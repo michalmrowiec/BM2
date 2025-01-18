@@ -13,8 +13,8 @@
         public Guid? UpdatedBy { get; set; }
 
         public Currency DefaultCurrency { get; set; }
-        public List<Record> Records { get; set; }
-        public List<User> Users { get; set; }
+        public List<Record> Records { get; set; } = [];
+        public List<User> Users { get; set; } = [];
         public List<WalletCategoryRelation> WalletCategories { get; set; } = [];
         public List<WalletTagRelation> WalletTagRelations { get; set; } = [];
     }

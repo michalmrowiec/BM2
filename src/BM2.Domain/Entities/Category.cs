@@ -10,6 +10,6 @@ public class Category
     public DateTime? UpdatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
     
-    public List<Record> Records { get; set; }
+    public List<Record> Records { get; set; } = [];
     public List<WalletCategoryRelation> WalletCategories { get; set; } = [];
 }
