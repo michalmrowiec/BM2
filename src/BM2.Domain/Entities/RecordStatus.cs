@@ -4,4 +4,6 @@ public class RecordStatus
 {
     public Guid RecordStatusId { get; set; }
     public string RecordStatusName { get; set; }
+    public bool ForRecords { get; set; }
+    public bool ForPeriodicRecord  { get; set; }
 }

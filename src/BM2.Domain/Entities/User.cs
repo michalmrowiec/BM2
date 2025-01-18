@@ -10,9 +10,9 @@
         public Guid CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public Guid? UpdatedBy { get; set; }
-        
-        public List<Wallet> Wallets { get; set; }
-        public List<Category> Categories { get; set; }
-        public List<Tag> Tags { get; set; }
+
+        public List<Wallet> Wallets { get; set; } = [];
+        public List<Category> Categories { get; set; } = [];
+        public List<Tag> Tags { get; set; } = [];
     }
 }
