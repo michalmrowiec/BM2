@@ -1,8 +1,8 @@
 ﻿namespace BM2.Domain.Entities;
 
-public class RecordTagRelation
+public class RecordTagRelation : IEntity, IOwnedByUser
 {
-    public Guid RecordTagRelationId { get; set; }
+    public Guid Id { get; set; }
     public Guid RecordId { get; set; }
     public Guid TagId { get; set; }
     public Guid UserId { get; set; }

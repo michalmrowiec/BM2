@@ -1,8 +1,8 @@
 ﻿namespace BM2.Domain.Entities
 {
-    public class Wallet
+    public class Wallet : IEntity, IEntityAudit, IOwnedByUser
     {
-        public Guid WalletId { get; set; }
+        public Guid Id { get; set; }
         public string WalletName { get; set; }
         public bool IsActive { get; set; }
         public Guid DefaultCurrencyId { get; set; }
