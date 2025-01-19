@@ -18,10 +18,31 @@ internal static class RecordStatusSeeder
     {
         return
         [
-            new RecordStatus() { RecordStatusId = Guid.NewGuid(), RecordStatusName = "Planned", ForRecords = true, ForPeriodicRecord = false },
-            new RecordStatus() { RecordStatusId = Guid.NewGuid(), RecordStatusName = "Realized", ForRecords = true, ForPeriodicRecord = false},
-            new RecordStatus() { RecordStatusId = Guid.NewGuid(), RecordStatusName = "Active", ForRecords = false, ForPeriodicRecord = true}, //ON
-            new RecordStatus() { RecordStatusId = Guid.NewGuid(), RecordStatusName = "Suspended", ForRecords = false, ForPeriodicRecord = true} //OFF
+            new RecordStatus()
+            {
+                Id = Guid.NewGuid(), StatusCode = 1, RecordStatusName = "Planned", ForRecords = true,
+                ForPeriodicRecord = false
+            },
+            new RecordStatus()
+            {
+                Id = Guid.NewGuid(), StatusCode = 2, RecordStatusName = "Realized", ForRecords = true,
+                ForPeriodicRecord = false
+            },
+            new RecordStatus()
+            {
+                Id = Guid.NewGuid(), StatusCode = 3, RecordStatusName = "Active", ForRecords = false,
+                ForPeriodicRecord = true
+            },
+            new RecordStatus()
+            {
+                Id = Guid.NewGuid(), StatusCode = 4, RecordStatusName = "Suspended", ForRecords = false,
+                ForPeriodicRecord = true
+            },
+            new RecordStatus()
+            {
+                Id = Guid.NewGuid(), StatusCode = 5, RecordStatusName = "Pending", ForRecords = false,
+                ForPeriodicRecord = true
+            }
         ];
     }
 }

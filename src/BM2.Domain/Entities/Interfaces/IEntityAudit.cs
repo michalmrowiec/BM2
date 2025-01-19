@@ -1,10 +1,7 @@
 ﻿namespace BM2.Domain.Entities;
 
-public class PeriodicRecordDefinition
+public interface IEntityAudit
 {
-    public Guid PeriodicRecordDefinitionId { get; set; }
-    public Guid UserId { get; set; }
-    
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }

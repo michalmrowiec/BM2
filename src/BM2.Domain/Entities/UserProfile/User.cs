@@ -1,8 +1,8 @@
 ﻿namespace BM2.Domain.Entities
 {
-    public class User
+    public class User : IEntity, IEntityAudit
     {
-        public Guid UserId { get; set; }
+        public Guid Id { get; set; }
         public string EmailAddress { get; set; }
         public string PasswordHash { get; set; }
         public bool IsActive { get; set; }
@@ -14,5 +14,6 @@
         public List<Wallet> Wallets { get; set; } = [];
         public List<Category> Categories { get; set; } = [];
         public List<Tag> Tags { get; set; } = [];
+        public List<AuditLogin> AuditLogins { get; set; } = [];
     }
 }

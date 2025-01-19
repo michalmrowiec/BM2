@@ -1,13 +1,13 @@
 ﻿namespace BM2.Domain.Entities;
 
-public class WalletTagRelation
+public class WalletCategoryRelation : IEntity, IOwnedByUser
 {
-    public Guid WalletTagRelationId { get; set; }
+    public Guid Id { get; set; }
     public Guid WalletId { get; set; }
-    public Guid TagId { get; set; }
+    public Guid CategoryId { get; set; }
     public bool IsActive  { get; set; }
     public Guid UserId { get; set; }
 
     public Wallet Wallet { get; set; }
-    public Tag Tag { get; set; }
+    public Category Category { get; set; }
 }

@@ -1,8 +1,8 @@
 ﻿namespace BM2.Domain.Entities;
 
-public class Category
+public class Category : IEntity, IEntityAudit, IOwnedByUser
 {
-    public Guid CategoryId { get; set; }
+    public Guid Id { get; set; }
     public string CategoryName { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAt { get; set; }

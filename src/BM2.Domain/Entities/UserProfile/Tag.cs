@@ -1,8 +1,8 @@
 ﻿namespace BM2.Domain.Entities;
 
-public class Tag
+public class Tag : IEntity, IEntityAudit, IOwnedByUser
 {
-    public Guid TagId { get; set; }
+    public Guid Id { get; set; }
     public string TagName { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAt { get; set; }
