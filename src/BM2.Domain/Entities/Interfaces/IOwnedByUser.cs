@@ -2,5 +2,5 @@
 
 public interface IOwnedByUser
 {
-    public Guid UserId { get; set; }
+    public Guid OwnedByUserId { get; set; }
 }
