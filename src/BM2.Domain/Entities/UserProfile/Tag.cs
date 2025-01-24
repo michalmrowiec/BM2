@@ -3,7 +3,8 @@
 public class Tag : IEntity, IEntityAudit, IOwnedByUser
 {
     public Guid Id { get; set; }
-    public string TagName { get; set; }
+    public Guid WalletId { get; set; }
+    public string TagName { get; set; } = null!;
     public Guid OwnedByUserId { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }
@@ -11,7 +12,7 @@ public class Tag : IEntity, IEntityAudit, IOwnedByUser
     public Guid? UpdatedBy { get; set; }
     public DateTime? DeletedAt { get; set; }
     public Guid? DeletedBy { get; set; }
-    
-    public List<RecordTagRelation> RecordTagRelations { get; set; } = [];
-    public List<WalletTagRelation> WalletTagRelations { get; set; } = [];
+
+    public Wallet? Wallet { get; set; }
+    public ICollection<Record> Records { get; set; } = [];
 }

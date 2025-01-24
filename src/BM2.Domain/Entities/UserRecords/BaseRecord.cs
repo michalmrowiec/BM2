@@ -18,4 +18,9 @@ public class BaseRecord : IEntity, IEntityAudit, IOwnedByUser
     public Guid? UpdatedBy { get; set; }
     public DateTime? DeletedAt { get; set; }
     public Guid? DeletedBy { get; set; }
+    
+    public Currency? Currency { get; set; }
+    public Wallet? Wallet { get; set; }
+    public Category? Category { get; set; }
+    public ICollection<Tag> Tags { get; set; } = [];
 }

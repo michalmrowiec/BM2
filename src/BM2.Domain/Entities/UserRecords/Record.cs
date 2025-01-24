@@ -2,10 +2,8 @@
 
 public class Record : BaseRecord
 {
+    public Guid AccountId { get; set; }
     public DateTime RecordDateTime { get; set; }
 
-    public Currency Currency { get; set; }
-    public Account Account { get; set; }
-    public Category Category { get; set; }
-    public List<RecordTagRelation> RecordTagRelations { get; set; } = [];
+    public Account? Account { get; set; }
 }

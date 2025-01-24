@@ -6,5 +6,5 @@ public class AuditLogin : IEntity
     public Guid UserId { get; set; }
     public DateTime DateTimeOfLogin { get; set; }
     
-    public User User { get; set; }
+    public User? User { get; set; }
 }

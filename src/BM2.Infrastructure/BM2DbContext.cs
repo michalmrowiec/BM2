@@ -14,9 +14,6 @@ public class BM2DbContext : DbContext
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<Tag> Tags { get; set; }
-    public DbSet<UserWalletRelation> UserWalletRelations { get; set; }
-    public DbSet<WalletCategoryRelation> WalletCategoryRelations { get; set; }
-    public DbSet<WalletTagRelation> WalletTagRelations { get; set; }
 
     public DbSet<Record> Records { get; set; }
     public DbSet<RecordTemplate> RecordTemplates { get; set; }
@@ -30,22 +27,27 @@ public class BM2DbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        modelBuilder.Entity<User>(user =>
-        {
-            user.HasKey(e => e.Id);
-            user.HasMany<Wallet>(x => x.Wallets)
-                .WithMany(x => x.Users)
-                .UsingEntity<UserWalletRelation>(
-                    r => r.HasOne(x => x.Wallet)
-                        .WithMany()
-                        .HasForeignKey(x => x.WalletId),
-                    r => r.HasOne(x => x.User)
-                        .WithMany()
-                        .HasForeignKey(x => x.UserId),
-                    uwr => { uwr.HasKey(x => x.Id); });
-        });
+        
+        ConfigureRecords(modelBuilder);
 
         // modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseDocumentConfiguration).Assembly);
+    }
+
+    private static void ConfigureRecords(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Record>(tag =>
+        {
+            tag.HasKey(x => x.Id);
+            tag.HasMany(x => x.Tags)
+                .WithMany(x => x.Records)
+                .UsingEntity<RecordTagRelation>(
+                    r => r.HasOne(x => x.Tag)
+                        .WithMany()
+                        .HasForeignKey(x => x.TagId),
+                    r => r.HasOne(x => x.Record)
+                        .WithMany()
+                        .HasForeignKey(x => x.RecordId),
+                    rtr => { rtr.HasKey(x => x.Id); });
+        });
     }
 }
