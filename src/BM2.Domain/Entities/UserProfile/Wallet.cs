@@ -16,10 +16,10 @@ namespace BM2.Domain.Entities
         public DateTime? DeletedAt { get; set; }
         public Guid? DeletedBy { get; set; }
         
-        public Currency DefaultCurrency { get; set; }
-        
-        public List<User> Users { get; set; } = [];
-        public List<Category> Categories { get; set; } = [];
-        public List<Tag> Tags { get; set; } = [];
+        public User? OwnedByUser { get; set; }
+        public Currency? DefaultCurrency { get; set; }
+        public ICollection<Account> Accounts { get; set; }
+        public ICollection<Category> Categories { get; set; } = [];
+        public ICollection<Tag> Tags { get; set; } = [];
     }
 }

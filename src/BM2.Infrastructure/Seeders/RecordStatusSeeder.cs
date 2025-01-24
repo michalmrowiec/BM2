@@ -1,4 +1,5 @@
 ﻿using BM2.Domain.Entities;
+using BM2.Domain.SystemCodes;
 
 namespace BM2.Infrastructure.Seeders;
 
@@ -18,31 +19,11 @@ internal static class RecordStatusSeeder
     {
         return
         [
-            new RecordStatus()
-            {
-                Id = Guid.NewGuid(), StatusCode = 1, RecordStatusName = "Planned", ForRecords = true,
-                ForPeriodicRecord = false
-            },
-            new RecordStatus()
-            {
-                Id = Guid.NewGuid(), StatusCode = 2, RecordStatusName = "Realized", ForRecords = true,
-                ForPeriodicRecord = false
-            },
-            new RecordStatus()
-            {
-                Id = Guid.NewGuid(), StatusCode = 3, RecordStatusName = "Active", ForRecords = false,
-                ForPeriodicRecord = true
-            },
-            new RecordStatus()
-            {
-                Id = Guid.NewGuid(), StatusCode = 4, RecordStatusName = "Suspended", ForRecords = false,
-                ForPeriodicRecord = true
-            },
-            new RecordStatus()
-            {
-                Id = Guid.NewGuid(), StatusCode = 5, RecordStatusName = "Pending", ForRecords = false,
-                ForPeriodicRecord = true
-            }
+            new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Planned, RecordStatusName = "Planned", ForRecords = true, ForPeriodicRecord = false },
+            new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Realized, RecordStatusName = "Realized", ForRecords = true, ForPeriodicRecord = false },
+            new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Active, RecordStatusName = "Active", ForRecords = false, ForPeriodicRecord = true },
+            new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Suspended, RecordStatusName = "Suspended", ForRecords = false, ForPeriodicRecord = true },
+            new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Pending, RecordStatusName = "Pending", ForRecords = false, ForPeriodicRecord = true }
         ];
     }
 }

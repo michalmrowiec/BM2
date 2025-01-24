@@ -3,8 +3,8 @@
 public class Currency : IEntity
 {
     public Guid Id { get; set; }
-    public string Name { get; set; }
-    public string Symbol { get; set; }
-    public string IsoCode { get; set; }
-    public string Country { get; set; }
+    public string Name { get; set; } = null!;
+    public string Symbol { get; set; } = null!;
+    public string IsoCode { get; set; } = null!;
+    public string Country { get; set; } = null!;
 }

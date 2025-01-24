@@ -13,10 +13,10 @@
         public DateTime? DeletedAt { get; set; }
         public Guid? DeletedBy { get; set; }
         
-        public List<Wallet> Wallets { get; set; } = [];
-        public List<Account> Accounts { get; set; } = [];
-        public List<Category> Categories { get; set; } = [];
-        public List<Tag> Tags { get; set; } = [];
-        public List<AuditLogin> AuditLogins { get; set; } = [];
+        public ICollection<Wallet> Wallets { get; set; } = [];
+        public ICollection<Account> Accounts { get; set; } = [];
+        public ICollection<Category> Categories { get; set; } = [];
+        public ICollection<Tag> Tags { get; set; } = [];
+        public ICollection<AuditLogin> AuditLogins { get; set; } = [];
     }
 }
