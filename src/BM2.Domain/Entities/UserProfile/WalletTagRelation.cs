@@ -6,7 +6,7 @@ public class WalletTagRelation : IEntity, IOwnedByUser
     public Guid WalletId { get; set; }
     public Guid TagId { get; set; }
     public bool IsActive  { get; set; }
-    public Guid UserId { get; set; }
+    public Guid OwnedByUserId { get; set; }
 
     public Wallet Wallet { get; set; }
     public Tag Tag { get; set; }

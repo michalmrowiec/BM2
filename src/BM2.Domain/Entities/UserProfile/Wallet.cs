@@ -1,4 +1,6 @@
-﻿namespace BM2.Domain.Entities
+﻿using Microsoft.VisualBasic;
+
+namespace BM2.Domain.Entities
 {
     public class Wallet : IEntity, IEntityAudit, IOwnedByUser
     {
@@ -6,16 +8,18 @@
         public string WalletName { get; set; }
         public bool IsActive { get; set; }
         public Guid DefaultCurrencyId { get; set; }
-        public Guid UserId { get; set; }
+        public Guid OwnedByUserId { get; set; }
         public DateTime CreatedAt { get; set; }
         public Guid CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public Guid? UpdatedBy { get; set; }
-
+        public DateTime? DeletedAt { get; set; }
+        public Guid? DeletedBy { get; set; }
+        
         public Currency DefaultCurrency { get; set; }
-        public List<Record> Records { get; set; } = [];
+        
         public List<User> Users { get; set; } = [];
-        public List<WalletCategoryRelation> WalletCategories { get; set; } = [];
-        public List<WalletTagRelation> WalletTagRelations { get; set; } = [];
+        public List<Category> Categories { get; set; } = [];
+        public List<Tag> Tags { get; set; } = [];
     }
 }

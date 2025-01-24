@@ -1,6 +1,6 @@
 ﻿namespace BM2.Domain.Entities;
 
-public class AuditLogin : IEntity, IOwnedByUser
+public class AuditLogin : IEntity
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
