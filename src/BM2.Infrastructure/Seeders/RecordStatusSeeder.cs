@@ -23,7 +23,7 @@ internal static class RecordStatusSeeder
             new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Realized, RecordStatusName = "Realized", ForRecords = true, ForPeriodicRecord = false },
             new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Active, RecordStatusName = "Active", ForRecords = false, ForPeriodicRecord = true },
             new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Suspended, RecordStatusName = "Suspended", ForRecords = false, ForPeriodicRecord = true },
-            new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Pending, RecordStatusName = "Pending", ForRecords = false, ForPeriodicRecord = true }
+            new RecordStatus() { Id = Guid.NewGuid(), SystemCode = StatusSystemCode.Pending, RecordStatusName = "Pending", ForRecords = true, ForPeriodicRecord = false }
         ];
     }
 }

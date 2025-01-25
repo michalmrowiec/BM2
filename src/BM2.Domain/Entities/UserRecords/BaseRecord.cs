@@ -3,7 +3,6 @@
 public class BaseRecord : IEntity, IEntityAudit, IOwnedByUser
 {
     public Guid Id { get; set; }
-    public Guid WalletId { get; set; }
     public Guid CategoryId { get; set; }
     public Guid StatusId { get; set; }
     public Guid OwnedByUserId { get; set; }
@@ -20,7 +19,7 @@ public class BaseRecord : IEntity, IEntityAudit, IOwnedByUser
     public Guid? DeletedBy { get; set; }
     
     public Currency? Currency { get; set; }
-    public Wallet? Wallet { get; set; }
     public Category? Category { get; set; }
+    public User? OwnedByUser { get; set; }
     public ICollection<Tag> Tags { get; set; } = [];
 }

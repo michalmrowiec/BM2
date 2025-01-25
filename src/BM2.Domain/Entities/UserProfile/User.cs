@@ -6,6 +6,14 @@
         public string EmailAddress { get; set; } = null!;
         public string PasswordHash { get; set; } = null!;
         public bool IsActive { get; set; }
+        public int MaxCategories { get; set; }
+        public int MaxTags { get; set; }
+        public int MaxRecordTemplates { get; set; }
+        public int MaxPeriodicRecordDefinitions { get; set; }
+        public int MaxRecordsPerMonth { get; set; }
+        public int MaxWallets { get; set; }
+        public int MaxAccountsPerWallet { get; set; }
+        
         public DateTime CreatedAt { get; set; }
         public Guid CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -18,5 +26,9 @@
         public ICollection<Category> Categories { get; set; } = [];
         public ICollection<Tag> Tags { get; set; } = [];
         public ICollection<AuditLogin> AuditLogins { get; set; } = [];
+        public ICollection<Record> Records { get; set; } = [];
+        public ICollection<RecordTemplate> RecordTemplates { get; set; } = [];
+        public ICollection<PeriodicRecordDefinition> PeriodicRecordDefinitions { get; set; } = [];
+        public ICollection<RecordTagRelation> RecordTagRelations { get; set; } = [];
     }
 }

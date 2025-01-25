@@ -9,4 +9,5 @@ public class RecordTagRelation : IEntity, IOwnedByUser
 
     public Record Record { get; set; }
     public Tag Tag { get; set; }
+    public User? OwnedByUser { get; set; }
 }

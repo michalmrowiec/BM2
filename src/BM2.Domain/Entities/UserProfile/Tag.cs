@@ -14,5 +14,6 @@ public class Tag : IEntity, IEntityAudit, IOwnedByUser
     public Guid? DeletedBy { get; set; }
 
     public Wallet? Wallet { get; set; }
+    public User? OwnedByUser { get; set; }
     public ICollection<Record> Records { get; set; } = [];
 }
