@@ -9,6 +9,7 @@ namespace BM2.Domain.Entities
         public bool IsActive { get; set; }
         public Guid DefaultCurrencyId { get; set; }
         public Guid OwnedByUserId { get; set; }
+        
         public DateTime CreatedAt { get; set; }
         public Guid CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }

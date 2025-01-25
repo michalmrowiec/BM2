@@ -18,5 +18,6 @@ public class Account : IEntity, IEntityAudit, IOwnedByUser
     
     public Wallet? Wallet { get; set; }
     public Currency? DefaultCurrency { get; set; }
+    public User? OwnedByUser { get; set; }
     public ICollection<Record> Records { get; set; } = [];
 }
