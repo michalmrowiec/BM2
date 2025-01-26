@@ -15,5 +15,5 @@ public class Category : IEntity, IEntityAudit, IOwnedByUser
     
     public Wallet? Wallet { get; set; }
     public User? OwnedByUser { get; set; }
-    public ICollection<Record> Records { get; set; } = [];
+    public ICollection<BaseRecord> Records { get; set; } = [];
 }

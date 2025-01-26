@@ -8,9 +8,8 @@ public class Currency : IEntity
     public string IsoCode { get; set; } = null!;
     public string Country { get; set; } = null!;
 
-    public ICollection<Record> Records { get; set; } = [];
+    public ICollection<BaseRecord> Records { get; set; } = [];
     public ICollection<PeriodicRecordDefinition> PeriodicRecordDefinitions { get; set; } = [];
-    public ICollection<RecordTemplate> RecordTemplates { get; set; } = [];
     public ICollection<Wallet> Wallets { get; set; } = [];
     public ICollection<Account> Accounts { get; set; } = [];
 }

@@ -54,7 +54,7 @@ public class BM2DbContext : DbContext
             currencyBuilder.HasKey(x => x.Id);
             currencyBuilder.Property(x => x.Name)
                 .IsRequired()
-                .HasMaxLength(500);
+                .HasMaxLength(200);
             currencyBuilder.Property(x => x.Symbol)
                 .IsRequired()
                 .HasMaxLength(20);
@@ -106,7 +106,7 @@ public class BM2DbContext : DbContext
             userBuilder.Property(x => x.MaxRecordTemplates)
                 .IsRequired()
                 .HasDefaultValue(10);
-            userBuilder.Property(x => x.PeriodicRecordDefinitions)
+            userBuilder.Property(x => x.MaxPeriodicRecordDefinitions)
                 .IsRequired()
                 .HasDefaultValue(5);
             userBuilder.Property(x => x.MaxRecordsPerMonth)
@@ -353,8 +353,10 @@ public class BM2DbContext : DbContext
                 .HasMaxLength(500);
             baseRecordBuilder.Property(x => x.Amount)
                 .IsRequired()
-                .HasDefaultValue(0);
-            baseRecordBuilder.Property(x => x.PlannedAmount);
+                .HasDefaultValue(0)
+                .HasPrecision(18, 2);
+            baseRecordBuilder.Property(x => x.PlannedAmount)
+                .HasPrecision(18, 2);
             baseRecordBuilder.Property(x => x.CurrencyId)
                 .IsRequired();
 
