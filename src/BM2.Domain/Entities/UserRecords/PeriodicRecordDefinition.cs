@@ -3,13 +3,13 @@
 public class PeriodicRecordDefinition : IEntity, IEntityAudit, IOwnedByUser
 {
     public Guid Id { get; set; }
-    public Guid OwnedByUserId { get; set; }
     public Guid RecordTemplateId { get; set; }
     public Guid CurrencyId { get; set; }
     public Guid PeriodicRecordStatusId { get; set; } // Status of periodic record
     public Guid SetRecordStatusId { get; set; } // Set status for created record
     public Guid WalletId { get; set; }
     public Guid SetRecordAccountId { get; set; } // Set account for created record
+    public Guid OwnedByUserId { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }
