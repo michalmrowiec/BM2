@@ -7,7 +7,7 @@ public class RecordTagRelation : IEntity, IOwnedByUser
     public Guid TagId { get; set; }
     public Guid OwnedByUserId { get; set; }
 
-    public Record Record { get; set; }
-    public Tag Tag { get; set; }
+    public BaseRecord? Record { get; set; }
+    public Tag? Tag { get; set; }
     public User? OwnedByUser { get; set; }
 }

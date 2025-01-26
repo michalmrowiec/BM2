@@ -6,6 +6,7 @@ public class Tag : IEntity, IEntityAudit, IOwnedByUser
     public Guid WalletId { get; set; }
     public string TagName { get; set; } = null!;
     public Guid OwnedByUserId { get; set; }
+    
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }
@@ -15,5 +16,5 @@ public class Tag : IEntity, IEntityAudit, IOwnedByUser
 
     public Wallet? Wallet { get; set; }
     public User? OwnedByUser { get; set; }
-    public ICollection<Record> Records { get; set; } = [];
+    public ICollection<BaseRecord> Records { get; set; } = [];
 }
