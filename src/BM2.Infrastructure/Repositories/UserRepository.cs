@@ -1,18 +1,40 @@
 ﻿using BM2.Application.Contracts.Persistence;
 using BM2.Domain.Entities;
-using BM2.Domain.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BM2.Infrastructure.Repositories;
 
-public class UserRepository : IUserRepository
+public class UserRepository(
+    BM2DbContext context,
+    ILogger<UserRepository> logger) : IUserRepository
 {
-    public Task<User> CreateAsync(User user)
+    public async Task<User> CreateAsync(User user)
     {
-        throw new NotImplementedException();
+        try
+        {
+            await context.Users.AddAsync(user);
+            await context.SaveChangesAsync();
+            return user;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error creating entity");
+            throw;
+        }
     }
 
-    public Task<User> GetByIdAsync(Guid id)
+    public async Task<User> GetByEmailAddressAsync(string emailAddress)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var result = await context.Users.FirstOrDefaultAsync(x => x.EmailAddress == emailAddress);
+            return result ?? throw new KeyNotFoundException("The object with the given id was not found.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving entity with Id: {EntityId}", emailAddress);
+            throw;
+        }
     }
 }
