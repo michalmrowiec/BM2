@@ -1,11 +1,6 @@
 ﻿namespace BM2.Application.Functions.Dtos;
 
-public class LoggedUserDto
+public class LoggedUserDto(string jwtToken)
 {
-    public string JwtToken { get; set; } = null!;
-
-    public LoggedUserDto(string jwtToken)
-    {
-        JwtToken = jwtToken;
-    }
+    public string JwtToken { get; set; } = jwtToken;
 }
