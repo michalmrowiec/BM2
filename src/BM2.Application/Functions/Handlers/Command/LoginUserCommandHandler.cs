@@ -11,6 +11,7 @@ namespace BM2.Application.Functions.Handlers.Command;
 
 public class LoginUserCommandHandler(
     IUserRepository userRepository,
+    IAuditLoginRepository auditLoginRepository,
     IPasswordHasher<User> passwordHasher,
     IJwtTokenService jwtTokenService)
     : IRequestHandler<LoginUserCommand, BaseResponse<LoggedUserDto>>
@@ -42,8 +43,15 @@ public class LoginUserCommandHandler(
 
         LoggedUserDto loggedEmployee = new(jwtToken);
 
+        try
+        {
+            await auditLoginRepository.AddAsync(AuditLogin.CreateInstance(user.Id));
+        }
+        catch (Exception ex)
+        {
+            return request.ReturnServerError();
+        }
+
         return request.ReturnSuccessWithObject(loggedEmployee);
-        
-        // TODO Add user login entry
     }
 }
