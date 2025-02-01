@@ -1,0 +1,98 @@
+﻿@page "/register"
+@using Newtonsoft.Json
+@using System.Text
+@using BM2.Client.VMs
+@inject ISnackbar Snackbar
+@inject HttpClient HttpClient
+@inject IAlertService AlertService
+@inject NavigationManager Navigation
+
+<div style="display: flex; justify-content: center; align-items: center; height: 75vh;">
+    <MudCard Class="pa-4" Style="width: 400px;">
+        <MudCardContent>
+            @if (_showForm)
+            {
+                <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-8">Register new account</MudText>
+
+                <MudForm @ref="_form" @onkeypress="HandleKeyPress" Spacing="4">
+                    <MudTextField @bind-Value="_registerModel.EmailAddress"
+                                  Label="Email address"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Required
+                                  Immediate
+                                  For="@(() => _registerModel.EmailAddress)"
+                                  AutoFocus/>
+
+                    <MudTextField @bind-Value="_registerModel.Password"
+                                  Label="Password"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  InputType="InputType.Password"
+                                  Required
+                                  Immediate
+                                  For="@(() => _registerModel.Password)"/>
+
+                    <MudTextField @bind-Value="_registerModel.RepeatPassword"
+                                  Label="Repeat password"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  InputType="InputType.Password"
+                                  Required
+                                  Immediate
+                                  For="@(() => _registerModel.RepeatPassword)"/>
+                    <MudSpacer/>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RegisterUser">
+                        Register
+                    </MudButton>
+                </MudForm>
+            }
+            else
+            {
+                <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-8">Account created!</MudText>
+                <MudSpacer/>
+                <MudButton href="/login" FullWidth="true" Variant="Variant.Filled" Color="Color.Primary">
+                    Go to login
+                </MudButton>
+            }
+        </MudCardContent>
+    </MudCard>
+</div>
+
+
+@code {
+    private MudForm _form;
+    private UserRegisterVM _registerModel = new();
+    private bool _showForm = true;
+
+    private async Task RegisterUser()
+    {
+        var postJson = new StringContent(JsonConvert.SerializeObject(_registerModel), Encoding.UTF8, "application/json");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, @"api/v1/User/register");
+        request.Content = postJson;
+
+        var response = await HttpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            _showForm = false;
+            Snackbar.Add(new MarkupString("Account created"), Severity.Success);
+            //Navigation.NavigateTo("/login", true);
+            StateHasChanged();
+        }
+        else
+        {
+            await response.HandleFailure(AlertService);
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await RegisterUser();
+        }
+    }
+
+}
