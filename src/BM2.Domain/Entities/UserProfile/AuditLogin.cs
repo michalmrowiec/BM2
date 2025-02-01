@@ -7,4 +7,15 @@ public class AuditLogin : IEntity
     public DateTime DateTimeOfLogin { get; set; }
     
     public User? User { get; set; }
+
+    private AuditLogin(Guid userId)
+    {
+        Id = Guid.NewGuid();
+        UserId = userId;
+    }
+
+    public static AuditLogin CreateInstance(Guid userId)
+    {
+        return new AuditLogin(userId);
+    }
 }
