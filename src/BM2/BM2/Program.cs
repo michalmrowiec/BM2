@@ -1,5 +1,6 @@
 using BM2.Components;
 using BM2.Infrastructure;
+using BM2.Services;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,6 +47,13 @@ builder.Services.AddSwaggerGen(cfg =>
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+using var scope = app.Services.CreateScope();
+
+var dbContext = scope.ServiceProvider
+    .GetRequiredService<BM2DbContext>();
+
+dbContext.UpdateDatabase(scope.ServiceProvider.GetRequiredService<ILogger<Program>>());
 
 if (app.Environment.IsDevelopment())
 {

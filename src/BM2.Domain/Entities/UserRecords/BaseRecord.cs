@@ -21,5 +21,6 @@ public abstract class BaseRecord : IEntity, IEntityAudit, IOwnedByUser
     public Currency? Currency { get; set; }
     public Category? Category { get; set; }
     public User? OwnedByUser { get; set; }
+    public RecordStatus? Status { get; set; }
     public ICollection<Tag> Tags { get; set; } = [];
 }
