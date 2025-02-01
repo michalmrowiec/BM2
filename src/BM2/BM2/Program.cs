@@ -1,9 +1,12 @@
+using BM2.Application;
 using BM2.Client.Services.Auth;
 using BM2.Client.Services.LocalStorage;
 using BM2.Client.Services.Notification;
 using BM2.Components;
+using BM2.Controllers.Utils;
 using BM2.Infrastructure;
 using BM2.Infrastructure.Services;
+using BM2.Middleware;
 using BM2.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.OpenApi.Models;
@@ -16,6 +19,7 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddSingleton<IAlertService, AlertService>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddMudServices();
 
@@ -57,8 +61,12 @@ builder.Services.AddSwaggerGen(cfg =>
         }
     });
 });
+builder.Services.AddScoped<ErrorHandlingMiddleware>();
 
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IUserContextService, UserContextService>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -88,6 +96,8 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 app.UseAuthorization();
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.MapControllers();
 

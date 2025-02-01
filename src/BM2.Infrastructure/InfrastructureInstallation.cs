@@ -1,6 +1,8 @@
 ﻿using System.Text;
+using BM2.Application.Contracts.Persistence;
 using BM2.Application.Contracts.Services;
 using BM2.Domain.Entities;
+using BM2.Infrastructure.Repositories;
 using BM2.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -44,5 +46,8 @@ public static class InfrastructureInstallation
         services.AddSingleton(authenticationSettings);
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAuditLoginRepository, AuditLoginRepository>();
     }
 }
