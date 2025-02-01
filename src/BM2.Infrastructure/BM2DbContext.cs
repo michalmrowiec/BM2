@@ -384,6 +384,10 @@ public class BM2DbContext : DbContext
                 .WithMany(x => x.Records)
                 .HasForeignKey(x => x.CurrencyId)
                 .OnDelete(DeleteBehavior.Restrict);
+            baseRecordBuilder.HasOne(x=>x.Status)
+                .WithMany()
+                .HasForeignKey(x=>x.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -446,10 +450,22 @@ public class BM2DbContext : DbContext
             periodicRecordDefinitionBuilder.HasOne(x => x.Wallet)
                 .WithMany(x => x.PeriodicRecordDefinitions)
                 .HasForeignKey(x => x.WalletId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.ClientCascade);
             periodicRecordDefinitionBuilder.HasOne(x => x.SetRecordAccount)
                 .WithMany(x => x.PeriodicRecordDefinitions)
                 .HasForeignKey(x => x.SetRecordAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+            periodicRecordDefinitionBuilder.HasOne(x => x.PeriodicRecordStatus)
+                .WithMany()
+                .HasForeignKey(x => x.PeriodicRecordStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+            periodicRecordDefinitionBuilder.HasOne(x => x.SetRecordAccount)
+                .WithMany()
+                .HasForeignKey(x => x.SetRecordAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+            periodicRecordDefinitionBuilder.HasOne(x=>x.RecordTemplate)
+                .WithMany(x=>x.PeriodicRecordDefinitions)
+                .HasForeignKey(x=>x.RecordTemplateId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
