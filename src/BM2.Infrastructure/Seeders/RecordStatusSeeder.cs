@@ -5,7 +5,7 @@ namespace BM2.Infrastructure.Seeders;
 
 internal static class RecordStatusSeeder
 {
-    internal static async Task Seed(this BM2DbContext context)
+    internal static async Task SeedAsync(BM2DbContext context)
     {
         if (!context.RecordStatuses.Any())
         {
