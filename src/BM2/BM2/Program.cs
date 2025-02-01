@@ -1,5 +1,6 @@
 using BM2.Components;
 using BM2.Infrastructure;
+using BM2.Infrastructure.Services;
 using BM2.Services;
 using Microsoft.OpenApi.Models;
 
@@ -54,6 +55,8 @@ var dbContext = scope.ServiceProvider
     .GetRequiredService<BM2DbContext>();
 
 dbContext.UpdateDatabase(scope.ServiceProvider.GetRequiredService<ILogger<Program>>());
+
+await dbContext.SeedDatabaseAsync();
 
 if (app.Environment.IsDevelopment())
 {
