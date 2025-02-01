@@ -3,8 +3,11 @@ using BM2.Infrastructure;
 using BM2.Infrastructure.Services;
 using BM2.Services;
 using Microsoft.OpenApi.Models;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMudServices();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
