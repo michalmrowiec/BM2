@@ -1,0 +1,27 @@
+﻿<style>
+    .global-alert-container {
+        position: fixed;
+        top: 2%;
+        right: 2%;
+        left: 2%;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+</style>
+
+@if (_alerts.Any())
+{
+    <div class="global-alert-container">
+        @foreach (var alert in _alerts.TakeLast(AlertMaxVisible).Reverse())
+        {
+            <MudAlert Severity="@alert.Severity"
+                      Variant="Variant.Filled"
+                      ShowCloseIcon="true"
+                      CloseIconClicked="@(() => HideAlert(alert.Id))">
+                @((MarkupString)alert.Message)
+            </MudAlert>
+        }
+    </div>
+}

@@ -1,6 +1,6 @@
 ﻿using BM2.Application.Contracts.Persistence;
 using BM2.Application.Contracts.Services;
-using BM2.Application.Functions.Dtos;
+using BM2.Application.Functions.DTOs;
 using BM2.Application.Functions.Requests.Command;
 using BM2.Application.Responses;
 using BM2.Domain.Entities;
@@ -41,7 +41,7 @@ public class LoginUserCommandHandler(
 
         var jwtToken = jwtTokenService.GenerateJwt(user);
 
-        LoggedUserDto loggedEmployee = new(jwtToken);
+        LoggedUserDto loggedEmployee = new(user.EmailAddress, jwtToken);
 
         try
         {
