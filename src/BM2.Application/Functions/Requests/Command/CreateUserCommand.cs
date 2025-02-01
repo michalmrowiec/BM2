@@ -1,4 +1,4 @@
-﻿using BM2.Application.Functions.Dtos;
+﻿using BM2.Application.Functions.DTOs;
 using BM2.Application.Responses;
 using MediatR;
 

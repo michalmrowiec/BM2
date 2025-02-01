@@ -1,11 +1,21 @@
+using BM2.Client.Services.Auth;
+using BM2.Client.Services.LocalStorage;
+using BM2.Client.Services.Notification;
 using BM2.Components;
 using BM2.Infrastructure;
 using BM2.Infrastructure.Services;
 using BM2.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.OpenApi.Models;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+builder.Services.AddSingleton<IAlertService, AlertService>();
 
 builder.Services.AddMudServices();
 

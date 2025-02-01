@@ -1,23 +1,26 @@
-﻿@inherits LayoutComponentBase
+﻿@using BM2.Client.Services.Auth
+@inherits LayoutComponentBase
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudLayout>
-    @* <GlobalAlert /> *@
+     <GlobalAlert /> 
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudText Typo="Typo.h5" Class="ml-3">BM2</MudText>
         <MudSpacer />
-        @* <AuthorizeView> *@
-        @*     <Authorized> *@
-        @*         <MudText>@context.User.Identity?.Name <a href="#" onclick="@(async () => { await AuthService.Logout(); Navigation.NavigateTo("/", true); })">Logout</a></MudText> *@
-        @*     </Authorized> *@
-        @*     <NotAuthorized> *@
-        @*         <a href="/login">Login</a> *@
-        @*     </NotAuthorized> *@
-        @* </AuthorizeView> *@
+        <AuthorizeView>
+            <Authorized>
+                <MudText>@context.User.Identity?.Name <a href="#" onclick="@(async () => { await AuthService.Logout(); Navigation.NavigateTo("/", true); })">Logout</a></MudText>
+            </Authorized>
+            <NotAuthorized>
+                <a href="/login">Login</a>
+            </NotAuthorized>
+        </AuthorizeView>
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
     </MudAppBar>

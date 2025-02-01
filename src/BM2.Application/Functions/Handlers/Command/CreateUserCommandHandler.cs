@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using BM2.Application.Contracts.Persistence;
-using BM2.Application.Functions.Dtos;
+using BM2.Application.Functions.DTOs;
 using BM2.Application.Functions.Requests.Command;
 using BM2.Application.Functions.Validators;
 using BM2.Application.Responses;
