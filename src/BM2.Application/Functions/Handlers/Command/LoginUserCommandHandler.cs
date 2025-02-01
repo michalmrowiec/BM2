@@ -1,13 +1,13 @@
 ﻿using BM2.Application.Contracts.Persistence;
 using BM2.Application.Contracts.Services;
-using BM2.Application.Functions.Commands;
 using BM2.Application.Functions.Dtos;
+using BM2.Application.Functions.Requests.Command;
 using BM2.Application.Responses;
 using BM2.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace BM2.Application.Functions.Handlers;
+namespace BM2.Application.Functions.Handlers.Command;
 
 public class LoginUserCommandHandler(
     IUserRepository userRepository,
@@ -29,23 +29,21 @@ public class LoginUserCommandHandler(
         }
         catch (Exception ex)
         {
-            return new BaseResponse<LoggedUserDto>
-                (BaseResponse.ResponseStatus.ServerError, "Something went wrong.");
+            return request.ReturnServerError();
         }
 
         var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
 
         if (verificationResult == PasswordVerificationResult.Failed)
-        {
             return new BaseResponse<LoggedUserDto>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
-        }
 
         var jwtToken = jwtTokenService.GenerateJwt(user);
 
         LoggedUserDto loggedEmployee = new(jwtToken);
 
-        return new BaseResponse<LoggedUserDto>(loggedEmployee);
+        return request.ReturnSuccessWithObject(loggedEmployee);
+        
         // TODO Add user login entry
     }
 }

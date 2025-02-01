@@ -1,5 +1,5 @@
-﻿using BM2.Application.Functions.Commands;
-using BM2.Application.Functions.Dtos;
+﻿using BM2.Application.Functions.Dtos;
+using BM2.Application.Functions.Requests.Command;
 using BM2.Controllers.Utils;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

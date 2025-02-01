@@ -2,7 +2,7 @@
 using BM2.Application.Responses;
 using MediatR;
 
-namespace BM2.Application.Functions.Commands;
+namespace BM2.Application.Functions.Requests.Command;
 
 public class LoginUserCommand : IRequest<BaseResponse<LoggedUserDto>>
 {

@@ -1,6 +1,7 @@
 ﻿using BM2.Application.Contracts.Persistence;
 using BM2.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Logging;
 
 namespace BM2.Infrastructure.Repositories;
@@ -9,6 +10,8 @@ public class UserRepository(
     BM2DbContext context,
     ILogger<UserRepository> logger) : IUserRepository
 {
+    private readonly IQueryable<User> _users = context.Users.GetUndeleted().AsNoTracking();
+
     public async Task<User> CreateAsync(User user)
     {
         try
@@ -28,7 +31,7 @@ public class UserRepository(
     {
         try
         {
-            var result = await context.Users.FirstOrDefaultAsync(x => x.EmailAddress == emailAddress);
+            var result = await _users.FirstOrDefaultAsync(x => x.EmailAddress == emailAddress);
             return result ?? throw new KeyNotFoundException("The object with the given id was not found.");
         }
         catch (Exception ex)
