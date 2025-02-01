@@ -38,7 +38,15 @@ public class LoginUserCommandHandler(
         if (verificationResult == PasswordVerificationResult.Failed)
             return new BaseResponse<LoggedUserDto>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
-
+        
+        if(user.DeletedAt != null)
+            return new BaseResponse<LoggedUserDto>
+                (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
+        
+        if(!user.IsActive)
+            return new BaseResponse<LoggedUserDto>
+                (BaseResponse.ResponseStatus.BadQuery, "Account is blocked. Contact to administrator.");
+        
         var jwtToken = jwtTokenService.GenerateJwt(user);
 
         LoggedUserDto loggedEmployee = new(user.EmailAddress, jwtToken);

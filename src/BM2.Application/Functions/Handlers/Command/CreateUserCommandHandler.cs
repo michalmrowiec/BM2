@@ -27,6 +27,9 @@ internal class CreateUserCommandHandler(
 
         var newUser = mapper.Map<User>(request);
         newUser.PasswordHash = passwordHasher.HashPassword(newUser, request.Password);
+        newUser.IsActive = true;
+        newUser.Id = Guid.NewGuid();
+        newUser.CreatedBy = newUser.Id;
         newUser.CreatedAt = DateTime.UtcNow;
 
         UserDto userDto;

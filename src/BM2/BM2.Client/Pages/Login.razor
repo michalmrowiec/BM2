@@ -11,7 +11,7 @@
 <div style="display: flex; justify-content: center; align-items: center; height: 75vh;">
     <MudCard Class="pa-4" Style="width: 400px;">
         <MudCardContent>
-            <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-8">DB2</MudText>
+            <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-8">BM2</MudText>
             <MudForm @ref="_form" @onkeypress="HandleKeyPress" Spacing="4">
                 <MudTextField @bind-Value="_loginModel.EmailAddress"
                               Label="Email address"
@@ -23,7 +23,7 @@
                               AutoFocus/>
 
                 <MudTextField @bind-Value="_loginModel.Password"
-                              Label="Hasło"
+                              Label="Password"
                               Variant="Variant.Filled"
                               Margin="Margin.Dense"
                               InputType="InputType.Password"
@@ -35,6 +35,7 @@
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LogIn">
                     Login
                 </MudButton>
+                <a style="align-self: flex-end;" href="/register">Register</a>
             </MudForm>
         </MudCardContent>
     </MudCard>

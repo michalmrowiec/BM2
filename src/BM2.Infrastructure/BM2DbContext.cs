@@ -474,13 +474,9 @@ public class BM2DbContext : DbContext
         where TEntity : class, IEntityAudit
     {
         entityBuilder.Property(x => x.CreatedAt)
-            .IsRequired()
-            .ValueGeneratedOnAdd();
+            .IsRequired();
         entityBuilder.Property(x => x.CreatedBy)
             .IsRequired();
-        entityBuilder.Property(x => x.UpdatedAt)
-            .IsRequired()
-            .ValueGeneratedOnUpdate();
     }
 
     private static void ConfigureOwnedByUserProperty<TEntity>(EntityTypeBuilder<TEntity> entityBuilder)

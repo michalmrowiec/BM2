@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BM2.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/v1/[controller]")]
     public class UserController : ControllerBase
@@ -26,7 +25,7 @@ namespace BM2.Controllers
             _userContextService = userContextService;
         }
 
-        [HttpPost]
+        [HttpPost("register")]
         public async Task<ActionResult<UserDto>> CreateEmployee
             ([FromBody] CreateUserCommand createUserCommand)
         {
