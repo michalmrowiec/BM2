@@ -21,6 +21,7 @@
       </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.1" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.1" />
+      <PackageReference Include="Sieve" Version="3.0.0-beta0015" />
     </ItemGroup>
 
     <ItemGroup>
