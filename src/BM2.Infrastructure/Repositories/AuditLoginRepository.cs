@@ -1,8 +1,6 @@
 ﻿using BM2.Application.Contracts.Persistence;
 using BM2.Application.Contracts.Persistence.Base;
 using BM2.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Logging;
 
 namespace BM2.Infrastructure.Repositories;

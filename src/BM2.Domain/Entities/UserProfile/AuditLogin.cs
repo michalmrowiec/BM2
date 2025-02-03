@@ -12,6 +12,7 @@ public class AuditLogin : IEntity
     {
         Id = Guid.NewGuid();
         UserId = userId;
+        DateTimeOfLogin = DateTime.UtcNow;
     }
 
     public static AuditLogin CreateInstance(Guid userId)

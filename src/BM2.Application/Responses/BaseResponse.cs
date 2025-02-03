@@ -45,7 +45,8 @@
             ValidationError = 4
         }
 
-        public bool IsSuccess() => Status == ResponseStatus.Success;
+        //public bool IsSuccess() => Status == ResponseStatus.Success;
+        public bool IsSuccess => Status == ResponseStatus.Success;
     }
 
     public class BaseResponse<T> : BaseResponse where T : class

@@ -1,5 +1,4 @@
-﻿@using BM2.Client.Services.Auth
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
@@ -62,7 +61,7 @@
                 LayoutProperties = new LayoutProperties()
             };
 
-        //AuthService.CheckLogin();
+        AuthService.CheckLogin();
     }
 
     private void DrawerToggle()

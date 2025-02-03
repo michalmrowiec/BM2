@@ -17,6 +17,7 @@ namespace BM2.Client.Services.Auth
         {
             var identity = new ClaimsIdentity(
             [
+                new Claim(ClaimTypes.Name, userEmail),
                 new Claim(ClaimTypes.Email, userEmail),
             ], "Custom Authentication");
 
