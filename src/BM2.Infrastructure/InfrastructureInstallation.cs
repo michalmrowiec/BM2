@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Sieve.Services;
 
 namespace BM2.Infrastructure;
 
@@ -46,7 +47,7 @@ public static class InfrastructureInstallation
         services.AddSingleton(authenticationSettings);
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
-
+        services.AddScoped<ISieveProcessor, BM2SieveProcessor>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuditLoginRepository, AuditLoginRepository>();
     }
