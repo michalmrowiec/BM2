@@ -1,5 +1,4 @@
 ﻿using System.Linq.Expressions;
-using BM2.Application.Contracts.Persistence;
 using BM2.Application.Contracts.Persistence.Base;
 using BM2.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

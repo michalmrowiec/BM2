@@ -17,7 +17,7 @@ public class CreateUserValidator : AbstractValidator<CreateUserCommand>
             .CustomAsync(async (value, context, cancellationToken) =>
             {
                 var user = await mediator.Send(new GetUserByEmailAddressQuery(value), cancellationToken);
-                if (user.IsSuccess())
+                if (user.IsSuccess)
                 {
                     context.AddFailure("EmailAddress", "Email address already exists");
                 }

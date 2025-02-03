@@ -18,47 +18,31 @@ public class LoginUserCommandHandler(
 {
     public async Task<BaseResponse<LoggedUserDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        User user;
-        try
-        {
-            user = await userRepository.GetByEmailAddressAsync(request.EmailAddress);
-        }
-        catch (KeyNotFoundException ex)
-        {
+        var user = await userRepository.GetByEmailAddressAsync(request.EmailAddress);
+
+        if (user == null)
             return new BaseResponse<LoggedUserDto>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
-        }
-        catch (Exception ex)
-        {
-            return request.ReturnServerError();
-        }
 
         var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
 
         if (verificationResult == PasswordVerificationResult.Failed)
             return new BaseResponse<LoggedUserDto>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
-        
-        if(user.DeletedAt != null)
+
+        if (user.DeletedAt != null)
             return new BaseResponse<LoggedUserDto>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
-        
-        if(!user.IsActive)
+
+        if (!user.IsActive)
             return new BaseResponse<LoggedUserDto>
                 (BaseResponse.ResponseStatus.BadQuery, "Account is blocked. Contact to administrator.");
-        
+
         var jwtToken = jwtTokenService.GenerateJwt(user);
 
         LoggedUserDto loggedEmployee = new(user.EmailAddress, jwtToken);
 
-        try
-        {
-            await auditLoginRepository.AddAsync(AuditLogin.CreateInstance(user.Id));
-        }
-        catch (Exception ex)
-        {
-            return request.ReturnServerError();
-        }
+        await auditLoginRepository.AddAsync(AuditLogin.CreateInstance(user.Id));
 
         return request.ReturnSuccessWithObject(loggedEmployee);
     }

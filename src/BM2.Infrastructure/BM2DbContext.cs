@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BM2.Infrastructure;
 
-public class BM2DbContext : DbContext
+public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(options)
 {
     public DbSet<Currency> Currencies { get; set; }
     public DbSet<RecordStatus> RecordStatuses { get; set; }
@@ -21,10 +21,6 @@ public class BM2DbContext : DbContext
     public DbSet<RecordTemplate> RecordTemplates { get; set; }
     public DbSet<RecordTagRelation> RecordTagRelations { get; set; }
     public DbSet<PeriodicRecordDefinition> PeriodicRecordDefinitions { get; set; }
-
-    public BM2DbContext(DbContextOptions<BM2DbContext> options) : base(options)
-    {
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -167,8 +163,7 @@ public class BM2DbContext : DbContext
             auditLoginBuilder.Property(x => x.UserId)
                 .IsRequired();
             auditLoginBuilder.Property(x => x.DateTimeOfLogin)
-                .IsRequired()
-                .ValueGeneratedOnAdd();
+                .IsRequired();
 
             auditLoginBuilder.HasOne(x => x.User)
                 .WithMany(x => x.AuditLogins)
