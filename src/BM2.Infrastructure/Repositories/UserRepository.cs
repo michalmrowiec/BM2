@@ -1,4 +1,5 @@
 ﻿using BM2.Application.Contracts.Persistence;
+using BM2.Application.Contracts.Persistence.Base;
 using BM2.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.Internal;
@@ -8,36 +9,23 @@ namespace BM2.Infrastructure.Repositories;
 
 public class UserRepository(
     BM2DbContext context,
+    IBaseRepository<User> baseRepository,
     ILogger<UserRepository> logger) : IUserRepository
 {
     private readonly IQueryable<User> _users = context.Users.GetUndeleted().AsNoTracking();
+    
+    public async Task<User?> GetByEmailAddressAsync(string emailAddress) =>
+        await baseRepository.GetByAsync(x => x.EmailAddress == emailAddress);
 
-    public async Task<User> CreateAsync(User user)
+    public async Task<User> AddAsync(User entity)=> await baseRepository.AddAsync(entity);
+
+    public Task DeleteAsync(User entity)
     {
-        try
-        {
-            await context.Users.AddAsync(user);
-            await context.SaveChangesAsync();
-            return user;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error creating entity");
-            throw;
-        }
+        throw new NotImplementedException();
     }
 
-    public async Task<User> GetByEmailAddressAsync(string emailAddress)
+    public Task<User> UpdateAsync(User entity)
     {
-        try
-        {
-            var result = await _users.FirstOrDefaultAsync(x => x.EmailAddress == emailAddress);
-            return result ?? throw new KeyNotFoundException("The object with the given id was not found.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error retrieving entity with Id: {EntityId}", emailAddress);
-            throw;
-        }
+        throw new NotImplementedException();
     }
 }
