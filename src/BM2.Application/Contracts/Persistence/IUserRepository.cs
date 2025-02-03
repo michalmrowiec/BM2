@@ -1,10 +1,10 @@
-﻿using BM2.Domain.Entities;
+﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Domain.Entities;
 using BM2.Domain.Models;
 
 namespace BM2.Application.Contracts.Persistence;
 
-public interface IUserRepository
+public interface IUserRepository : ICrudRepository<User>
 {
-    Task<User> CreateAsync(User user);
-    Task<User> GetByEmailAddressAsync(string emailAddress);
+    Task<User?> GetByEmailAddressAsync(string emailAddress);
 }

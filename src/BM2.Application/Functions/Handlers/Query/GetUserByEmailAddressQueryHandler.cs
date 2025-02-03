@@ -14,20 +14,27 @@ public class GetUserByEmailAddressQueryHandler(IUserRepository userRepository, I
     public async Task<BaseResponse<UserDto>> Handle(GetUserByEmailAddressQuery request,
         CancellationToken cancellationToken)
     {
-        User user;
-        try
-        {
-            user = await userRepository.GetByEmailAddressAsync(request.EmailAddress);
-        }
-        catch (KeyNotFoundException ex)
-        {
+        //User user;
+        // try
+        // {
+        //     user = await userRepository.GetByEmailAddressAsync(request.EmailAddress);
+        // }
+        // catch (KeyNotFoundException ex)
+        // {
+        //     return new BaseResponse<UserDto>
+        //         (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
+        // }
+        // catch (Exception ex)
+        // {
+        //     return request.ReturnServerError();
+        // }
+
+        var user = await userRepository.GetByEmailAddressAsync(request.EmailAddress);
+
+        if (user == null)
             return new BaseResponse<UserDto>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
-        }
-        catch (Exception ex)
-        {
-            return request.ReturnServerError();
-        }
+
 
         UserDto userDto;
         try

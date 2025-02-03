@@ -35,7 +35,7 @@ internal class CreateUserCommandHandler(
         UserDto userDto;
         try
         {
-            var createdUser = await userRepository.CreateAsync(newUser);
+            var createdUser = await userRepository.AddAsync(newUser);
 
             userDto = mapper.Map<UserDto>(createdUser);
         }
