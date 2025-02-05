@@ -4,6 +4,7 @@ using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Contracts.Services;
 using BM2.Domain.Entities;
 using BM2.Infrastructure.Repositories;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -49,9 +50,11 @@ public static class InfrastructureInstallation
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ISieveProcessor, BM2SieveProcessor>();
-
-        services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+        
+        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuditLoginRepository, AuditLoginRepository>();
+        services.AddScoped<IWalletRepository, WalletRepository>();
     }
 }

@@ -4,7 +4,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.Requests.Command;
 
-public class CreateUserCommand : IRequest<BaseResponse<UserDto>>
+public class CreateUserCommand : IRequest<BaseResponse<UserDTO>>
 {
     public string EmailAddress { get; set; } = null!;
     public string Password { get; set; } = null!;

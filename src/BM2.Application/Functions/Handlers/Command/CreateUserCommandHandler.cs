@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BM2.Application.Contracts.Persistence;
+using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Functions.DTOs;
 using BM2.Application.Functions.Requests.Command;
 using BM2.Application.Functions.Validators;
@@ -11,19 +12,19 @@ using Microsoft.AspNetCore.Identity;
 namespace BM2.Application.Functions.Handlers.Command;
 
 internal class CreateUserCommandHandler(
-    IUserRepository userRepository,
+    IUnitOfWork unitOfWork,
     IMapper mapper,
     IMediator mediator,
     IPasswordHasher<User> passwordHasher)
-    : IRequestHandler<CreateUserCommand, BaseResponse<UserDto>>
+    : IRequestHandler<CreateUserCommand, BaseResponse<UserDTO>>
 {
-    public async Task<BaseResponse<UserDto>> Handle
+    public async Task<BaseResponse<UserDTO>> Handle
         (CreateUserCommand request, CancellationToken cancellationToken)
     {
         var validationResult =
             await new CreateUserValidator(mediator).ValidateAsync(request, cancellationToken);
 
-        if (!validationResult.IsValid) return new BaseResponse<UserDto>(validationResult);
+        if (!validationResult.IsValid) return new BaseResponse<UserDTO>(validationResult);
 
         var newUser = mapper.Map<User>(request);
         newUser.PasswordHash = passwordHasher.HashPassword(newUser, request.Password);
@@ -32,12 +33,13 @@ internal class CreateUserCommandHandler(
         newUser.CreatedBy = newUser.Id;
         newUser.CreatedAt = DateTime.UtcNow;
 
-        UserDto userDto;
+        UserDTO userDto;
         try
         {
-            var createdUser = await userRepository.AddAsync(newUser);
+            var createdUser = await unitOfWork.UserRepository.Add(newUser);
+            await unitOfWork.UserRepository.Save();
 
-            userDto = mapper.Map<UserDto>(createdUser);
+            userDto = mapper.Map<UserDTO>(createdUser);
         }
         catch (Exception ex)
         {

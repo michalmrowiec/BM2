@@ -4,6 +4,6 @@ using BM2.Domain.Models;
 
 namespace BM2.Application.Contracts.Persistence;
 
-public interface IAuditLoginRepository : IAddAsync<AuditLogin>
+public interface IAuditLoginRepository : IGenericRepository<AuditLogin>
 {
 }

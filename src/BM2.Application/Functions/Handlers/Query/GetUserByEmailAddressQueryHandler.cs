@@ -9,9 +9,9 @@ using MediatR;
 namespace BM2.Application.Functions.Handlers.Query;
 
 public class GetUserByEmailAddressQueryHandler(IUserRepository userRepository, IMapper mapper)
-    : IRequestHandler<GetUserByEmailAddressQuery, BaseResponse<UserDto>>
+    : IRequestHandler<GetUserByEmailAddressQuery, BaseResponse<UserDTO>>
 {
-    public async Task<BaseResponse<UserDto>> Handle(GetUserByEmailAddressQuery request,
+    public async Task<BaseResponse<UserDTO>> Handle(GetUserByEmailAddressQuery request,
         CancellationToken cancellationToken)
     {
         //User user;
@@ -32,20 +32,20 @@ public class GetUserByEmailAddressQueryHandler(IUserRepository userRepository, I
         var user = await userRepository.GetByEmailAddressAsync(request.EmailAddress);
 
         if (user == null)
-            return new BaseResponse<UserDto>
+            return new BaseResponse<UserDTO>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
 
 
-        UserDto userDto;
+        UserDTO userDto;
         try
         {
-            userDto = mapper.Map<UserDto>(user);
+            userDto = mapper.Map<UserDTO>(user);
         }
         catch (Exception ex)
         {
             return request.ReturnServerError();
         }
 
-        return new BaseResponse<UserDto>(userDto);
+        return new BaseResponse<UserDTO>(userDto);
     }
 }
