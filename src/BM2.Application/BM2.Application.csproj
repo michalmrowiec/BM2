@@ -20,7 +20,6 @@
 
     <ItemGroup>
       <Folder Include="Functions\Handlers\" />
-      <Folder Include="Functions\Requests\" />
     </ItemGroup>
 
 </Project>

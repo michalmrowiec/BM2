@@ -6,35 +6,55 @@ using Microsoft.Extensions.Logging;
 
 namespace BM2.Infrastructure.Repositories;
 
-public class BaseRepository<T>(
-    BM2DbContext context,
-    ILogger<BaseRepository<T>> logger) : IBaseRepository<T> where T : class
+public class GenericRepository<T>(
+    BM2DbContext context) : IGenericRepository<T> where T : class
 {
     private readonly DbSet<T> _dbSet = context.Set<T>();
 
-    public async Task<T> AddAsync(T entity)
+    public async Task<T> Add(T entity)
     {
         try
         {
-            await _dbSet.AddAsync(entity);
-            await context.SaveChangesAsync();
+            await _dbSet.AddAsync(entity); 
+            // await context.SaveChangesAsync();
             return entity;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating entity");
             throw;
         }
     }
 
-    public Task<T> UpdateAsync(T entity)
+    public Task<T> Update(T entity)
     {
         throw new NotImplementedException();
     }
 
-    public Task DeleteAsync(T entity)
+    public async Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = _dbSet;
+
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+
+        if (typeof(IEntityAudit).IsAssignableFrom(typeof(T)))
+        {
+            query = query.Where(e => ((IEntityAudit)e).DeletedAt == null);
+        }
+
+        return await query.ToListAsync();
+    }
+
+    public Task Delete(T entity)
     {
         throw new NotImplementedException();
+    }
+
+    public async Task Save()
+    {
+        await context.SaveChangesAsync();
     }
 
     public Task<T?> GetByIdAsync(Guid id)
@@ -59,8 +79,8 @@ public class BaseRepository<T>(
         return await query.FirstOrDefaultAsync(predicate);
     }
 
-    public Task<IReadOnlyList<T>> GetAllAsync()
+    public async Task<IReadOnlyList<T>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await _dbSet.AsNoTracking().ToListAsync();
     }
 }

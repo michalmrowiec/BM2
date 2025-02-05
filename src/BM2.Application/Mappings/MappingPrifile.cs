@@ -10,6 +10,6 @@ public class MappingPrifile : Profile
     public MappingPrifile()
     {
         CreateMap<CreateUserCommand, User>();
-        CreateMap<User, UserDto>();
+        CreateMap<User, UserDTO>();
     }
 }

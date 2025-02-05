@@ -26,7 +26,7 @@ namespace BM2.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<UserDto>> CreateEmployee
+        public async Task<ActionResult<UserDTO>> CreateEmployee
             ([FromBody] CreateUserCommand createUserCommand)
         {
             var result = await _mediator.Send(createUserCommand);
@@ -36,7 +36,7 @@ namespace BM2.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<LoggedUserDto>> Login([FromBody] LoginUserCommand loginUserCommand)
+        public async Task<ActionResult<LoggedUserDTO>> Login([FromBody] LoginUserCommand loginUserCommand)
         {
             var result = await _mediator.Send(loginUserCommand);
 

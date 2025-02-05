@@ -1,4 +1,5 @@
 ﻿using BM2.Application.Contracts.Persistence;
+using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Contracts.Services;
 using BM2.Application.Functions.DTOs;
 using BM2.Application.Functions.Requests.Command;
@@ -10,39 +11,39 @@ using Microsoft.AspNetCore.Identity;
 namespace BM2.Application.Functions.Handlers.Command;
 
 public class LoginUserCommandHandler(
-    IUserRepository userRepository,
-    IAuditLoginRepository auditLoginRepository,
+    IUnitOfWork unitOfWork,
     IPasswordHasher<User> passwordHasher,
     IJwtTokenService jwtTokenService)
-    : IRequestHandler<LoginUserCommand, BaseResponse<LoggedUserDto>>
+    : IRequestHandler<LoginUserCommand, BaseResponse<LoggedUserDTO>>
 {
-    public async Task<BaseResponse<LoggedUserDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
+    public async Task<BaseResponse<LoggedUserDTO>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailAddressAsync(request.EmailAddress);
+        var user = await unitOfWork.UserRepository.GetByEmailAddressAsync(request.EmailAddress);
 
         if (user == null)
-            return new BaseResponse<LoggedUserDto>
+            return new BaseResponse<LoggedUserDTO>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
 
         var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
 
         if (verificationResult == PasswordVerificationResult.Failed)
-            return new BaseResponse<LoggedUserDto>
+            return new BaseResponse<LoggedUserDTO>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
 
         if (user.DeletedAt != null)
-            return new BaseResponse<LoggedUserDto>
+            return new BaseResponse<LoggedUserDTO>
                 (BaseResponse.ResponseStatus.BadQuery, "Login or password are wrong.");
 
         if (!user.IsActive)
-            return new BaseResponse<LoggedUserDto>
+            return new BaseResponse<LoggedUserDTO>
                 (BaseResponse.ResponseStatus.BadQuery, "Account is blocked. Contact to administrator.");
 
         var jwtToken = jwtTokenService.GenerateJwt(user);
 
-        LoggedUserDto loggedEmployee = new(user.EmailAddress, jwtToken);
+        LoggedUserDTO loggedEmployee = new(user.EmailAddress, jwtToken);
 
-        await auditLoginRepository.AddAsync(AuditLogin.CreateInstance(user.Id));
+        await unitOfWork.AuditLoginRepository.Add(AuditLogin.CreateInstance(user.Id));
+        await unitOfWork.AuditLoginRepository.Save();
 
         return request.ReturnSuccessWithObject(loggedEmployee);
     }
