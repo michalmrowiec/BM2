@@ -9,6 +9,7 @@ public class MappingPrifile : Profile
 {
     public MappingPrifile()
     {
+        CreateMap<Currency, CurrencyDTO>();
         CreateMap<CreateUserCommand, User>();
         CreateMap<User, UserDTO>();
     }

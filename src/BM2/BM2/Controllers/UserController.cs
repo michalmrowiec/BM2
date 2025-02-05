@@ -9,27 +9,17 @@ namespace BM2.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")]
-    public class UserController : ControllerBase
+    public class UserController(
+        IMediator mediator,
+        IUserContextService userContextService)
+        : ControllerBase
     {
-        private readonly IMediator _mediator;
-        private readonly ILogger<UserController> _logger;
-        private readonly IUserContextService _userContextService;
-
-        public UserController(
-            ILogger<UserController> logger,
-            IMediator mediator,
-            IUserContextService userContextService)
-        {
-            _mediator = mediator;
-            _logger = logger;
-            _userContextService = userContextService;
-        }
-
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<ActionResult<UserDTO>> CreateEmployee
             ([FromBody] CreateUserCommand createUserCommand)
         {
-            var result = await _mediator.Send(createUserCommand);
+            var result = await mediator.Send(createUserCommand);
 
             return result.HandleCreatedResult(this, "");
         }
@@ -38,7 +28,7 @@ namespace BM2.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<LoggedUserDTO>> Login([FromBody] LoginUserCommand loginUserCommand)
         {
-            var result = await _mediator.Send(loginUserCommand);
+            var result = await mediator.Send(loginUserCommand);
 
             return result.HandleOkResult(this);
         }

@@ -50,11 +50,12 @@ public static class InfrastructureInstallation
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ISieveProcessor, BM2SieveProcessor>();
-        
+
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuditLoginRepository, AuditLoginRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddScoped<ICurrencyRepository, CurrencyRepository>();
     }
 }
