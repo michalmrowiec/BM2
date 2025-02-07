@@ -179,7 +179,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
             walletBuilder.HasKey(x => x.Id);
             walletBuilder.Property(x => x.WalletName)
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(Wallet.WalletNameMaxLength);
             walletBuilder.Property(x => x.IsActive)
                 .IsRequired()
                 .HasDefaultValue(true);
