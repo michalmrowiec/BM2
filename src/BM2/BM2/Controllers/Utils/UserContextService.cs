@@ -20,7 +20,7 @@ namespace BM2.Controllers.Utils
 
                 if (userId is null)
                 {
-                    throw new InvalidOperationException();
+                    throw new UnauthorizedAccessException();
                 }
 
                 return userId;

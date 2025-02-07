@@ -1,4 +1,6 @@
-﻿namespace BM2.Domain.Entities;
+﻿using BM2.Domain.Entities.Interfaces;
+
+namespace BM2.Domain.Entities.UserProfile;
 
 public class AuditLogin : IEntity
 {

@@ -3,6 +3,7 @@ using BM2.Application.Contracts.Persistence;
 using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Contracts.Services;
 using BM2.Domain.Entities;
+using BM2.Domain.Entities.UserProfile;
 using BM2.Infrastructure.Repositories;
 using BM2.Infrastructure.Repositories.Base;
 using BM2.Infrastructure.Services;

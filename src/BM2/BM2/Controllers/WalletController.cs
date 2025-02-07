@@ -1,6 +1,7 @@
 ﻿using BM2.Application.DTOs;
 using BM2.Application.Functions;
 using BM2.Application.Functions.Wallets.Commands.AddWalletCommand;
+using BM2.Application.Functions.Wallets.Queries.GetWalletByIdQuery;
 using BM2.Controllers.Utils;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,15 @@ public class WalletController(
         addWalletCommand.OwnedByUserId = userContextService.GetUserId;
 
         var result = await mediator.Send(addWalletCommand);
+
+        return result.HandleCreatedResult(this, "");
+    }
+
+    [HttpGet("{walletId:guid}")]
+    public async Task<ActionResult<WalletDTO>> GetWalletById
+        ([FromRoute] Guid walletId)
+    {
+        var result = await mediator.Send(new GetWalletByIdQuery(walletId, userContextService.GetUserId));
 
         return result.HandleCreatedResult(this, "");
     }

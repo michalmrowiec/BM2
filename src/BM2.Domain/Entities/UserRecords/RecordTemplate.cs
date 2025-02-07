@@ -1,4 +1,6 @@
-﻿namespace BM2.Domain.Entities;
+﻿using BM2.Domain.Entities.UserProfile;
+
+namespace BM2.Domain.Entities.UserRecords;
 
 public class RecordTemplate : BaseRecord
 {

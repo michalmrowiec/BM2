@@ -1,4 +1,5 @@
 ﻿using BM2.Domain.Entities;
+using BM2.Domain.Entities.UserProfile;
 using FluentValidation;
 
 namespace BM2.Application.Functions.Wallets.Commands.AddWalletCommand;

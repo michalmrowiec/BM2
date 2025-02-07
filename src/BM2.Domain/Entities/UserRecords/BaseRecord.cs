@@ -1,4 +1,8 @@
-﻿namespace BM2.Domain.Entities;
+﻿using BM2.Domain.Entities.Interfaces;
+using BM2.Domain.Entities.System;
+using BM2.Domain.Entities.UserProfile;
+
+namespace BM2.Domain.Entities.UserRecords;
 
 public abstract class BaseRecord : IEntity, IEntityAudit, IOwnedByUser
 {

@@ -1,13 +1,14 @@
 ﻿using System.Linq.Expressions;
 using BM2.Application.Contracts.Persistence.Base;
 using BM2.Domain.Entities;
+using BM2.Domain.Entities.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BM2.Infrastructure.Repositories;
 
 public class GenericRepository<T>(
-    BM2DbContext context) : IGenericRepository<T> where T : class
+    BM2DbContext context) : IGenericRepository<T> where T : class, IEntity
 {
     private readonly DbSet<T> _dbSet = context.Set<T>();
 
@@ -15,7 +16,7 @@ public class GenericRepository<T>(
     {
         try
         {
-            await _dbSet.AddAsync(entity); 
+            await _dbSet.AddAsync(entity);
             // await context.SaveChangesAsync();
             return entity;
         }
@@ -59,7 +60,7 @@ public class GenericRepository<T>(
 
     public Task<T?> GetByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return _dbSet.FirstOrDefaultAsync(x => x.Id == id);
     }
 
     public async Task<T?> GetByAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)

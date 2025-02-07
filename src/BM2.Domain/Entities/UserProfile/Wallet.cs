@@ -1,6 +1,8 @@
-﻿using System.Transactions;
+﻿using BM2.Domain.Entities.Interfaces;
+using BM2.Domain.Entities.System;
+using BM2.Domain.Entities.UserRecords;
 
-namespace BM2.Domain.Entities
+namespace BM2.Domain.Entities.UserProfile
 {
     public class Wallet : IEntity, IEntityAudit, IOwnedByUser
     {
