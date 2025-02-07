@@ -1,4 +1,7 @@
-﻿using MediatR;
+﻿using BM2.Application.Exceptions;
+using BM2.Domain.Entities;
+using BM2.Domain.Entities.Interfaces;
+using MediatR;
 
 namespace BM2.Application.Responses;
 
@@ -8,9 +11,27 @@ internal static class ResponseHelper
     {
         return new BaseResponse<T>(BaseResponse.ResponseStatus.ServerError, "Something went wrong.");
     }
-    
-    internal static BaseResponse<T> ReturnSuccessWithObject<T>(this IRequest<BaseResponse<T>> request, T obj) where T : class
+
+    internal static BaseResponse<T> ReturnSuccessWithObject<T>(this IRequest<BaseResponse<T>> request, T obj)
+        where T : class
     {
         return new BaseResponse<T>(obj);
+    }
+
+    internal static BaseResponse<T> ReturnNotFound<T>(this IRequest<BaseResponse<T>> request) where T : class
+    {
+        return new BaseResponse<T>(BaseResponse.ResponseStatus.NotFound, "Not found.");
+    }
+
+    internal static void ThrowExceptionIfNull<T>(this T? obj) where T : class
+    {
+        if (obj is null)
+            throw new NotFoundException($"{nameof(T)} not found.");
+    }
+    
+    internal static void CheckPermission<T>(this T obj, Guid userId) where T : IOwnedByUser
+    {
+        if (obj.OwnedByUserId != userId)
+            throw new UnauthorizedAccessException();
     }
 }

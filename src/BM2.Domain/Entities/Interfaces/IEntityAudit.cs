@@ -1,4 +1,4 @@
-﻿namespace BM2.Domain.Entities;
+﻿namespace BM2.Domain.Entities.Interfaces;
 
 public interface IEntityAudit
 {

@@ -1,4 +1,8 @@
 ﻿using BM2.Domain.Entities;
+using BM2.Domain.Entities.Interfaces;
+using BM2.Domain.Entities.System;
+using BM2.Domain.Entities.UserProfile;
+using BM2.Domain.Entities.UserRecords;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

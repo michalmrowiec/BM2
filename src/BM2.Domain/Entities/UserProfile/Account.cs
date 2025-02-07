@@ -1,4 +1,8 @@
-﻿namespace BM2.Domain.Entities;
+﻿using BM2.Domain.Entities.Interfaces;
+using BM2.Domain.Entities.System;
+using BM2.Domain.Entities.UserRecords;
+
+namespace BM2.Domain.Entities.UserProfile;
 
 public class Account : IEntity, IEntityAudit, IOwnedByUser
 {

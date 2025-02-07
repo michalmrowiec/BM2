@@ -1,4 +1,7 @@
-﻿namespace BM2.Domain.Entities
+﻿using BM2.Domain.Entities.Interfaces;
+using BM2.Domain.Entities.UserRecords;
+
+namespace BM2.Domain.Entities.UserProfile
 {
     public class User : IEntity, IEntityAudit
     {

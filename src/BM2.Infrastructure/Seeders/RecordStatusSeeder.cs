@@ -1,4 +1,5 @@
 ﻿using BM2.Domain.Entities;
+using BM2.Domain.Entities.System;
 using BM2.Domain.SystemCodes;
 
 namespace BM2.Infrastructure.Seeders;
