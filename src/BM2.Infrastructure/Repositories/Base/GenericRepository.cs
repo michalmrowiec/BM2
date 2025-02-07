@@ -1,11 +1,9 @@
 ﻿using System.Linq.Expressions;
 using BM2.Application.Contracts.Persistence.Base;
-using BM2.Domain.Entities;
 using BM2.Domain.Entities.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
-namespace BM2.Infrastructure.Repositories;
+namespace BM2.Infrastructure.Repositories.Base;
 
 public class GenericRepository<T>(
     BM2DbContext context) : IGenericRepository<T> where T : class, IEntity
@@ -33,7 +31,7 @@ public class GenericRepository<T>(
 
     public async Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Expression<Func<T, object>>[] includes)
     {
-        IQueryable<T> query = _dbSet;
+        IQueryable<T> query = _dbSet.Where(x => ((IOwnedByUser)x).OwnedByUserId == userId);
 
         foreach (var include in includes)
         {
@@ -42,7 +40,7 @@ public class GenericRepository<T>(
 
         if (typeof(IEntityAudit).IsAssignableFrom(typeof(T)))
         {
-            query = query.Where(e => ((IEntityAudit)e).DeletedAt == null);
+            query = query.Where(x => ((IEntityAudit)x).DeletedAt == null);
         }
 
         return await query.ToListAsync();

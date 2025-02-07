@@ -12,12 +12,17 @@ namespace BM2.Middleware
             {
                 await next.Invoke(context);
             }
+            catch (DomainExceptions.UnauthenticatedException ex)
+            {
+                logger.LogWarning(ex, "Unauthenticated: {Message}", ex.Message);
+                await context.HandleExceptionAsync(HttpStatusCode.Unauthorized, "Unauthenticated");
+            }
             catch (UnauthorizedAccessException ex)
             {
                 logger.LogWarning(ex, "Unauthorized: {Message}", ex.Message);
-                await context.HandleExceptionAsync(HttpStatusCode.Unauthorized, "Unauthorized access");
+                await context.HandleExceptionAsync(HttpStatusCode.Forbidden, "Unauthorized access");
             }
-            catch (NotFoundException ex)
+            catch (DomainExceptions.NotFoundException ex)
             {
                 logger.LogWarning(ex, "Not found: {Message}", ex.Message);
                 await context.HandleExceptionAsync(HttpStatusCode.NotFound, "Not found");
