@@ -1,9 +1,8 @@
-﻿using BM2.Application.Functions.DTOs;
+﻿using BM2.Application.DTOs;
 using BM2.Application.Responses;
-using BM2.Domain.Entities;
 using MediatR;
 
-namespace BM2.Application.Functions.Requests.Command;
+namespace BM2.Application.Functions.Wallets.Commands.AddWalletCommand;
 
 public class AddWalletCommand : IRequest<BaseResponse<WalletDTO>>
 {

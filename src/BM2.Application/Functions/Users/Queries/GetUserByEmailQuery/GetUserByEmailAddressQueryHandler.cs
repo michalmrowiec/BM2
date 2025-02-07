@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
 using BM2.Application.Contracts.Persistence;
-using BM2.Application.Functions.DTOs;
-using BM2.Application.Functions.Requests.Query;
+using BM2.Application.DTOs;
 using BM2.Application.Responses;
-using BM2.Domain.Entities;
 using MediatR;
 
-namespace BM2.Application.Functions.Handlers.Query;
+namespace BM2.Application.Functions.Users.Queries.GetUserByEmailQuery;
 
 public class GetUserByEmailAddressQueryHandler(IUserRepository userRepository, IMapper mapper)
     : IRequestHandler<GetUserByEmailAddressQuery, BaseResponse<UserDTO>>

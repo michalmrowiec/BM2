@@ -1,11 +1,10 @@
 ﻿using AutoMapper;
 using BM2.Application.Contracts.Persistence.Base;
-using BM2.Application.Functions.DTOs;
-using BM2.Application.Functions.Requests.Query;
+using BM2.Application.DTOs;
 using BM2.Application.Responses;
 using MediatR;
 
-namespace BM2.Application.Functions.Handlers.Query;
+namespace BM2.Application.Functions.Curencies.Queries.GetAllCurrenciesQuery;
 
 public class GetAllCurrenciesQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
     : IRequestHandler<GetAllCurrenciesQuery, BaseResponse<IEnumerable<CurrencyDTO>>>

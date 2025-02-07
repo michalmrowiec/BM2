@@ -1,4 +1,4 @@
-﻿namespace BM2.Application.Functions.DTOs;
+﻿namespace BM2.Application.DTOs;
 
 public class LoggedUserDTO(string emailAddress, string jwtToken)
 {

@@ -1,5 +1,6 @@
-﻿using BM2.Application.Functions.DTOs;
-using BM2.Application.Functions.Requests.Command;
+﻿using BM2.Application.DTOs;
+using BM2.Application.Functions.Users.Commands.AddUserCommand;
+using BM2.Application.Functions.Users.Commands.LoginUserCommand;
 using BM2.Controllers.Utils;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -17,9 +18,9 @@ namespace BM2.Controllers
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<ActionResult<UserDTO>> CreateEmployee
-            ([FromBody] CreateUserCommand createUserCommand)
+            ([FromBody] AddUserCommand addUserCommand)
         {
-            var result = await mediator.Send(createUserCommand);
+            var result = await mediator.Send(addUserCommand);
 
             return result.HandleCreatedResult(this, "");
         }

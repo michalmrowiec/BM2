@@ -1,12 +1,12 @@
 ﻿using BM2.Application.Contracts.Persistence;
-using BM2.Application.Functions.Requests.Command;
-using BM2.Application.Functions.Requests.Query;
+using BM2.Application.Functions.Users.Commands.AddUserCommand;
+using BM2.Application.Functions.Users.Queries.GetUserByEmailQuery;
 using FluentValidation;
 using MediatR;
 
 namespace BM2.Application.Functions.Validators;
 
-public class CreateUserValidator : AbstractValidator<CreateUserCommand>
+public class CreateUserValidator : AbstractValidator<AddUserCommand>
 {
     public CreateUserValidator(IMediator mediator)
     {

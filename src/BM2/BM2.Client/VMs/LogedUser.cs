@@ -2,7 +2,7 @@
 {
     public class LogedUser
     {
-        public string EmailAddress { get; set; }
-        public string JwtToken { get; set; }
+        public string? EmailAddress { get; set; }
+        public string? JwtToken { get; set; }
     }
 }
