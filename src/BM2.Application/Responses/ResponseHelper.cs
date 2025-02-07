@@ -26,12 +26,21 @@ internal static class ResponseHelper
     internal static void ThrowExceptionIfNull<T>(this T? obj) where T : class
     {
         if (obj is null)
-            throw new NotFoundException($"{nameof(T)} not found.");
+            throw new DomainExceptions.NotFoundException($"{nameof(T)} not found.");
     }
-    
+
     internal static void CheckPermission<T>(this T obj, Guid userId) where T : IOwnedByUser
     {
         if (obj.OwnedByUserId != userId)
+            throw new UnauthorizedAccessException();
+    }
+
+    internal static void CheckPermission<T>(this IEnumerable<T> objs, Guid userId) where T : IOwnedByUser
+    {
+        if(!objs.Any())
+            return;
+        
+        if (objs.Any(x => x.OwnedByUserId != userId))
             throw new UnauthorizedAccessException();
     }
 }
