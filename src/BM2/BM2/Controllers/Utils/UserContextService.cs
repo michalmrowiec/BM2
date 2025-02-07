@@ -4,23 +4,29 @@ namespace BM2.Controllers.Utils
 {
     public interface IUserContextService
     {
-        string? GetUserId { get; }
+        Guid GetUserId { get; }
         ClaimsPrincipal? User { get; }
     }
 
-    public class UserContextService : IUserContextService
+    public class UserContextService(IHttpContextAccessor httpContextAccessor) : IUserContextService
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ClaimsPrincipal? User => httpContextAccessor.HttpContext?.User;
 
-        public UserContextService(IHttpContextAccessor httpContextAccessor)
+        private string GetUserIdAsString
         {
-            _httpContextAccessor = httpContextAccessor;
+            get
+            {
+                var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (userId is null)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                return userId;
+            }
         }
 
-        public ClaimsPrincipal? User => _httpContextAccessor.HttpContext?.User;
-
-        public string? GetUserId => User?.FindFirstValue(ClaimTypes.NameIdentifier) is null
-            ? null
-            : User!.FindFirstValue(ClaimTypes.NameIdentifier!);
+        public Guid GetUserId => Guid.Parse(GetUserIdAsString);
     };
 }

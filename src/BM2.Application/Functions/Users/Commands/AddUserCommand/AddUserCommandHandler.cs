@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.DTOs;
-using BM2.Application.Functions.Validators;
 using BM2.Application.Responses;
 using BM2.Domain.Entities;
 using MediatR;
@@ -20,7 +19,7 @@ internal class AddUserCommandHandler(
         (AddUserCommand request, CancellationToken cancellationToken)
     {
         var validationResult =
-            await new CreateUserValidator(mediator).ValidateAsync(request, cancellationToken);
+            await new AddUserValidator(mediator).ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid) return new BaseResponse<UserDTO>(validationResult);
 

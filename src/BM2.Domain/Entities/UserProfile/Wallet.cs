@@ -24,5 +24,7 @@ namespace BM2.Domain.Entities
         public ICollection<PeriodicRecordDefinition> PeriodicRecordDefinitions { get; set; } = [];
         public ICollection<Category> Categories { get; set; } = [];
         public ICollection<Tag> Tags { get; set; } = [];
+
+        public static int WalletNameMaxLength => 100;
     }
 }

@@ -1,0 +1,29 @@
+﻿using BM2.Application.DTOs;
+using BM2.Application.Functions;
+using BM2.Application.Functions.Wallets.Commands.AddWalletCommand;
+using BM2.Controllers.Utils;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace BM2.Controllers;
+
+[Authorize]
+[ApiController]
+[Route("api/v1/[controller]")]
+public class WalletController(
+    IMediator mediator,
+    IUserContextService userContextService)
+    : ControllerBase
+{
+    [HttpPost]
+    public async Task<ActionResult<WalletDTO>> AddWallet
+        ([FromBody] AddWalletCommand addWalletCommand)
+    {
+        addWalletCommand.OwnedByUserId = userContextService.GetUserId;
+
+        var result = await mediator.Send(addWalletCommand);
+
+        return result.HandleCreatedResult(this, "");
+    }
+}
