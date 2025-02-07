@@ -1,10 +1,10 @@
-﻿using BM2.Application.Functions.DTOs;
+﻿using BM2.Application.DTOs;
 using BM2.Application.Responses;
 using MediatR;
 
-namespace BM2.Application.Functions.Requests.Command;
+namespace BM2.Application.Functions.Users.Commands.AddUserCommand;
 
-public class CreateUserCommand : IRequest<BaseResponse<UserDTO>>
+public class AddUserCommand : IRequest<BaseResponse<UserDTO>>
 {
     public string EmailAddress { get; set; } = null!;
     public string Password { get; set; } = null!;

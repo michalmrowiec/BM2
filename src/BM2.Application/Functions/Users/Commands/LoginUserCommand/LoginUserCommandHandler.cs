@@ -1,14 +1,12 @@
-﻿using BM2.Application.Contracts.Persistence;
-using BM2.Application.Contracts.Persistence.Base;
+﻿using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Contracts.Services;
-using BM2.Application.Functions.DTOs;
-using BM2.Application.Functions.Requests.Command;
+using BM2.Application.DTOs;
 using BM2.Application.Responses;
 using BM2.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace BM2.Application.Functions.Handlers.Command;
+namespace BM2.Application.Functions.Users.Commands.LoginUserCommand;
 
 public class LoginUserCommandHandler(
     IUnitOfWork unitOfWork,

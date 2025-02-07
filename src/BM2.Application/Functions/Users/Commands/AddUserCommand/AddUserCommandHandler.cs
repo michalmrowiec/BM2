@@ -1,25 +1,23 @@
 ﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence;
 using BM2.Application.Contracts.Persistence.Base;
-using BM2.Application.Functions.DTOs;
-using BM2.Application.Functions.Requests.Command;
+using BM2.Application.DTOs;
 using BM2.Application.Functions.Validators;
 using BM2.Application.Responses;
 using BM2.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace BM2.Application.Functions.Handlers.Command;
+namespace BM2.Application.Functions.Users.Commands.AddUserCommand;
 
-internal class CreateUserCommandHandler(
+internal class AddUserCommandHandler(
     IUnitOfWork unitOfWork,
     IMapper mapper,
     IMediator mediator,
     IPasswordHasher<User> passwordHasher)
-    : IRequestHandler<CreateUserCommand, BaseResponse<UserDTO>>
+    : IRequestHandler<AddUserCommand, BaseResponse<UserDTO>>
 {
     public async Task<BaseResponse<UserDTO>> Handle
-        (CreateUserCommand request, CancellationToken cancellationToken)
+        (AddUserCommand request, CancellationToken cancellationToken)
     {
         var validationResult =
             await new CreateUserValidator(mediator).ValidateAsync(request, cancellationToken);

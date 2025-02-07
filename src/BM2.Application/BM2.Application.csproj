@@ -18,8 +18,4 @@
       <ProjectReference Include="..\BM2.Domain\BM2.Domain.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Functions\Handlers\" />
-    </ItemGroup>
-
 </Project>
