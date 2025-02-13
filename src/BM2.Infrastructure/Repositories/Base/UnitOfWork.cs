@@ -10,6 +10,7 @@ public sealed class UnitOfWork(BM2DbContext context) : IUnitOfWork
     public IAuditLoginRepository AuditLoginRepository { get; } = new AuditLoginRepository(context);
     public IWalletRepository WalletRepository { get; } = new WalletRepository(context);
     public ICurrencyRepository CurrencyRepository { get; } = new CurrencyRepository(context);
+    public IAccountRepository AccountRepository { get; } = new AccountRepository(context);
 
     private bool _disposed = false;
 

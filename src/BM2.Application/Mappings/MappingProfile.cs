@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BM2.Application.DTOs;
+using BM2.Application.Functions.Accounts.Commands.AddAccountCommand;
 using BM2.Application.Functions.Users.Commands.AddUserCommand;
 using BM2.Application.Functions.Wallets.Commands.AddWalletCommand;
 using BM2.Domain.Entities;
@@ -8,9 +9,9 @@ using BM2.Domain.Entities.UserProfile;
 
 namespace BM2.Application.Mappings;
 
-public class MappingPrifile : Profile
+public class MappingProfile : Profile
 {
-    public MappingPrifile()
+    public MappingProfile()
     {
         CreateMap<Currency, CurrencyDTO>();
         
@@ -19,5 +20,8 @@ public class MappingPrifile : Profile
 
         CreateMap<AddWalletCommand, Wallet>();
         CreateMap<Wallet, WalletDTO>();
+        
+        CreateMap<AddAccountCommand, Account>();
+        CreateMap<Account, AccountDTO>();
     }
 }

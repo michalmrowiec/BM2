@@ -16,8 +16,7 @@ public class CurrencyController(
     : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CurrencyDTO>>> GetAllCurrencies
-        ()
+    public async Task<ActionResult<IEnumerable<CurrencyDTO>>> GetAllCurrencies()
     {
         var result = await mediator.Send(new GetAllCurrenciesQuery());
 

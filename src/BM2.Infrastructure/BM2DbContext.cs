@@ -227,7 +227,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .IsRequired();
             accountBuilder.Property(x => x.AccountName)
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(Account.AccountNameMaxLength);
             accountBuilder.Property(x => x.IsActive)
                 .IsRequired()
                 .HasDefaultValue(true);

@@ -15,7 +15,7 @@ public class AddWalletCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
     {
         var validationResult =
             await new AddWalletCommandValidator().ValidateAsync(request, cancellationToken);
-
+// TODO Check max wallets
         if (!validationResult.IsValid) return new BaseResponse<WalletDTO>(validationResult);
 
         var wallet = mapper.Map<AddWalletCommand, Wallet>(request);

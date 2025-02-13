@@ -25,4 +25,6 @@ public class Account : IEntity, IEntityAudit, IOwnedByUser
     public User? OwnedByUser { get; set; }
     public ICollection<Record> Records { get; set; } = [];
     public ICollection<PeriodicRecordDefinition> PeriodicRecordDefinitions { get; set; } = [];
+    
+    public static int AccountNameMaxLength => 100;
 }
