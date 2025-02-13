@@ -17,8 +17,7 @@ namespace BM2.Controllers
     {
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<ActionResult<UserDTO>> CreateEmployee
-            ([FromBody] AddUserCommand addUserCommand)
+        public async Task<ActionResult<UserDTO>> CreateEmployee([FromBody] AddUserCommand addUserCommand)
         {
             var result = await mediator.Send(addUserCommand);
 

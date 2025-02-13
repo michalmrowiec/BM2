@@ -3,7 +3,7 @@ using BM2.Domain.Entities.UserProfile;
 
 namespace BM2.Application.Contracts.Persistence;
 
-public interface IWalletRepository : IGenericRepository<Wallet>
+public interface IAccountRepository : IGenericRepository<Account>
 {
     
 }

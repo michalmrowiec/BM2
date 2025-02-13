@@ -6,4 +6,5 @@ public interface IUnitOfWork : IDisposable
     public IAuditLoginRepository AuditLoginRepository { get; }
     public IWalletRepository WalletRepository { get; }
     public ICurrencyRepository CurrencyRepository { get; }
+    public IAccountRepository AccountRepository { get; }
 }

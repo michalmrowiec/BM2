@@ -19,8 +19,7 @@ public class WalletController(
     : ControllerBase
 {
     [HttpPost]
-    public async Task<ActionResult<WalletDTO>> AddWallet
-        ([FromBody] AddWalletCommand addWalletCommand)
+    public async Task<ActionResult<WalletDTO>> AddWallet([FromBody] AddWalletCommand addWalletCommand)
     {
         addWalletCommand.OwnedByUserId = userContextService.GetUserId;
 
@@ -30,8 +29,7 @@ public class WalletController(
     }
 
     [HttpGet("{walletId:guid}")]
-    public async Task<ActionResult<WalletDTO>> GetWalletById
-        ([FromRoute] Guid walletId)
+    public async Task<ActionResult<WalletDTO>> GetWalletById([FromRoute] Guid walletId)
     {
         var result = await mediator.Send(new GetWalletByIdQuery(walletId, userContextService.GetUserId));
 
