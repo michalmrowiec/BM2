@@ -56,24 +56,37 @@ public class GenericRepository<T>(
         await context.SaveChangesAsync();
     }
 
-    public Task<T?> GetByIdAsync(Guid id)
+    public async Task<T?> GetByIdAsync(Guid id)
     {
-        return _dbSet.FirstOrDefaultAsync(x => x.Id == id);
+        return await _dbSet.FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = _dbSet.Where(x => x.Id == id);
+
+        query = ApplyIncludes(query, includes);
+
+        query = SoftDeleteFilter(query);
+
+        return await query.FirstOrDefaultAsync();
     }
 
     public async Task<T?> GetByAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
     {
         IQueryable<T> query = _dbSet;
 
-        foreach (var include in includes)
-        {
-            query = query.Include(include);
-        }
+        query = ApplyIncludes(query, includes);
+        // foreach (var include in includes)
+        // {
+        //     query = query.Include(include);
+        // }
 
-        if (typeof(IEntityAudit).IsAssignableFrom(typeof(T)))
-        {
-            query = query.Where(e => ((IEntityAudit)e).DeletedAt == null);
-        }
+        query = SoftDeleteFilter(query);
+        // if (typeof(IEntityAudit).IsAssignableFrom(typeof(T)))
+        // {
+        //     query = query.Where(e => ((IEntityAudit)e).DeletedAt == null);
+        // }
 
         return await query.FirstOrDefaultAsync(predicate);
     }
@@ -81,5 +94,26 @@ public class GenericRepository<T>(
     public async Task<IReadOnlyList<T>> GetAllAsync()
     {
         return await _dbSet.AsNoTracking().ToListAsync();
+    }
+
+    private IQueryable<T> ApplyIncludes(IQueryable<T> query, params Expression<Func<T, object>>[] includes)
+    {
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+        
+        return query;
+    }
+
+    private IQueryable<T> SoftDeleteFilter(IQueryable<T> query)
+    {
+        if (typeof(IEntityAudit).IsAssignableFrom(typeof(T)))
+        {
+            //query = query.Where(e => ((IEntityAudit)e).DeletedAt == null);
+            query = query.Cast<IEntityAudit>().Where(e => e.DeletedAt == null).Cast<T>();
+        }
+
+        return query;
     }
 }
