@@ -17,7 +17,7 @@ public class AddCategoryCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
     public async Task<BaseResponse<CategoryDTO>> Handle(AddCategoryCommand request, CancellationToken cancellationToken)
     {
         var validationResult =
-            await new AddCategoryCommandValidator().ValidateAsync(request, cancellationToken);
+            await new AddCategoryCommandValidator(unitOfWork).ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid) return new BaseResponse<CategoryDTO>(validationResult);
 
@@ -28,7 +28,7 @@ public class AddCategoryCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
 
         List<WalletCategoryRelation> walletCategoryRelations = new List<WalletCategoryRelation>();
 
-        foreach (var walletId in request.WalletIds)
+        foreach (var walletId in request.WalletIds.Distinct())
         {
             walletCategoryRelations.Add(WalletCategoryRelation.CreateInstance(walletId, category.Id, request.OwnedByUserId));
         }

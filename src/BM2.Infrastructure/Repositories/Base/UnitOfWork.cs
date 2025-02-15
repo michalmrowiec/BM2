@@ -18,6 +18,8 @@ public sealed class UnitOfWork(BM2DbContext context) : IUnitOfWork
     public IAccountRepository AccountRepository { get; } = new AccountRepository(context);
     public ICategoryRepository CategoryRepository { get; } = new CategoryRepository(context);
     public IWalletCategoryRelationRepository WalletCategoryRelationRepository { get; } = new WalletCategoryRelationRepository(context);
+    public ITagRepository TagRepository { get; } = new TagRepository(context);
+    public IWalletTagRelationRepository WalletTagRelationRepository { get; } = new WalletTagRelationRepository(context);
 
     private bool _disposed = false;
 
