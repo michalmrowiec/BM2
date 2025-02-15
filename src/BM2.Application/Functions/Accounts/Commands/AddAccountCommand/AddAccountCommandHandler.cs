@@ -13,8 +13,8 @@ public class AddAccountCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
     public async Task<BaseResponse<AccountDTO>> Handle(AddAccountCommand request, CancellationToken cancellationToken)
     {
         var validationResult =
-            await new AddAccountCommandValidator().ValidateAsync(request, cancellationToken);
-// TODO Check max accounts
+            await new AddAccountCommandValidator(unitOfWork).ValidateAsync(request, cancellationToken);
+
         if (!validationResult.IsValid) return new BaseResponse<AccountDTO>(validationResult);
 
         var entity = mapper.Map<AddAccountCommand, Account>(request);
