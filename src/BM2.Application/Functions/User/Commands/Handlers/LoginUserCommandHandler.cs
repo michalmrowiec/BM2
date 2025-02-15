@@ -42,7 +42,7 @@ public class LoginUserCommandHandler(
         LoggedUserDTO loggedEmployee = new(user.EmailAddress, jwtToken);
 
         await unitOfWork.AuditLoginRepository.Add(AuditLogin.CreateInstance(user.Id));
-        await unitOfWork.AuditLoginRepository.Save();
+        await unitOfWork.SaveAsync();
 
         return request.ReturnSuccessWithObject(loggedEmployee);
     }

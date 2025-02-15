@@ -26,7 +26,7 @@ public class AddAccountCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
         try
         {
             entity = await unitOfWork.AccountRepository.Add(entity);
-            await unitOfWork.AccountRepository.Save();
+            await unitOfWork.SaveAsync();
 
             return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserProfile.Account, AccountDTO>(entity));
         }

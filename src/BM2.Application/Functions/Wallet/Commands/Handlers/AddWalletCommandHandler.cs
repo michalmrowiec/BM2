@@ -26,7 +26,7 @@ public class AddWalletCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
         try
         {
             wallet = await unitOfWork.WalletRepository.Add(wallet);
-            await unitOfWork.WalletRepository.Save();
+            await unitOfWork.SaveAsync();
 
             return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserProfile.Wallet, WalletDTO>(wallet));
         }

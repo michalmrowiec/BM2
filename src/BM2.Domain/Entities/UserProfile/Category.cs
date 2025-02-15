@@ -19,4 +19,6 @@ public class Category : IEntity, IEntityAudit, IOwnedByUser
     public User? OwnedByUser { get; set; }
     public ICollection<Wallet> Wallets { get; set; } = [];
     public ICollection<BaseRecord> Records { get; set; } = [];
+    
+    public static int CategoryNameMaxLength => 80;
 }

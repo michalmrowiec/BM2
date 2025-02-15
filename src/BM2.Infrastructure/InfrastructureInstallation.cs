@@ -60,5 +60,7 @@ public static class InfrastructureInstallation
         services.AddScoped<IAuditLoginRepository, AuditLoginRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IWalletCategoryRelationRepository, WalletCategoryRelationRepository>();
     }
 }
