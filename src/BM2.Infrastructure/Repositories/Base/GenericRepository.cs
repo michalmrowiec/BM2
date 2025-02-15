@@ -15,13 +15,18 @@ public class GenericRepository<T>(
         try
         {
             await _dbSet.AddAsync(entity);
-            // await context.SaveChangesAsync();
             return entity;
         }
         catch (Exception ex)
         {
             throw;
         }
+    }
+
+    public async Task<IEnumerable<T>> AddRange(IList<T> entities)
+    {
+        await _dbSet.AddRangeAsync(entities);
+        return entities;
     }
 
     public Task<T> Update(T entity)

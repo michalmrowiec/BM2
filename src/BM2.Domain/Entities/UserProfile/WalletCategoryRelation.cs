@@ -12,4 +12,17 @@ public class WalletCategoryRelation : IEntity, IOwnedByUser
     public Wallet? Wallet { get; set; }
     public Category? Category { get; set; }
     public User? OwnedByUser { get; set; }
+
+    private WalletCategoryRelation(Guid walletId, Guid categoryId, Guid ownedByUserId)
+    {
+        Id = Guid.NewGuid();
+        WalletId = walletId;
+        CategoryId = categoryId;
+        OwnedByUserId = ownedByUserId;
+    }
+
+    public static WalletCategoryRelation CreateInstance(Guid walletId, Guid categoryId, Guid ownedByUserId)
+    {
+        return new WalletCategoryRelation(walletId, categoryId, ownedByUserId);
+    }
 }

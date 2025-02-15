@@ -5,9 +5,10 @@ namespace BM2.Application.Contracts.Persistence.Base;
 public interface IGenericRepository<T>
 {
     Task<T> Add(T entity);
+    Task<IEnumerable<T>> AddRange(IList<T> entities);
     Task<T> Update(T entity);
     Task Delete(T entity);
-    Task Save();
+    //Task Save();
     Task<IReadOnlyList<T>> GetAllAsync();
     Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Expression<Func<T, object>>[] includes);
     Task<T?> GetByIdAsync(Guid id);
