@@ -64,5 +64,6 @@ public static class InfrastructureInstallation
         services.AddScoped<IWalletCategoryRelationRepository, WalletCategoryRelationRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<IWalletTagRelationRepository, WalletTagRelationRepository>();
+        services.AddScoped<IRecordTagRelationRepository, RecordTagRelationRepository>();
     }
 }

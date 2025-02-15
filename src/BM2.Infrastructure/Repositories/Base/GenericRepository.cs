@@ -77,6 +77,14 @@ public class GenericRepository<T>(
         return await query.FirstOrDefaultAsync();
     }
 
+    public async Task<IReadOnlyList<T>> GetByIdsAsync(IList<Guid> ids)
+    {
+        if (ids.Any())
+            return new List<T>();
+
+        return await _dbSet.Where(x => ids.Contains(x.Id)).ToListAsync();
+    }
+
     public async Task<T?> GetByAsync(Expression<Func<T, bool>> predicate,
         params Func<IQueryable<T>, IQueryable<T>>[] includes)
     {
