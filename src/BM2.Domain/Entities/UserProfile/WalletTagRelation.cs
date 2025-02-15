@@ -12,4 +12,17 @@ public class WalletTagRelation : IEntity, IOwnedByUser
     public Wallet? Wallet { get; set; }
     public Tag? Tag { get; set; }
     public User? OwnedByUser { get; set; }
+
+    private WalletTagRelation(Guid walletId, Guid tagId, Guid ownedByUserId)
+    {
+        Id = Guid.NewGuid();
+        WalletId = walletId;
+        TagId = tagId;
+        OwnedByUserId = ownedByUserId;
+    }
+
+    public static WalletTagRelation CreateInstance(Guid walletId, Guid tagId, Guid ownedByUserId)
+    {
+        return new WalletTagRelation(walletId, tagId, ownedByUserId);
+    }
 }

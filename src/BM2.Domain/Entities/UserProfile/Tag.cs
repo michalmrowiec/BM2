@@ -20,4 +20,6 @@ public class Tag : IEntity, IEntityAudit, IOwnedByUser
     public User? OwnedByUser { get; set; }
     public ICollection<Wallet> Wallets { get; set; } = [];
     public ICollection<BaseRecord> Records { get; set; } = [];
+    
+    public static int TagNameMaxLength => 150;
 }

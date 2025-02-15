@@ -313,7 +313,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
 
             tagBuilder.Property(x => x.TagName)
                 .IsRequired()
-                .HasMaxLength(150);
+                .HasMaxLength(Tag.TagNameMaxLength);
 
             ConfigureOwnedByUserProperty(tagBuilder);
             ConfigureEntityAuditProperties(tagBuilder);

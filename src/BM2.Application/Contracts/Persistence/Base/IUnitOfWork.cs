@@ -11,4 +11,6 @@ public interface IUnitOfWork : IDisposable
     public IAccountRepository AccountRepository { get; }
     public ICategoryRepository CategoryRepository { get; }
     public IWalletCategoryRelationRepository WalletCategoryRelationRepository { get; }
+    public ITagRepository TagRepository { get; }
+    public IWalletTagRelationRepository WalletTagRelationRepository { get; }
 }
