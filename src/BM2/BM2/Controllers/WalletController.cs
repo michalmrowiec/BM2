@@ -33,14 +33,14 @@ public class WalletController(
     {
         var result = await mediator.Send(new GetWalletByIdQuery(walletId, userContextService.GetUserId));
 
-        return result.HandleCreatedResult(this, "");
+        return result.HandleOkResult(this);
     }
 
     [HttpGet("all")]
-    public async Task<ActionResult<WalletDTO>> GetAllWallets()
+    public async Task<ActionResult<IList<WalletDTO>>> GetAllWallets()
     {
         var result = await mediator.Send(new GetAllWalletsForUserQuery(userContextService.GetUserId));
 
-        return result.HandleCreatedResult(this, "");
+        return result.HandleOkResult(this);
     }
 }

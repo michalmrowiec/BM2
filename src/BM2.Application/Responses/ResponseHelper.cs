@@ -37,10 +37,11 @@ internal static class ResponseHelper
 
     internal static void CheckPermission<T>(this IEnumerable<T> objs, Guid userId) where T : IOwnedByUser
     {
-        if(!objs.Any())
+        var ownedByUsers = objs.ToList();
+        if(!ownedByUsers.Any())
             return;
         
-        if (objs.Any(x => x.OwnedByUserId != userId))
+        if (ownedByUsers.Any(x => x.OwnedByUserId != userId))
             throw new UnauthorizedAccessException();
     }
 }

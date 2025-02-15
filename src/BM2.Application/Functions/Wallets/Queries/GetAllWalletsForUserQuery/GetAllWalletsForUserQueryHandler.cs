@@ -12,11 +12,11 @@ public class GetAllWalletsForUserQueryHandler(IMapper mapper, IUnitOfWork unitOf
     public async Task<BaseResponse<IEnumerable<WalletDTO>>> Handle(GetAllWalletsForUserQuery request,
         CancellationToken cancellationToken)
     {
-        var wallet = await unitOfWork.WalletRepository.GetAllForUserAsync(request.UserId);
+        var wallets = await unitOfWork.WalletRepository.GetAllForUserAsync(request.UserId);
 
-        wallet.ThrowExceptionIfNull();
-        wallet!.CheckPermission(request.UserId);
+        wallets.ThrowExceptionIfNull();
+        wallets!.CheckPermission(request.UserId);
 
-        return request.ReturnSuccessWithObject(mapper.Map<IEnumerable<WalletDTO>>(wallet));
+        return request.ReturnSuccessWithObject(mapper.Map<IEnumerable<WalletDTO>>(wallets));
     }
 }
