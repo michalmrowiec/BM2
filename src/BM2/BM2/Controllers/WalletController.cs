@@ -1,7 +1,7 @@
 ﻿using BM2.Application.DTOs;
 using BM2.Application.Functions;
-using BM2.Application.Functions.Wallets.Commands.Requests;
-using BM2.Application.Functions.Wallets.Queries.Requests;
+using BM2.Application.Functions.Wallet.Commands.Requests;
+using BM2.Application.Functions.Wallet.Queries.Requests;
 using BM2.Controllers.Utils;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

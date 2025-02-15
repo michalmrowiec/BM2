@@ -1,5 +1,5 @@
 ﻿using BM2.Application.DTOs;
-using BM2.Application.Functions.Curencies.Queries.Requests;
+using BM2.Application.Functions.Currency.Queries.Requests;
 using BM2.Controllers.Utils;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
