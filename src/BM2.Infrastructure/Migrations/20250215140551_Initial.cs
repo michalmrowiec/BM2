@@ -88,6 +88,56 @@ namespace BM2.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Categories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CategoryName = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: false),
+                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Categories_Users_OwnedByUserId",
+                        column: x => x.OwnedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Tags",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TagName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tags", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Tags_Users_OwnedByUserId",
+                        column: x => x.OwnedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Wallets",
                 columns: table => new
                 {
@@ -124,6 +174,38 @@ namespace BM2.Infrastructure.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RecordTagRelations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TagId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RecordTagRelations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RecordTagRelations_Tags_TagId",
+                        column: x => x.TagId,
+                        principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RecordTagRelations_Users_OwnedByUserId",
+                        column: x => x.OwnedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RecordTagRelations_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -173,31 +255,55 @@ namespace BM2.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Categories",
+                name: "RecordTemplates",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    WalletId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CategoryName = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: false),
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StatusId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    PlannedAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    CurrencyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    WalletId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Categories", x => x.Id);
+                    table.PrimaryKey("PK_RecordTemplates", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Categories_Users_OwnedByUserId",
-                        column: x => x.OwnedByUserId,
-                        principalTable: "Users",
+                        name: "FK_RecordTemplates_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Categories_Wallets_WalletId",
+                        name: "FK_RecordTemplates_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RecordTemplates_RecordStatuses_StatusId",
+                        column: x => x.StatusId,
+                        principalTable: "RecordStatuses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RecordTemplates_Users_OwnedByUserId",
+                        column: x => x.OwnedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RecordTemplates_Wallets_WalletId",
                         column: x => x.WalletId,
                         principalTable: "Wallets",
                         principalColumn: "Id",
@@ -205,31 +311,63 @@ namespace BM2.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Tags",
+                name: "WalletCategoryRelations",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     WalletId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TagName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Tags", x => x.Id);
+                    table.PrimaryKey("PK_WalletCategoryRelations", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Tags_Users_OwnedByUserId",
+                        name: "FK_WalletCategoryRelations_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WalletCategoryRelations_Users_OwnedByUserId",
                         column: x => x.OwnedByUserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Tags_Wallets_WalletId",
+                        name: "FK_WalletCategoryRelations_Wallets_WalletId",
+                        column: x => x.WalletId,
+                        principalTable: "Wallets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WalletTagRelations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    WalletId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TagId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WalletTagRelations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WalletTagRelations_Tags_TagId",
+                        column: x => x.TagId,
+                        principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WalletTagRelations_Users_OwnedByUserId",
+                        column: x => x.OwnedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WalletTagRelations_Wallets_WalletId",
                         column: x => x.WalletId,
                         principalTable: "Wallets",
                         principalColumn: "Id",
@@ -291,94 +429,6 @@ namespace BM2.Infrastructure.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RecordTemplates",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StatusId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
-                    PlannedAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
-                    CurrencyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    WalletId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RecordTemplates", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_RecordTemplates_Categories_CategoryId",
-                        column: x => x.CategoryId,
-                        principalTable: "Categories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_RecordTemplates_Currencies_CurrencyId",
-                        column: x => x.CurrencyId,
-                        principalTable: "Currencies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_RecordTemplates_RecordStatuses_StatusId",
-                        column: x => x.StatusId,
-                        principalTable: "RecordStatuses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_RecordTemplates_Users_OwnedByUserId",
-                        column: x => x.OwnedByUserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_RecordTemplates_Wallets_WalletId",
-                        column: x => x.WalletId,
-                        principalTable: "Wallets",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RecordTagRelations",
-                columns: table => new
-                {
-                    RecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TagId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RecordTagRelations", x => new { x.RecordId, x.TagId });
-                    table.ForeignKey(
-                        name: "FK_RecordTagRelations_Tags_TagId",
-                        column: x => x.TagId,
-                        principalTable: "Tags",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_RecordTagRelations_Users_OwnedByUserId",
-                        column: x => x.OwnedByUserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_RecordTagRelations_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -483,11 +533,6 @@ namespace BM2.Infrastructure.Migrations
                 column: "OwnedByUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Categories_WalletId",
-                table: "Categories",
-                column: "WalletId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PeriodicRecordDefinitions_AccountId",
                 table: "PeriodicRecordDefinitions",
                 column: "AccountId");
@@ -558,6 +603,11 @@ namespace BM2.Infrastructure.Migrations
                 column: "OwnedByUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RecordTagRelations_RecordId",
+                table: "RecordTagRelations",
+                column: "RecordId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RecordTagRelations_TagId",
                 table: "RecordTagRelations",
                 column: "TagId");
@@ -598,8 +648,18 @@ namespace BM2.Infrastructure.Migrations
                 column: "OwnedByUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tags_WalletId",
-                table: "Tags",
+                name: "IX_WalletCategoryRelations_CategoryId",
+                table: "WalletCategoryRelations",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletCategoryRelations_OwnedByUserId",
+                table: "WalletCategoryRelations",
+                column: "OwnedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletCategoryRelations_WalletId",
+                table: "WalletCategoryRelations",
                 column: "WalletId");
 
             migrationBuilder.CreateIndex(
@@ -616,6 +676,21 @@ namespace BM2.Infrastructure.Migrations
                 name: "IX_Wallets_OwnedByUserId",
                 table: "Wallets",
                 column: "OwnedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletTagRelations_OwnedByUserId",
+                table: "WalletTagRelations",
+                column: "OwnedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletTagRelations_TagId",
+                table: "WalletTagRelations",
+                column: "TagId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletTagRelations_WalletId",
+                table: "WalletTagRelations",
+                column: "WalletId");
         }
 
         /// <inheritdoc />
@@ -632,6 +707,12 @@ namespace BM2.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "RecordTagRelations");
+
+            migrationBuilder.DropTable(
+                name: "WalletCategoryRelations");
+
+            migrationBuilder.DropTable(
+                name: "WalletTagRelations");
 
             migrationBuilder.DropTable(
                 name: "RecordTemplates");
