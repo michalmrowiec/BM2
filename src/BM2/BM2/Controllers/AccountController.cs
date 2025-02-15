@@ -1,6 +1,7 @@
 ﻿using BM2.Application.DTOs;
 using BM2.Application.Functions;
 using BM2.Application.Functions.Accounts.Commands.AddAccountCommand;
+using BM2.Application.Functions.Accounts.Queries.Requests;
 using BM2.Application.Functions.Wallets.Commands.AddWalletCommand;
 using BM2.Application.Functions.Wallets.Queries.GetAllWalletsForUserQuery;
 using BM2.Application.Functions.Wallets.Queries.GetWalletByIdQuery;
@@ -27,5 +28,13 @@ public class AccountController(
         var result = await mediator.Send(command);
 
         return result.HandleCreatedResult(this, "");
+    }
+    
+    [HttpGet("for-wallet/{walletId:guid}")]
+    public async Task<ActionResult<IList<WalletDTO>>> GetAccountsForWalletById([FromRoute] Guid walletId)
+    {
+        var result = await mediator.Send(new GetAccountsForWalletByIdQuery(walletId, userContextService.GetUserId));
+
+        return result.HandleOkResult(this);
     }
 }

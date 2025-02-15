@@ -72,23 +72,24 @@ public class GenericRepository<T>(
         return await query.FirstOrDefaultAsync();
     }
 
-    public async Task<T?> GetByAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
+    public async Task<T?> GetByAsync(Expression<Func<T, bool>> predicate,
+        params Func<IQueryable<T>, IQueryable<T>>[] includes)
+    {
+        var results = await GetListByAsync(predicate, includes);
+        return results.FirstOrDefault();
+    }
+
+    public async Task<IReadOnlyList<T>> GetListByAsync(Expression<Func<T, bool>> predicate,
+        params Func<IQueryable<T>, IQueryable<T>>[] includes)
     {
         IQueryable<T> query = _dbSet;
 
         query = ApplyIncludes(query, includes);
-        // foreach (var include in includes)
-        // {
-        //     query = query.Include(include);
-        // }
 
         query = SoftDeleteFilter(query);
-        // if (typeof(IEntityAudit).IsAssignableFrom(typeof(T)))
-        // {
-        //     query = query.Where(e => ((IEntityAudit)e).DeletedAt == null);
-        // }
 
-        return await query.FirstOrDefaultAsync(predicate);
+
+        return await query.Where(predicate).ToListAsync();
     }
 
     public async Task<IReadOnlyList<T>> GetAllAsync()
@@ -96,22 +97,23 @@ public class GenericRepository<T>(
         return await _dbSet.AsNoTracking().ToListAsync();
     }
 
-    private IQueryable<T> ApplyIncludes(IQueryable<T> query, params Expression<Func<T, object>>[] includes)
-    {
-        foreach (var include in includes)
-        {
-            query = query.Include(include);
-        }
-        
-        return query;
-    }
-    
+    // private IQueryable<T> ApplyIncludes(IQueryable<T> query, params Expression<Func<T, object>>[] includes)
+    // {
+    //     foreach (var include in includes)
+    //     {
+    //         query = query.Include(include);
+    //     }
+    //     
+    //     return query;
+    // }
+
     private IQueryable<T> ApplyIncludes(IQueryable<T> query, params Func<IQueryable<T>, IQueryable<T>>[] includes)
     {
         foreach (var include in includes)
         {
             query = include(query);
         }
+
         return query;
     }
 
