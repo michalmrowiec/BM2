@@ -13,4 +13,17 @@ public class RecordTagRelation : IEntity, IOwnedByUser
     public BaseRecord? Record { get; set; }
     public Tag? Tag { get; set; }
     public User? OwnedByUser { get; set; }
+    
+    private RecordTagRelation(Guid recordId, Guid tagId, Guid ownedByUserId)
+    {
+        Id = Guid.NewGuid();
+        RecordId = recordId;
+        TagId = tagId;
+        OwnedByUserId = ownedByUserId;
+    }
+
+    public static RecordTagRelation CreateInstance(Guid recordId, Guid tagId, Guid ownedByUserId)
+    {
+        return new RecordTagRelation(recordId, tagId, ownedByUserId);
+    }
 }

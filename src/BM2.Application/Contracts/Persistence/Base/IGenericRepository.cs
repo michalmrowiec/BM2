@@ -8,11 +8,11 @@ public interface IGenericRepository<T>
     Task<IEnumerable<T>> AddRange(IList<T> entities);
     Task<T> Update(T entity);
     Task Delete(T entity);
-    //Task Save();
     Task<IReadOnlyList<T>> GetAllAsync();
     Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Expression<Func<T, object>>[] includes);
     Task<T?> GetByIdAsync(Guid id);
     Task<T?> GetByIdAsync(Guid id, params Func<IQueryable<T>, IQueryable<T>>[] includes);
+    Task<IReadOnlyList<T>> GetByIdsAsync(IList<Guid> ids);
     protected Task<T?> GetByAsync(Expression<Func<T, bool>> predicate, params Func<IQueryable<T>, IQueryable<T>>[] includes);
     protected Task<IReadOnlyList<T>> GetListByAsync(Expression<Func<T, bool>> predicate, params Func<IQueryable<T>, IQueryable<T>>[] includes);
 

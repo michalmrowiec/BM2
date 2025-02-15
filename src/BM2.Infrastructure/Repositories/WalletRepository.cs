@@ -8,4 +8,5 @@ namespace BM2.Infrastructure.Repositories;
 public class WalletRepository(
     BM2DbContext context) : GenericRepository<Wallet>(context), IWalletRepository
 {
+    
 }

@@ -4,6 +4,7 @@ using BM2.Application.DTOs;
 using BM2.Application.Functions.Record.Commands.Requests;
 using BM2.Application.Functions.Record.Commands.Validators;
 using BM2.Application.Responses;
+using BM2.Domain.Entities.UserRecords;
 using MediatR;
 
 namespace BM2.Application.Functions.Record.Commands.Handlers;
@@ -23,9 +24,17 @@ public class AddRecordCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
         record.CreatedAt = DateTime.UtcNow;
         record.CreatedBy = request.OwnedByUserId;
         
+        List<RecordTagRelation> recordTagRelations = new();
+
+        foreach (var tagId in request.TagIds.Distinct())
+        {
+            recordTagRelations.Add(RecordTagRelation.CreateInstance(record.Id, tagId, request.OwnedByUserId));
+        }
+        
         try
         {
             record = await unitOfWork.RecordRepository.Add(record);
+            await unitOfWork.RecordTagRelationRepository.AddRange(recordTagRelations);
             await unitOfWork.SaveAsync();
 
             return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserRecords.Record, RecordDTO>(record));
