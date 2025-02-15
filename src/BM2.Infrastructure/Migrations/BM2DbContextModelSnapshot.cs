@@ -17,12 +17,68 @@ namespace BM2.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.1")
+                .HasAnnotation("ProductVersion", "9.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("BM2.Domain.Entities.Account", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.System.Currency", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("IsoCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Symbol")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Currencies");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.System.RecordStatus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ForPeriodicRecord")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ForRecords")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RecordStatusName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("SystemCode")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RecordStatuses");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Account", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -81,14 +137,13 @@ namespace BM2.Infrastructure.Migrations
                     b.ToTable("Accounts");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.AuditLogin", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.AuditLogin", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("DateTimeOfLogin")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
@@ -101,75 +156,7 @@ namespace BM2.Infrastructure.Migrations
                     b.ToTable("AuditLogins");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.BaseRecord", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m);
-
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CurrencyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<Guid>("OwnedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal?>("PlannedAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("StatusId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("CurrencyId");
-
-                    b.HasIndex("StatusId");
-
-                    b.ToTable((string)null);
-
-                    b.UseTpcMappingStrategy();
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.Category", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -201,172 +188,14 @@ namespace BM2.Infrastructure.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OwnedByUserId");
-
-                    b.HasIndex("WalletId");
 
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.Currency", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("IsoCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Symbol")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Currencies");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.PeriodicRecordDefinition", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("AccountId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CurrencyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("OwnedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("PeriodicRecordStatusId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("RecordTemplateId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SetRecordAccountId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SetRecordStatusId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("CurrencyId");
-
-                    b.HasIndex("OwnedByUserId");
-
-                    b.HasIndex("PeriodicRecordStatusId");
-
-                    b.HasIndex("RecordTemplateId");
-
-                    b.HasIndex("SetRecordAccountId");
-
-                    b.HasIndex("SetRecordStatusId");
-
-                    b.HasIndex("WalletId");
-
-                    b.ToTable("PeriodicRecordDefinitions");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.RecordStatus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("ForPeriodicRecord")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("ForRecords")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("RecordStatusName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<Guid>("SystemCode")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("RecordStatuses");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.RecordTagRelation", b =>
-                {
-                    b.Property<Guid>("RecordId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("TagId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("OwnedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("RecordId", "TagId");
-
-                    b.HasIndex("OwnedByUserId");
-
-                    b.HasIndex("TagId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("RecordTagRelations");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.Tag", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Tag", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -398,19 +227,14 @@ namespace BM2.Infrastructure.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OwnedByUserId");
 
-                    b.HasIndex("WalletId");
-
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.User", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -489,7 +313,7 @@ namespace BM2.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.Wallet", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Wallet", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -543,9 +367,229 @@ namespace BM2.Infrastructure.Migrations
                     b.ToTable("Wallets");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.Record", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.WalletCategoryRelation", b =>
                 {
-                    b.HasBaseType("BM2.Domain.Entities.BaseRecord");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwnedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("OwnedByUserId");
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("WalletCategoryRelations");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.WalletTagRelation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwnedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnedByUserId");
+
+                    b.HasIndex("TagId");
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("WalletTagRelations");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.BaseRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CurrencyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("OwnedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PlannedAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("StatusId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("StatusId");
+
+                    b.ToTable((string)null);
+
+                    b.UseTpcMappingStrategy();
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.PeriodicRecordDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CurrencyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwnedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PeriodicRecordStatusId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RecordTemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SetRecordAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SetRecordStatusId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("OwnedByUserId");
+
+                    b.HasIndex("PeriodicRecordStatusId");
+
+                    b.HasIndex("RecordTemplateId");
+
+                    b.HasIndex("SetRecordAccountId");
+
+                    b.HasIndex("SetRecordStatusId");
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("PeriodicRecordDefinitions");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.RecordTagRelation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwnedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RecordId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnedByUserId");
+
+                    b.HasIndex("RecordId");
+
+                    b.HasIndex("TagId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RecordTagRelations");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.Record", b =>
+                {
+                    b.HasBaseType("BM2.Domain.Entities.UserRecords.BaseRecord");
 
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
@@ -560,9 +604,9 @@ namespace BM2.Infrastructure.Migrations
                     b.ToTable("Records");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.RecordTemplate", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.RecordTemplate", b =>
                 {
-                    b.HasBaseType("BM2.Domain.Entities.BaseRecord");
+                    b.HasBaseType("BM2.Domain.Entities.UserRecords.BaseRecord");
 
                     b.Property<Guid>("WalletId")
                         .HasColumnType("uniqueidentifier");
@@ -574,25 +618,25 @@ namespace BM2.Infrastructure.Migrations
                     b.ToTable("RecordTemplates");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.Account", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Account", b =>
                 {
-                    b.HasOne("BM2.Domain.Entities.Currency", null)
+                    b.HasOne("BM2.Domain.Entities.System.Currency", null)
                         .WithMany("Accounts")
                         .HasForeignKey("CurrencyId");
 
-                    b.HasOne("BM2.Domain.Entities.Currency", "DefaultCurrency")
+                    b.HasOne("BM2.Domain.Entities.System.Currency", "DefaultCurrency")
                         .WithMany()
                         .HasForeignKey("DefaultCurrencyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.User", "OwnedByUser")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
                         .WithMany("Accounts")
                         .HasForeignKey("OwnedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.Wallet", "Wallet")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Wallet", "Wallet")
                         .WithMany("Accounts")
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -605,9 +649,9 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Wallet");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.AuditLogin", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.AuditLogin", b =>
                 {
-                    b.HasOne("BM2.Domain.Entities.User", "User")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "User")
                         .WithMany("AuditLogins")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -616,21 +660,120 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.BaseRecord", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Category", b =>
                 {
-                    b.HasOne("BM2.Domain.Entities.Category", "Category")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
+                        .WithMany("Categories")
+                        .HasForeignKey("OwnedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OwnedByUser");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Tag", b =>
+                {
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
+                        .WithMany("Tags")
+                        .HasForeignKey("OwnedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OwnedByUser");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Wallet", b =>
+                {
+                    b.HasOne("BM2.Domain.Entities.System.Currency", null)
+                        .WithMany("Wallets")
+                        .HasForeignKey("CurrencyId");
+
+                    b.HasOne("BM2.Domain.Entities.System.Currency", "DefaultCurrency")
+                        .WithMany()
+                        .HasForeignKey("DefaultCurrencyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
+                        .WithMany("Wallets")
+                        .HasForeignKey("OwnedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DefaultCurrency");
+
+                    b.Navigation("OwnedByUser");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.WalletCategoryRelation", b =>
+                {
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
+                        .WithMany()
+                        .HasForeignKey("OwnedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Wallet", "Wallet")
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("OwnedByUser");
+
+                    b.Navigation("Wallet");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.WalletTagRelation", b =>
+                {
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
+                        .WithMany()
+                        .HasForeignKey("OwnedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Tag", "Tag")
+                        .WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Wallet", "Wallet")
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OwnedByUser");
+
+                    b.Navigation("Tag");
+
+                    b.Navigation("Wallet");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.BaseRecord", b =>
+                {
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Category", "Category")
                         .WithMany("Records")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.Currency", "Currency")
+                    b.HasOne("BM2.Domain.Entities.System.Currency", "Currency")
                         .WithMany("Records")
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.RecordStatus", "Status")
+                    b.HasOne("BM2.Domain.Entities.System.RecordStatus", "Status")
                         .WithMany()
                         .HasForeignKey("StatusId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -643,68 +786,49 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Status");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.Category", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.PeriodicRecordDefinition", b =>
                 {
-                    b.HasOne("BM2.Domain.Entities.User", "OwnedByUser")
-                        .WithMany("Categories")
-                        .HasForeignKey("OwnedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BM2.Domain.Entities.Wallet", "Wallet")
-                        .WithMany("Categories")
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("OwnedByUser");
-
-                    b.Navigation("Wallet");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.PeriodicRecordDefinition", b =>
-                {
-                    b.HasOne("BM2.Domain.Entities.Account", null)
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Account", null)
                         .WithMany("PeriodicRecordDefinitions")
                         .HasForeignKey("AccountId");
 
-                    b.HasOne("BM2.Domain.Entities.Currency", "Currency")
+                    b.HasOne("BM2.Domain.Entities.System.Currency", "Currency")
                         .WithMany("PeriodicRecordDefinitions")
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.User", "OwnedByUser")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
                         .WithMany("PeriodicRecordDefinitions")
                         .HasForeignKey("OwnedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.RecordStatus", "PeriodicRecordStatus")
+                    b.HasOne("BM2.Domain.Entities.System.RecordStatus", "PeriodicRecordStatus")
                         .WithMany()
                         .HasForeignKey("PeriodicRecordStatusId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.RecordTemplate", "RecordTemplate")
+                    b.HasOne("BM2.Domain.Entities.UserRecords.RecordTemplate", "RecordTemplate")
                         .WithMany("PeriodicRecordDefinitions")
                         .HasForeignKey("RecordTemplateId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.Account", "SetRecordAccount")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Account", "SetRecordAccount")
                         .WithMany()
                         .HasForeignKey("SetRecordAccountId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.RecordStatus", "SetRecordStatus")
+                    b.HasOne("BM2.Domain.Entities.System.RecordStatus", "SetRecordStatus")
                         .WithMany()
                         .HasForeignKey("SetRecordStatusId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.Wallet", "Wallet")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Wallet", "Wallet")
                         .WithMany("PeriodicRecordDefinitions")
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.ClientCascade)
@@ -725,27 +849,27 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Wallet");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.RecordTagRelation", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.RecordTagRelation", b =>
                 {
-                    b.HasOne("BM2.Domain.Entities.User", "OwnedByUser")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
                         .WithMany()
                         .HasForeignKey("OwnedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.BaseRecord", "Record")
+                    b.HasOne("BM2.Domain.Entities.UserRecords.BaseRecord", "Record")
                         .WithMany()
                         .HasForeignKey("RecordId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.Tag", "Tag")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Tag", "Tag")
                         .WithMany()
                         .HasForeignKey("TagId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.User", null)
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", null)
                         .WithMany("RecordTagRelations")
                         .HasForeignKey("UserId");
 
@@ -756,57 +880,15 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Tag");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.Tag", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.Record", b =>
                 {
-                    b.HasOne("BM2.Domain.Entities.User", "OwnedByUser")
-                        .WithMany("Tags")
-                        .HasForeignKey("OwnedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BM2.Domain.Entities.Wallet", "Wallet")
-                        .WithMany("Tags")
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("OwnedByUser");
-
-                    b.Navigation("Wallet");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.Wallet", b =>
-                {
-                    b.HasOne("BM2.Domain.Entities.Currency", null)
-                        .WithMany("Wallets")
-                        .HasForeignKey("CurrencyId");
-
-                    b.HasOne("BM2.Domain.Entities.Currency", "DefaultCurrency")
-                        .WithMany()
-                        .HasForeignKey("DefaultCurrencyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BM2.Domain.Entities.User", "OwnedByUser")
-                        .WithMany("Wallets")
-                        .HasForeignKey("OwnedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("DefaultCurrency");
-
-                    b.Navigation("OwnedByUser");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.Record", b =>
-                {
-                    b.HasOne("BM2.Domain.Entities.Account", "Account")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Account", "Account")
                         .WithMany("Records")
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.User", "OwnedByUser")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
                         .WithMany("Records")
                         .HasForeignKey("OwnedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -817,15 +899,15 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("OwnedByUser");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.RecordTemplate", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.RecordTemplate", b =>
                 {
-                    b.HasOne("BM2.Domain.Entities.User", "OwnedByUser")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
                         .WithMany("RecordTemplates")
                         .HasForeignKey("OwnedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BM2.Domain.Entities.Wallet", "Wallet")
+                    b.HasOne("BM2.Domain.Entities.UserProfile.Wallet", "Wallet")
                         .WithMany("RecordTemplates")
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -836,19 +918,7 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Wallet");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.Account", b =>
-                {
-                    b.Navigation("PeriodicRecordDefinitions");
-
-                    b.Navigation("Records");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.Category", b =>
-                {
-                    b.Navigation("Records");
-                });
-
-            modelBuilder.Entity("BM2.Domain.Entities.Currency", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.System.Currency", b =>
                 {
                     b.Navigation("Accounts");
 
@@ -859,7 +929,19 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Wallets");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.User", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Account", b =>
+                {
+                    b.Navigation("PeriodicRecordDefinitions");
+
+                    b.Navigation("Records");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Category", b =>
+                {
+                    b.Navigation("Records");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.User", b =>
                 {
                     b.Navigation("Accounts");
 
@@ -880,20 +962,16 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Wallets");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.Wallet", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserProfile.Wallet", b =>
                 {
                     b.Navigation("Accounts");
-
-                    b.Navigation("Categories");
 
                     b.Navigation("PeriodicRecordDefinitions");
 
                     b.Navigation("RecordTemplates");
-
-                    b.Navigation("Tags");
                 });
 
-            modelBuilder.Entity("BM2.Domain.Entities.RecordTemplate", b =>
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.RecordTemplate", b =>
                 {
                     b.Navigation("PeriodicRecordDefinitions");
                 });

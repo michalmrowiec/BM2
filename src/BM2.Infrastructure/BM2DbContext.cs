@@ -16,6 +16,8 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
     public DbSet<User> Users { get; set; }
     public DbSet<AuditLogin> AuditLogins { get; set; }
     public DbSet<Wallet> Wallets { get; set; }
+    public DbSet<WalletCategoryRelation> WalletCategoryRelations { get; set; }
+    public DbSet<WalletTagRelation> WalletTagRelations { get; set; }
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<Tag> Tags { get; set; }
@@ -35,6 +37,8 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
         ConfigureUsers(modelBuilder);
         ConfigureAuditLogins(modelBuilder);
         ConfigureWallets(modelBuilder);
+        ConfigureWalletCategoryRelations(modelBuilder);
+        ConfigureWalletTagRelations(modelBuilder);
         ConfigureAccounts(modelBuilder);
         ConfigureCategories(modelBuilder);
         ConfigureTags(modelBuilder);
@@ -181,40 +185,36 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
         modelBuilder.Entity<Wallet>(walletBuilder =>
         {
             walletBuilder.HasKey(x => x.Id);
+
             walletBuilder.Property(x => x.WalletName)
                 .IsRequired()
                 .HasMaxLength(Wallet.WalletNameMaxLength);
+
             walletBuilder.Property(x => x.IsActive)
                 .IsRequired()
                 .HasDefaultValue(true);
+
             walletBuilder.Property(x => x.DefaultCurrencyId)
                 .IsRequired();
             ConfigureOwnedByUserProperty(walletBuilder);
             ConfigureEntityAuditProperties(walletBuilder);
 
-            // walletBuilder.HasMany<Account>(x => x.Accounts)
-            //     .WithOne(x => x.Wallet)
-            //     .HasForeignKey(x => x.WalletId)
-            //     .OnDelete(DeleteBehavior.Restrict);
-            // walletBuilder.HasMany(x => x.Categories)
-            //     .WithOne(x => x.Wallet)
-            //     .HasForeignKey(x => x.WalletId)
-            //     .OnDelete(DeleteBehavior.Restrict);
-            // walletBuilder.HasMany(x => x.Tags)
-            //     .WithOne(x => x.Wallet)
-            //     .HasForeignKey(x => x.WalletId)
-            //     .OnDelete(DeleteBehavior.Restrict);
             walletBuilder.HasOne(x => x.OwnedByUser)
                 .WithMany(x => x.Wallets)
                 .HasForeignKey(x => x.OwnedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             walletBuilder.HasOne(x => x.DefaultCurrency)
                 .WithMany()
                 .HasForeignKey(x => x.DefaultCurrencyId);
-            // walletBuilder.HasMany(x=>x.PeriodicRecordDefinitions)
-            //     .WithOne(x => x.Wallet)
-            //     .HasForeignKey(x => x.WalletId)
-            //     .OnDelete(DeleteBehavior.Cascade);
+
+            walletBuilder.HasMany(x => x.Categories)
+                .WithMany(x => x.Wallets)
+                .UsingEntity<WalletCategoryRelation>();
+
+            walletBuilder.HasMany(x => x.Tags)
+                .WithMany(x => x.Wallets)
+                .UsingEntity<WalletTagRelation>();
         });
     }
 
@@ -259,26 +259,49 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
         modelBuilder.Entity<Category>(categoryBuilder =>
         {
             categoryBuilder.HasKey(x => x.Id);
-            categoryBuilder.Property(x => x.WalletId)
-                .IsRequired();
+
             categoryBuilder.Property(x => x.CategoryName)
                 .IsRequired()
                 .HasMaxLength(80);
+
             ConfigureOwnedByUserProperty(categoryBuilder);
             ConfigureEntityAuditProperties(categoryBuilder);
 
-            categoryBuilder.HasOne(x => x.Wallet)
-                .WithMany(x => x.Categories)
-                .HasForeignKey(x => x.WalletId)
-                .OnDelete(DeleteBehavior.Cascade);
             categoryBuilder.HasOne(x => x.OwnedByUser)
                 .WithMany(x => x.Categories)
                 .HasForeignKey(x => x.OwnedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            // categoryBuilder.HasMany(x => x.Records)
-            //     .WithOne(x => x.Category)
-            //     .HasForeignKey(x => x.CategoryId)
-            //     .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureWalletCategoryRelations(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WalletCategoryRelation>(walletCategoryRelation =>
+        {
+            walletCategoryRelation.HasKey(x => x.Id);
+
+            walletCategoryRelation.Property(x => x.WalletId)
+                .IsRequired();
+
+            walletCategoryRelation.Property(x => x.CategoryId)
+                .IsRequired();
+
+            ConfigureOwnedByUserProperty(walletCategoryRelation);
+
+            walletCategoryRelation.HasOne(x => x.Wallet)
+                .WithMany()
+                .HasForeignKey(x => x.WalletId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            walletCategoryRelation.HasOne(x => x.Category)
+                .WithMany()
+                .HasForeignKey(x => x.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            walletCategoryRelation.HasOne(x => x.OwnedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.OwnedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -287,18 +310,19 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
         modelBuilder.Entity<Tag>(tagBuilder =>
         {
             tagBuilder.HasKey(x => x.Id);
-            tagBuilder.Property(x => x.WalletId)
-                .IsRequired();
+
             tagBuilder.Property(x => x.TagName)
                 .IsRequired()
                 .HasMaxLength(150);
+
             ConfigureOwnedByUserProperty(tagBuilder);
             ConfigureEntityAuditProperties(tagBuilder);
 
-            tagBuilder.HasOne(x => x.Wallet)
-                .WithMany(x => x.Tags)
-                .HasForeignKey(x => x.WalletId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // tagBuilder.HasOne(x => x.Wallet)
+            //     .WithMany(x => x.Tags)
+            //     .HasForeignKey(x => x.WalletId)
+            //     .OnDelete(DeleteBehavior.Cascade);
+
             tagBuilder.HasOne(x => x.OwnedByUser)
                 .WithMany(x => x.Tags)
                 .HasForeignKey(x => x.OwnedByUserId)
@@ -309,11 +333,42 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
         });
     }
 
+    private static void ConfigureWalletTagRelations(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WalletTagRelation>(walletTagRelation =>
+        {
+            walletTagRelation.HasKey(x => x.Id);
+
+            walletTagRelation.Property(x => x.WalletId)
+                .IsRequired();
+
+            walletTagRelation.Property(x => x.TagId)
+                .IsRequired();
+
+            ConfigureOwnedByUserProperty(walletTagRelation);
+
+            walletTagRelation.HasOne(x => x.Wallet)
+                .WithMany()
+                .HasForeignKey(x => x.WalletId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            walletTagRelation.HasOne(x => x.Tag)
+                .WithMany()
+                .HasForeignKey(x => x.TagId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            walletTagRelation.HasOne(x => x.OwnedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.OwnedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
     private static void ConfigureRecordTagRelations(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<RecordTagRelation>(recordTagRelationBuilder =>
         {
-            recordTagRelationBuilder.HasKey(x => new { x.RecordId, x.TagId });
+            recordTagRelationBuilder.HasKey(x => x.Id);
             recordTagRelationBuilder.Property(x => x.RecordId)
                 .IsRequired();
             recordTagRelationBuilder.Property(x => x.TagId)
@@ -383,9 +438,9 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .WithMany(x => x.Records)
                 .HasForeignKey(x => x.CurrencyId)
                 .OnDelete(DeleteBehavior.Restrict);
-            baseRecordBuilder.HasOne(x=>x.Status)
+            baseRecordBuilder.HasOne(x => x.Status)
                 .WithMany()
-                .HasForeignKey(x=>x.StatusId)
+                .HasForeignKey(x => x.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
@@ -462,9 +517,9 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .WithMany()
                 .HasForeignKey(x => x.SetRecordAccountId)
                 .OnDelete(DeleteBehavior.Restrict);
-            periodicRecordDefinitionBuilder.HasOne(x=>x.RecordTemplate)
-                .WithMany(x=>x.PeriodicRecordDefinitions)
-                .HasForeignKey(x=>x.RecordTemplateId)
+            periodicRecordDefinitionBuilder.HasOne(x => x.RecordTemplate)
+                .WithMany(x => x.PeriodicRecordDefinitions)
+                .HasForeignKey(x => x.RecordTemplateId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
