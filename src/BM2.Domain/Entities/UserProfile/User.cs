@@ -33,5 +33,7 @@ namespace BM2.Domain.Entities.UserProfile
         public ICollection<RecordTemplate> RecordTemplates { get; set; } = [];
         public ICollection<PeriodicRecordDefinition> PeriodicRecordDefinitions { get; set; } = [];
         public ICollection<RecordTagRelation> RecordTagRelations { get; set; } = [];
+        public ICollection<WalletCategoryRelation> WalletCategoryRelations { get; set; } = [];
+        public ICollection<WalletTagRelation> WalletTagRelations { get; set; } = [];
     }
 }

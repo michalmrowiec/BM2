@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BM2.Infrastructure.Migrations
 {
     [DbContext(typeof(BM2DbContext))]
-    [Migration("20250215140551_Initial")]
+    [Migration("20250215215244_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -574,9 +574,6 @@ namespace BM2.Infrastructure.Migrations
                     b.Property<Guid>("TagId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OwnedByUserId");
@@ -584,8 +581,6 @@ namespace BM2.Infrastructure.Migrations
                     b.HasIndex("RecordId");
 
                     b.HasIndex("TagId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("RecordTagRelations");
                 });
@@ -717,7 +712,7 @@ namespace BM2.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
-                        .WithMany()
+                        .WithMany("WalletCategoryRelations")
                         .HasForeignKey("OwnedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -738,7 +733,7 @@ namespace BM2.Infrastructure.Migrations
             modelBuilder.Entity("BM2.Domain.Entities.UserProfile.WalletTagRelation", b =>
                 {
                     b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
-                        .WithMany()
+                        .WithMany("WalletTagRelations")
                         .HasForeignKey("OwnedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -855,7 +850,7 @@ namespace BM2.Infrastructure.Migrations
             modelBuilder.Entity("BM2.Domain.Entities.UserRecords.RecordTagRelation", b =>
                 {
                     b.HasOne("BM2.Domain.Entities.UserProfile.User", "OwnedByUser")
-                        .WithMany()
+                        .WithMany("RecordTagRelations")
                         .HasForeignKey("OwnedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -871,10 +866,6 @@ namespace BM2.Infrastructure.Migrations
                         .HasForeignKey("TagId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("BM2.Domain.Entities.UserProfile.User", null)
-                        .WithMany("RecordTagRelations")
-                        .HasForeignKey("UserId");
 
                     b.Navigation("OwnedByUser");
 
@@ -961,6 +952,10 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Records");
 
                     b.Navigation("Tags");
+
+                    b.Navigation("WalletCategoryRelations");
+
+                    b.Navigation("WalletTagRelations");
 
                     b.Navigation("Wallets");
                 });

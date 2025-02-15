@@ -183,8 +183,7 @@ namespace BM2.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TagId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    OwnedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -201,11 +200,6 @@ namespace BM2.Infrastructure.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_RecordTagRelations_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -611,11 +605,6 @@ namespace BM2.Infrastructure.Migrations
                 name: "IX_RecordTagRelations_TagId",
                 table: "RecordTagRelations",
                 column: "TagId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RecordTagRelations_UserId",
-                table: "RecordTagRelations",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RecordTemplates_CategoryId",
