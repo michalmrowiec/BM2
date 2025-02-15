@@ -15,6 +15,8 @@ public class MappingProfile : Profile
     {
         CreateMap<Currency, CurrencyDTO>();
         
+        CreateMap<RecordStatus, RecordStatusDTO>();
+        
         CreateMap<AddUserCommand, User>();
         CreateMap<User, UserDTO>();
 

@@ -7,7 +7,7 @@ public class AccountDTO
     public string AccountName { get; set; } = null!;
     public bool IsActive { get; set; }
     public Guid DefaultCurrencyId { get; set; }
-    public Guid OwnedByUserId { get; set; }
+    //public Guid OwnedByUserId { get; set; }
     
     public CurrencyDTO? DefaultCurrency { get; set; }
 }

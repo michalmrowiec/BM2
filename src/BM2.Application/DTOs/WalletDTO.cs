@@ -6,7 +6,7 @@ public class WalletDTO
     public string WalletName { get; set; } = null!;
     public bool IsActive { get; set; }
     public Guid DefaultCurrencyId { get; set; }
-    public Guid OwnedByUserId { get; set; }
+    //public Guid OwnedByUserId { get; set; }
 
     public CurrencyDTO? DefaultCurrency { get; set; }
     public ICollection<AccountDTO> Accounts { get; set; } = [];
