@@ -19,9 +19,4 @@
       <ProjectReference Include="..\BM2.Domain\BM2.Domain.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Functions\Record\Commands\Handlers\" />
-      <Folder Include="Functions\Record\Commands\Validators\" />
-    </ItemGroup>
-
 </Project>

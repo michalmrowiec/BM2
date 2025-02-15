@@ -402,9 +402,9 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .IsRequired();
             baseRecordBuilder.Property(x => x.Name)
                 .IsRequired()
-                .HasMaxLength(150);
+                .HasMaxLength(BaseRecord.RecordNameMaxLength);
             baseRecordBuilder.Property(x => x.Description)
-                .HasMaxLength(500);
+                .HasMaxLength(BaseRecord.RecordDescriptionMaxLength);
             baseRecordBuilder.Property(x => x.Amount)
                 .IsRequired()
                 .HasDefaultValue(0)
