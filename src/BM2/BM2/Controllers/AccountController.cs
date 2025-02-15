@@ -1,7 +1,7 @@
 ﻿using BM2.Application.DTOs;
 using BM2.Application.Functions;
-using BM2.Application.Functions.Accounts.Commands.Requests;
-using BM2.Application.Functions.Accounts.Queries.Requests;
+using BM2.Application.Functions.Account.Commands.Requests;
+using BM2.Application.Functions.Account.Queries.Requests;
 using BM2.Controllers.Utils;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
