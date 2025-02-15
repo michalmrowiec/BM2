@@ -55,6 +55,7 @@ public static class InfrastructureInstallation
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+        services.AddScoped<IRecordStatusRepository, RecordStatusRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuditLoginRepository, AuditLoginRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
