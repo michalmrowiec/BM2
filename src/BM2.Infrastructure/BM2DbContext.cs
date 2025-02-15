@@ -299,7 +299,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Restrict);
 
             walletCategoryRelation.HasOne(x => x.OwnedByUser)
-                .WithMany()
+                .WithMany(x => x.WalletCategoryRelations)
                 .HasForeignKey(x => x.OwnedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -358,7 +358,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Restrict);
 
             walletTagRelation.HasOne(x => x.OwnedByUser)
-                .WithMany()
+                .WithMany(x => x.WalletTagRelations)
                 .HasForeignKey(x => x.OwnedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -379,12 +379,14 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .WithMany()
                 .HasForeignKey(x => x.RecordId)
                 .OnDelete(DeleteBehavior.Cascade);
+            
             recordTagRelationBuilder.HasOne(x => x.Tag)
                 .WithMany()
                 .HasForeignKey(x => x.TagId)
                 .OnDelete(DeleteBehavior.Restrict);
+            
             recordTagRelationBuilder.HasOne(x => x.OwnedByUser)
-                .WithMany()
+                .WithMany(x => x.RecordTagRelations)
                 .HasForeignKey(x => x.OwnedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
