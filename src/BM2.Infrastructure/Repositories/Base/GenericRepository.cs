@@ -61,7 +61,7 @@ public class GenericRepository<T>(
         return await _dbSet.FirstOrDefaultAsync(x => x.Id == id);
     }
 
-    public async Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes)
+    public async Task<T?> GetByIdAsync(Guid id, params Func<IQueryable<T>, IQueryable<T>>[] includes)
     {
         IQueryable<T> query = _dbSet.Where(x => x.Id == id);
 
@@ -105,6 +105,16 @@ public class GenericRepository<T>(
         
         return query;
     }
+    
+    private IQueryable<T> ApplyIncludes(IQueryable<T> query, params Func<IQueryable<T>, IQueryable<T>>[] includes)
+    {
+        foreach (var include in includes)
+        {
+            query = include(query);
+        }
+        return query;
+    }
+
 
     private IQueryable<T> SoftDeleteFilter(IQueryable<T> query)
     {
