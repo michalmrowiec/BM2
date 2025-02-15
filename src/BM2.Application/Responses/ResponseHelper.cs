@@ -1,6 +1,6 @@
-﻿using BM2.Application.Exceptions;
-using BM2.Domain.Entities;
+﻿using BM2.Domain.Entities;
 using BM2.Domain.Entities.Interfaces;
+using BM2.Domain.Exceptions;
 using MediatR;
 
 namespace BM2.Application.Responses;

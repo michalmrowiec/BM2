@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using BM2.Application.Exceptions;
+using BM2.Domain.Exceptions;
 using BM2.Middleware.Utils;
 
 namespace BM2.Middleware

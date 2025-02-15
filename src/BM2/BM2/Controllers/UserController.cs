@@ -1,6 +1,5 @@
 ﻿using BM2.Application.DTOs;
-using BM2.Application.Functions.Users.Commands.AddUserCommand;
-using BM2.Application.Functions.Users.Commands.LoginUserCommand;
+using BM2.Application.Functions.Users.Commands.Requests;
 using BM2.Controllers.Utils;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
