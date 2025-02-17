@@ -1,6 +1,6 @@
-﻿using BM2.Application.DTOs;
-using BM2.Application.Functions.RecordStatus.Queries.Requests;
-using BM2.Controllers.Utils;
+﻿using BM2.Controllers.Utils;
+using BM2.Shared.DTOs;
+using BM2.Shared.Requests.Queries.RecordStatus;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

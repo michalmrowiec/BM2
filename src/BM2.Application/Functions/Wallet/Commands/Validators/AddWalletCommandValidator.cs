@@ -1,6 +1,6 @@
 ﻿using BM2.Application.Contracts.Persistence.Base;
-using BM2.Application.Functions.Wallet.Commands.Requests;
 using BM2.Application.Responses;
+using BM2.Shared.Requests.Commands.Wallet;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 

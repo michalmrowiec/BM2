@@ -1,7 +1,7 @@
 ﻿@page "/register"
-@using Newtonsoft.Json
 @using System.Text
-@using BM2.Client.VMs
+@using BM2.Shared.Requests.Commands.User
+@using Newtonsoft.Json
 @inject ISnackbar Snackbar
 @inject HttpClient HttpClient
 @inject IAlertService AlertService
@@ -62,14 +62,14 @@
 
 @code {
     private MudForm _form;
-    private UserRegisterVM _registerModel = new();
+    private AddUserCommand _registerModel = new();
     private bool _showForm = true;
 
     private async Task RegisterUser()
     {
         var postJson = new StringContent(JsonConvert.SerializeObject(_registerModel), Encoding.UTF8, "application/json");
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, @"api/v1/User/register");
+        using var request = new HttpRequestMessage(HttpMethod.Post, @"api/v1/users/register");
         request.Content = postJson;
 
         var response = await HttpClient.SendAsync(request);

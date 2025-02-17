@@ -1,7 +1,7 @@
 ﻿using BM2.Application.Contracts.Persistence.Base;
-using BM2.Application.Functions.Record.Commands.Requests;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserRecords;
+using BM2.Shared.Requests.Commands.Record;
 using FluentValidation;
 
 namespace BM2.Application.Functions.Record.Commands.Validators;

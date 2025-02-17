@@ -1,0 +1,7 @@
+﻿namespace BM2.Shared.DTOs;
+
+public class CategoryDTO
+{
+    public Guid Id { get; set; }
+    public string CategoryName { get; set; }
+}

@@ -115,6 +115,8 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.MapControllers();
 
+app.MapBlazorHub();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
