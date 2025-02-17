@@ -1,0 +1,13 @@
+﻿@page "/wallets"
+@using BM2.Application.DTOs
+@rendermode InteractiveAuto
+
+<h3>Wallet</h3>
+
+<MudDataGrid T="WalletDTO" Items="@WalletList">
+    <Columns>
+        <PropertyColumn Property="x => x.WalletName" />
+        <PropertyColumn Property="x => x.IsActive" />
+        <PropertyColumn Property="x => x.DefaultCurrencyId" />
+    </Columns>
+</MudDataGrid>

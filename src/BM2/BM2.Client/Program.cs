@@ -1,3 +1,4 @@
+using BM2.Client.Services.API;
 using BM2.Client.Services.Auth;
 using BM2.Client.Services.LocalStorage;
 using BM2.Client.Services.Notification;
@@ -13,8 +14,9 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(@"https:
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddAuthorizationCore();
-builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddSingleton<IAlertService, AlertService>();
+builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+builder.Services.AddTransient<IApiOperator, ApiOperator>();
 
 builder.Services.AddMudServices();
 builder.Services.AddMudBlazorSnackbar(config =>

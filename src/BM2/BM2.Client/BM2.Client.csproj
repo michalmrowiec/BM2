@@ -26,4 +26,8 @@
     <Folder Include="Components\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\BM2.Application\BM2.Application.csproj" />
+  </ItemGroup>
+
 </Project>
