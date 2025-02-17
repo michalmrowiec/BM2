@@ -1,4 +1,5 @@
 using BM2.Application;
+using BM2.Client.Services.API;
 using BM2.Client.Services.Auth;
 using BM2.Client.Services.LocalStorage;
 using BM2.Client.Services.Notification;
@@ -14,11 +15,24 @@ using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
-builder.Services.AddAuthorizationCore();
-builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+//builder.Services.AddAuthorizationCore();
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSingleton<IAlertService, AlertService>();
+builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+builder.Services.AddTransient<IApiOperator, ApiOperator>();
 builder.Services.AddHttpClient();
 
 builder.Services.AddMudServices();
@@ -106,5 +120,7 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BM2.Client._Imports).Assembly);
+
+app.UseCors("AllowAll");
 
 app.Run();
