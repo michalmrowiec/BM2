@@ -1,5 +1,5 @@
 ﻿using BM2.Application.DTOs;
-using BM2.Application.Functions;
+using BM2.Application.Functions.Account.Queries.Requests;
 using BM2.Application.Functions.Wallet.Commands.Requests;
 using BM2.Application.Functions.Wallet.Queries.Requests;
 using BM2.Controllers.Utils;
@@ -12,7 +12,7 @@ namespace BM2.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/v1/[controller]")]
-public class WalletController(
+public class WalletsController(
     IMediator mediator,
     IUserContextService userContextService)
     : ControllerBase
@@ -35,10 +35,18 @@ public class WalletController(
         return result.HandleOkResult(this);
     }
 
-    [HttpGet("all")]
+    [HttpGet]
     public async Task<ActionResult<IList<WalletDTO>>> GetAllWallets()
     {
         var result = await mediator.Send(new GetAllWalletsForUserQuery(userContextService.GetUserId));
+
+        return result.HandleOkResult(this);
+    }
+    
+    [HttpGet("{walletId:guid}/accounts")]
+    public async Task<ActionResult<IList<WalletDTO>>> GetAccountsForWallet([FromRoute] Guid walletId)
+    {
+        var result = await mediator.Send(new GetAccountsForWalletByIdQuery(walletId, userContextService.GetUserId));
 
         return result.HandleOkResult(this);
     }
