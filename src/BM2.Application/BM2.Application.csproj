@@ -17,6 +17,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BM2.Domain\BM2.Domain.csproj" />
+      <ProjectReference Include="..\BM2.Shared\BM2.Shared.csproj" />
     </ItemGroup>
 
 </Project>

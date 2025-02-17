@@ -1,6 +1,6 @@
 ﻿using BM2.Application.Contracts.Persistence.Base;
-using BM2.Application.Functions.Category.Commands.Requests;
 using BM2.Application.Responses;
+using BM2.Shared.Requests.Commands.Category;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 

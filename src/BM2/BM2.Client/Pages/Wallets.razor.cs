@@ -1,5 +1,5 @@
-﻿using BM2.Application.DTOs;
-using BM2.Client.Services.API;
+﻿using BM2.Client.Services.API;
+using BM2.Shared.DTOs;
 using Microsoft.AspNetCore.Components;
 using Newtonsoft.Json;
 
@@ -12,7 +12,7 @@ public partial class Wallets(IApiOperator apiOperator) : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await ApiOperator.Get("api/v1/wallet/all");
+        var response = await ApiOperator.Get("api/v1/wallets");
         var r = await response.Content.ReadAsStringAsync();
         WalletList = JsonConvert.DeserializeObject<IList<WalletDTO>>(r)??[];
         StateHasChanged();

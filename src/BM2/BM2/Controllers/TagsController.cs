@@ -1,6 +1,6 @@
-﻿using BM2.Application.DTOs;
-using BM2.Application.Functions.Tag.Commands.Requests;
-using BM2.Controllers.Utils;
+﻿using BM2.Controllers.Utils;
+using BM2.Shared.DTOs;
+using BM2.Shared.Requests.Commands.Tag;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

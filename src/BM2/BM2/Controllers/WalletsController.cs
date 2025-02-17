@@ -1,8 +1,8 @@
-﻿using BM2.Application.DTOs;
-using BM2.Application.Functions.Account.Queries.Requests;
-using BM2.Application.Functions.Wallet.Commands.Requests;
-using BM2.Application.Functions.Wallet.Queries.Requests;
-using BM2.Controllers.Utils;
+﻿using BM2.Controllers.Utils;
+using BM2.Shared.DTOs;
+using BM2.Shared.Requests.Commands.Wallet;
+using BM2.Shared.Requests.Queries.Account;
+using BM2.Shared.Requests.Wallet;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +42,7 @@ public class WalletsController(
 
         return result.HandleOkResult(this);
     }
-    
+
     [HttpGet("{walletId:guid}/accounts")]
     public async Task<ActionResult<IList<WalletDTO>>> GetAccountsForWallet([FromRoute] Guid walletId)
     {

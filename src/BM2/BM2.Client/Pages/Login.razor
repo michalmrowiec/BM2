@@ -1,7 +1,8 @@
 ﻿@page "/login"
-@using Newtonsoft.Json
 @using System.Text
-@using BM2.Client.VMs
+@using BM2.Client.Models
+@using BM2.Shared.Requests.Commands.User
+@using Newtonsoft.Json
 @inject ISnackbar Snackbar
 @inject HttpClient HttpClient
 @inject IAlertService AlertService
@@ -44,13 +45,13 @@
 
 @code {
     private MudForm _form;
-    private UserLoginVM _loginModel = new UserLoginVM();
+    private LoginUserCommand _loginModel = new();
 
     private async Task LogIn()
     {
         var postJson = new StringContent(JsonConvert.SerializeObject(_loginModel), Encoding.UTF8, "application/json");
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, @"api/v1/User/login");
+        using var request = new HttpRequestMessage(HttpMethod.Post, @"api/v1/users/login");
         request.Content = postJson;
 
         var response = await HttpClient.SendAsync(request);
@@ -58,8 +59,8 @@
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            var logedUser = JsonConvert.DeserializeObject<LogedUser>(content);
-            await AuthService.Login(logedUser);
+            var loggedUser = JsonConvert.DeserializeObject<LoggedUser>(content);
+            await AuthService.Login(loggedUser);
             Navigation.NavigateTo("/", true);
         }
         else
