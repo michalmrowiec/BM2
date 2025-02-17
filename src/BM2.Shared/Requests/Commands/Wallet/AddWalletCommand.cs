@@ -6,8 +6,7 @@ namespace BM2.Shared.Requests.Commands.Wallet;
 public class AddWalletCommand : IBaseRequest<WalletDTO>
 {
     public string WalletName { get; set; } = null!;
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
     public Guid DefaultCurrencyId { get; set; }
-    [JsonIgnore]
-    public Guid OwnedByUserId { get; set; }
+    [JsonIgnore] public Guid OwnedByUserId { get; set; }
 }
