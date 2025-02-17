@@ -4,6 +4,12 @@
 
 <h3>Wallet</h3>
 
+<MudButton @onclick="OpenZoneDialogAsync"
+           Variant="Variant.Filled"
+           Color="Color.Primary">
+    New wallet
+</MudButton>
+
 <MudDataGrid T="WalletDTO" Items="@WalletList">
     <Columns>
         <PropertyColumn Property="x => x.WalletName" />

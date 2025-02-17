@@ -8,6 +8,8 @@ namespace BM2.Client.Services.API;
 public interface IApiOperator
 {
     Task<HttpResponseMessage> Get(string uri, Dictionary<string, string>? queryParams = null);
+    Task<HttpResponseMessage> Create(string uri, object item);
+
 }
 
 public class ApiOperator(
@@ -49,5 +51,13 @@ public class ApiOperator(
             HttpMethod.Get,
             uri: uri,
             queryParams: queryParams);
+    }
+    
+    public async Task<HttpResponseMessage> Create(string uri, object item)
+    {
+        return await BaseRequestWithAuth(
+            HttpMethod.Post,
+            uri: uri,
+            item: item);
     }
 }
