@@ -15,7 +15,7 @@ public class GetAccountsForWalletByIdQueryHandler(IMapper mapper, IUnitOfWork un
         CancellationToken cancellationToken)
     {
         var wallet = await unitOfWork.WalletRepository.GetByIdAsync(request.WalletId,
-            q => q.Include(w => w.Accounts));
+            q => q.Include(w => w.Accounts).ThenInclude(a => a.DefaultCurrency));
 
         wallet.ThrowExceptionIfNull();
         wallet!.CheckPermission(request.UserId);

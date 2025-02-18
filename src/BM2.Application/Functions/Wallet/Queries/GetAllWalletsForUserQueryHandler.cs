@@ -16,7 +16,8 @@ public class GetAllWalletsForUserQueryHandler(IMapper mapper, IUnitOfWork unitOf
     {
         var wallets =
             await unitOfWork.WalletRepository.GetAllForUserAsync(request.UserId,
-                q => q.Include(w => w.DefaultCurrency));
+                q => q.Include(w => w.DefaultCurrency),
+                q => q.Include(w => w.Accounts));
 
         wallets.ThrowExceptionIfNull();
         wallets!.CheckPermission(request.UserId);

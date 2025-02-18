@@ -1,5 +1,6 @@
 ﻿@using BM2.Domain.Entities.UserProfile
 @using BM2.Shared.DTOs
+@using BM2.Shared.Requests.Commands.Account
 @using Newtonsoft.Json
 @using BM2.Shared.Requests.Commands.Wallet
 @inject ISnackbar Snackbar
@@ -14,14 +15,20 @@
                  @ref="@_form"
                  ValidationDelay="0">
             <MudCardContent>
+                <MudAutocomplete T="WalletDTO"
+                                 SearchFunc="WalletSearch"
+                                 Label="Wallet"
+                                 ToStringFunc="@((i) => WalletDisplay(i))"
+                                 Clearable MaxItems="100"/>
+                
                 <MudAutocomplete T="CurrencyDTO"
                                  SearchFunc="Search"
-                                 Label="Wallet currency"
-                                 ToStringFunc="@((i) => ItemDisplay(i))"
+                                 Label="Account currency"
+                                 ToStringFunc="@((i) => CurrencyDisplay(i))"
                                  Clearable MaxItems="1000"/>
 
-                <MudTextField @bind-Value="_model.WalletName"
-                              For="@(() => _model.WalletName)"
+                <MudTextField @bind-Value="_model.AccountName"
+                              For="@(() => _model.AccountName)"
                               Immediate="true"
                               Label="Name"
                               MaxLength="@Wallet.WalletNameMaxLength"
@@ -37,8 +44,9 @@
     [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
     private MudForm _form;
-    private AddWalletCommand _model = new();
+    private AddAccountCommand _model = new();
     private IEnumerable<CurrencyDTO> _currencies = [];
+    private IEnumerable<WalletDTO> _wallets = [];
 
     private void Cancel() => MudDialog.Cancel();
 
@@ -48,13 +56,13 @@
 
         if (_form.IsValid)
         {
-            var response = await ApiOperator.Create(@"api/v1/wallets", _model);
+            var response = await ApiOperator.Create(@"api/v1/accounts", _model);
             if (response.StatusCode == System.Net.HttpStatusCode.Created)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var newWallet = JsonConvert.DeserializeObject<WalletDTO>(content) ?? new();
+                var newItem = JsonConvert.DeserializeObject<AccountDTO>(content) ?? new();
 
-                Snackbar.Add(new MarkupString($"Created<b>{newWallet.WalletName}</b>"), Severity.Success);
+                Snackbar.Add(new MarkupString($"Created<b>{newItem.AccountName}</b>"), Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
                 FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
             }
@@ -71,6 +79,12 @@
         var r = await response.Content.ReadAsStringAsync();
         var crs = JsonConvert.DeserializeObject<List<CurrencyDTO>>(r) ?? new List<CurrencyDTO>();
         _currencies = crs.OrderBy(x => x.Name);
+        
+        var response2 = await ApiOperator.Get(@"api/v1/wallets");
+        var r2 = await response2.Content.ReadAsStringAsync();
+        var crs2 = JsonConvert.DeserializeObject<List<WalletDTO>>(r2) ?? new List<WalletDTO>();
+        _wallets = crs2.OrderBy(x => x.WalletName);
+        
         StateHasChanged();
     }
 
@@ -82,14 +96,31 @@
         return _currencies.Where(x => x.Name.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.Symbol.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.IsoCode.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 
-    private string ItemDisplay(CurrencyDTO? currencyId)
+    private string CurrencyDisplay(CurrencyDTO? currencyDto)
     {
-        if (currencyId == null)
+        if (currencyDto == null)
             return string.Empty;
 
-        _model.DefaultCurrencyId = currencyId.Id;
+        _model.DefaultCurrencyId = currencyDto.Id;
 
-        return $"[{currencyId.IsoCode}] {currencyId.Name}";
+        return $"[{currencyDto.IsoCode}] {currencyDto.Name}";
     }
+    
+    private async Task<IEnumerable<WalletDTO>> WalletSearch(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return _wallets;
 
+        return _wallets.Where(x => x.WalletName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+    
+    private string WalletDisplay(WalletDTO? walletDto)
+    {
+        if (walletDto == null)
+            return string.Empty;
+
+        _model.WalletId = walletDto.Id;
+
+        return $"{walletDto.WalletName} [{walletDto.DefaultCurrency?.IsoCode}]";
+    }
 }

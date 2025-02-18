@@ -1,18 +1,18 @@
-﻿@page "/wallets"
+﻿@page "/accounts"
 @using BM2.Shared.DTOs
 @rendermode InteractiveAuto
 
-<h3>Wallets</h3>
+<h3>Accounts</h3>
 
-<MudButton @onclick="OpenAddWalletDialogAsync"
+<MudButton @onclick="OpenAddAccountDialogAsync"
            Variant="Variant.Filled"
            Color="Color.Primary">
-    Add wallet
+    Add account
 </MudButton>
 
-<MudDataGrid T="WalletDTO" Items="@WalletList">
+<MudDataGrid T="AccountDTO" Items="@AccountList">
     <Columns>
-        <PropertyColumn Title="Name" Property="x => x.WalletName" />
+        <PropertyColumn Title="Name" Property="x => x.AccountName" />
         <PropertyColumn Title="Is active" Property="x => x.IsActive"  />
         <PropertyColumn Title="Currency" Property="x => x.DefaultCurrency" SortBy="x => x.DefaultCurrency!.Name">
             <CellTemplate>

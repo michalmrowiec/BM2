@@ -7,7 +7,7 @@ public class AddAccountCommand : IBaseRequest<AccountDTO>
 {
     public Guid WalletId { get; set; }
     public string AccountName { get; set; } = null!;
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
     public Guid DefaultCurrencyId { get; set; }
     [JsonIgnore]
     public Guid OwnedByUserId { get; set; }
