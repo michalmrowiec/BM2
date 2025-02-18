@@ -1,5 +1,6 @@
 ﻿using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Responses;
+using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Category;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ public class AddCategoryCommandValidator : AbstractValidator<AddCategoryCommand>
     {
         RuleFor(x => x.CategoryName)
             .NotEmpty()
-            .MaximumLength(Domain.Entities.UserProfile.Category.CategoryNameMaxLength);
+            .MaximumLength(ModelsRequirements.CategoryNameMaxLength);
 
         RuleFor(x => x)
             .CustomAsync(async (request, context, cancellationToken) =>

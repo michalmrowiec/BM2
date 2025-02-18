@@ -3,6 +3,7 @@ using BM2.Domain.Entities.Interfaces;
 using BM2.Domain.Entities.System;
 using BM2.Domain.Entities.UserProfile;
 using BM2.Domain.Entities.UserRecords;
+using BM2.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -188,7 +189,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
 
             walletBuilder.Property(x => x.WalletName)
                 .IsRequired()
-                .HasMaxLength(Wallet.WalletNameMaxLength);
+                .HasMaxLength(ModelsRequirements.WalletNameMaxLength);
 
             walletBuilder.Property(x => x.IsActive)
                 .IsRequired()
@@ -227,7 +228,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .IsRequired();
             accountBuilder.Property(x => x.AccountName)
                 .IsRequired()
-                .HasMaxLength(Account.AccountNameMaxLength);
+                .HasMaxLength(ModelsRequirements.AccountNameMaxLength);
             accountBuilder.Property(x => x.IsActive)
                 .IsRequired()
                 .HasDefaultValue(true);
@@ -313,7 +314,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
 
             tagBuilder.Property(x => x.TagName)
                 .IsRequired()
-                .HasMaxLength(Tag.TagNameMaxLength);
+                .HasMaxLength(ModelsRequirements.TagNameMaxLength);
 
             ConfigureOwnedByUserProperty(tagBuilder);
             ConfigureEntityAuditProperties(tagBuilder);

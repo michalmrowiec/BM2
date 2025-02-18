@@ -1,5 +1,6 @@
 ﻿using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Responses;
+using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Tag;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ public class AddTagCommandValidator : AbstractValidator<AddTagCommand>
     {
         RuleFor(x => x.TagName)
             .NotEmpty()
-            .MaximumLength(Domain.Entities.UserProfile.Tag.TagNameMaxLength);
+            .MaximumLength(ModelsRequirements.TagNameMaxLength);
 
         RuleFor(x => x)
             .CustomAsync(async (request, context, cancellationToken) =>

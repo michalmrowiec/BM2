@@ -1,5 +1,6 @@
 ﻿using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Responses;
+using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Account;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ public class AddAccountCommandValidator : AbstractValidator<AddAccountCommand>
     {
         RuleFor(x => x.AccountName)
             .NotEmpty()
-            .MaximumLength(Domain.Entities.UserProfile.Account.AccountNameMaxLength);
+            .MaximumLength(ModelsRequirements.AccountNameMaxLength);
 
         RuleFor(x => x)
             .CustomAsync(async (request, context, cancellationToken) =>
