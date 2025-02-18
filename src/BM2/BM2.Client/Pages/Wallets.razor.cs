@@ -11,10 +11,9 @@ public partial class Wallets(IApiOperator apiOperator, IDialogService dialogServ
 {
     [Inject] private IApiOperator ApiOperator { get; set; } = apiOperator;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
-
     private IList<WalletDTO> WalletList { get; set; } = new List<WalletDTO>();
 
-    async Task GetWallets()
+    private async Task GetWallets()
     {
         var response = await ApiOperator.Get("api/v1/wallets");
         var r = await response.Content.ReadAsStringAsync();
@@ -27,7 +26,7 @@ public partial class Wallets(IApiOperator apiOperator, IDialogService dialogServ
         await GetWallets();
     }
 
-    private Task OpenZoneDialogAsync()
+    private Task OpenAddWalletDialogAsync()
     {
         var options = new DialogOptions
         {
@@ -45,4 +44,5 @@ public partial class Wallets(IApiOperator apiOperator, IDialogService dialogServ
         };
         return DialogService.ShowAsync<AddWalletDialogForm>(null, parameters, options);
     }
+    
 }

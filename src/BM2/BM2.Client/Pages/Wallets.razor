@@ -2,12 +2,12 @@
 @using BM2.Shared.DTOs
 @rendermode InteractiveAuto
 
-<h3>Wallet</h3>
+<h3>Wallets</h3>
 
-<MudButton @onclick="OpenZoneDialogAsync"
+<MudButton @onclick="OpenAddWalletDialogAsync"
            Variant="Variant.Filled"
            Color="Color.Primary">
-    New wallet
+    Add wallet
 </MudButton>
 
 <MudDataGrid T="WalletDTO" Items="@WalletList">
