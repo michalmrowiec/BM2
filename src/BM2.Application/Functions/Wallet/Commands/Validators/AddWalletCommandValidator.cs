@@ -1,5 +1,6 @@
 ﻿using BM2.Application.Contracts.Persistence.Base;
 using BM2.Application.Responses;
+using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Wallet;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ public class AddWalletCommandValidator : AbstractValidator<AddWalletCommand>
     {
         RuleFor(x => x.WalletName)
             .NotEmpty()
-            .MaximumLength(Domain.Entities.UserProfile.Wallet.WalletNameMaxLength);
+            .MaximumLength(ModelsRequirements.WalletNameMaxLength);
 
         RuleFor(x => x)
             .CustomAsync(async (request, context, cancellationToken) =>

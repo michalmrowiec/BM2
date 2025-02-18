@@ -1,13 +1,12 @@
 ﻿@using System.Net
-@using BM2.Domain.Entities.UserProfile
 @using BM2.Shared.DTOs
-@using BM2.Shared.Requests.Commands.Wallet
+@using BM2.Shared.Requests.Commands.Category
 @using Newtonsoft.Json
 @inject ISnackbar Snackbar
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
 
-<BaseDialog DialogTitle="New wallet" MudDialog="@MudDialog"
+<BaseDialog DialogTitle="New category" MudDialog="@MudDialog"
             FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
             FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
     <BodyContent>
@@ -15,17 +14,12 @@
                  @ref="@_form"
                  ValidationDelay="0">
             <MudCardContent>
-                <CurrencyAutocomplete Label="Wallet default currency"
-                                      SelectedCurrency="@((c) => _model.DefaultCurrencyId = c.Id)"/>
-
-                <MudTextField @bind-Value="_model.WalletName"
-                              For="@(() => _model.WalletName)"
+                <MudTextField @bind-Value="_model.CategoryName"
+                              For="@(() => _model.CategoryName)"
                               Immediate="true"
                               Label="Name"
-                              MaxLength="@ModelsRequirements.WalletNameMaxLength"
+                              MaxLength="@ModelsRequirements.CategoryNameMaxLength"
                               Required/>
-
-                <MudCheckBox T="bool" Label="Is active" @bind-Value="_model.IsActive"/>
             </MudCardContent>
         </MudForm>
     </BodyContent>
@@ -35,7 +29,7 @@
     [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
     private MudForm _form;
-    private AddWalletCommand _model = new();
+    private AddCategoryCommand _model = new();
 
     private void Cancel() => MudDialog.Cancel();
 
@@ -45,13 +39,13 @@
 
         if (_form.IsValid)
         {
-            var response = await ApiClient.Create(@"api/v1/wallets", _model);
+            var response = await ApiClient.Create(@"api/v1/categories", _model);
             if (response.StatusCode == HttpStatusCode.Created)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var newWallet = JsonConvert.DeserializeObject<WalletDTO>(content) ?? new();
+                var addedItem = JsonConvert.DeserializeObject<CategoryDTO>(content) ?? new();
 
-                Snackbar.Add(new MarkupString($"Created<b>{newWallet.WalletName}</b>"), Severity.Success);
+                Snackbar.Add(new MarkupString($"Created<b>{addedItem.CategoryName}</b>"), Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
                 FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
             }

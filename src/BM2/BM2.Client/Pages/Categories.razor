@@ -1,0 +1,16 @@
+﻿@page "/categories"
+@using BM2.Shared.DTOs
+
+<h3>Categories</h3>
+
+<MudButton @onclick="OpenAddCategoryDialogAsync"
+           Variant="Variant.Filled"
+           Color="Color.Primary">
+    Add category
+</MudButton>
+
+<MudDataGrid T="CategoryDTO" Items="@CategoryList">
+    <Columns>
+        <PropertyColumn Title="Name" Property="x => x.CategoryName" />
+    </Columns>
+</MudDataGrid>

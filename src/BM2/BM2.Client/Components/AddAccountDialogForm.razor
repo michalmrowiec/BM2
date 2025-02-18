@@ -1,5 +1,6 @@
 ﻿@using BM2.Domain.Entities.UserProfile
 @using BM2.Shared.DTOs
+
 @using BM2.Shared.Requests.Commands.Account
 @using Newtonsoft.Json
 @using BM2.Shared.Requests.Commands.Wallet
@@ -30,7 +31,7 @@
                               For="@(() => _model.AccountName)"
                               Immediate="true"
                               Label="Name"
-                              MaxLength="@Wallet.WalletNameMaxLength"
+                              MaxLength="@ModelsRequirements.AccountNameMaxLength"
                               Required/>
 
                 <MudCheckBox T="bool" Label="Is active" @bind-Value="_model.IsActive"/>
