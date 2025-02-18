@@ -51,7 +51,7 @@
                 var content = await response.Content.ReadAsStringAsync();
                 var newWallet = JsonConvert.DeserializeObject<WalletDTO>(content) ?? new();
 
-                Snackbar.Add(new MarkupString($"Created<b>{newWallet.WalletName}</b>"), Severity.Success);
+                Snackbar.Add(new MarkupString($"Created <b>{newWallet.WalletName}</b>"), Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
                 FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
             }
