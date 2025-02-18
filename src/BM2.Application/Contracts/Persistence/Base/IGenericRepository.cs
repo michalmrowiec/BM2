@@ -9,7 +9,7 @@ public interface IGenericRepository<T>
     Task<T> Update(T entity);
     Task Delete(T entity);
     Task<IReadOnlyList<T>> GetAllAsync();
-    Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Expression<Func<T, object>>[] includes);
+    Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Func<IQueryable<T>, IQueryable<T>>[] includes);
     Task<T?> GetByIdAsync(Guid id);
     Task<T?> GetByIdAsync(Guid id, params Func<IQueryable<T>, IQueryable<T>>[] includes);
     Task<IReadOnlyList<T>> GetByIdsAsync(IList<Guid> ids);

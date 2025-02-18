@@ -12,8 +12,12 @@
 
 <MudDataGrid T="WalletDTO" Items="@WalletList">
     <Columns>
-        <PropertyColumn Property="x => x.WalletName" />
-        <PropertyColumn Property="x => x.IsActive" />
-        <PropertyColumn Property="x => x.DefaultCurrencyId" />
+        <PropertyColumn Title="Name" Property="x => x.WalletName" />
+        <PropertyColumn Title="Is active" Property="x => x.IsActive"  />
+        <PropertyColumn Title="Currency" Property="x => x.DefaultCurrency" SortBy="x => x.DefaultCurrency!.Name">
+            <CellTemplate>
+                @string.Concat($"[{context.Item.DefaultCurrency?.IsoCode}] {context.Item.DefaultCurrency?.Name}")
+            </CellTemplate>
+        </PropertyColumn>
     </Columns>
 </MudDataGrid>

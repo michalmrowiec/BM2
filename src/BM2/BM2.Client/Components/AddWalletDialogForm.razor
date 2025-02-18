@@ -6,11 +6,10 @@
 @inject IAlertService AlertService
 @inject IApiOperator ApiOperator
 
-<MudDialog>
-    <TitleContent>
-        New wallet
-    </TitleContent>
-    <DialogContent>
+<BaseDialog DialogTitle="New wallet" MudDialog="@MudDialog"
+            FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
+            FuncsOnCancel="@([EventCallback.Factory.Create(this, Cancel)])">
+    <BodyContent>
         <MudForm Model="@_model"
                  @ref="@_form"
                  ValidationDelay="0">
@@ -31,14 +30,42 @@
                 <MudCheckBox T="bool" Label="Is active" @bind-Value="_model.IsActive"/>
             </MudCardContent>
         </MudForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
-                   OnClick="@(async () => await Submit())">Add
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+    </BodyContent>
+</BaseDialog>
+
+@* <MudDialog> *@
+@*     <TitleContent> *@
+@*         New wallet *@
+@*     </TitleContent> *@
+@*     <DialogContent> *@
+@*         <MudForm Model="@_model" *@
+@*                  @ref="@_form" *@
+@*                  ValidationDelay="0"> *@
+@*             <MudCardContent> *@
+@*                 <MudAutocomplete T="CurrencyDTO" *@
+@*                                  SearchFunc="Search" *@
+@*                                  Label="Wallet currency" *@
+@*                                  ToStringFunc="@((i) => ItemDisplay(i))" *@
+@*                                  Clearable MaxItems="1000"/> *@
+@* *@
+@*                 <MudTextField @bind-Value="_model.WalletName" *@
+@*                               For="@(() => _model.WalletName)" *@
+@*                               Immediate="true" *@
+@*                               Label="Name" *@
+@*                               MaxLength="@Wallet.WalletNameMaxLength" *@
+@*                               Required/> *@
+@* *@
+@*                 <MudCheckBox T="bool" Label="Is active" @bind-Value="_model.IsActive"/> *@
+@*             </MudCardContent> *@
+@*         </MudForm> *@
+@*     </DialogContent> *@
+@*     <DialogActions> *@
+@*         <MudButton OnClick="Cancel">Cancel</MudButton> *@
+@*         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" *@
+@*                    OnClick="@(async () => await Submit())">Add *@
+@*         </MudButton> *@
+@*     </DialogActions> *@
+@* </MudDialog> *@
 
 @code {
     [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
@@ -98,4 +125,5 @@
 
         return $"[{currencyId.IsoCode}] {currencyId.Name}";
     }
+
 }
