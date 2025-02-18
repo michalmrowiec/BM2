@@ -1,6 +1,6 @@
 ﻿namespace BM2.Shared.DTOs;
 
-public class AccountDTO
+public class AccountBasicDTO
 {
     public Guid Id { get; set; }
     public Guid WalletId { get; set; }
@@ -10,4 +10,10 @@ public class AccountDTO
     //public Guid OwnedByUserId { get; set; }
     
     public CurrencyDTO? DefaultCurrency { get; set; }
+    //public WalletDTO? Wallet { get; set; }
+}
+
+public class AccountDTO : AccountBasicDTO
+{
+    public WalletBasicDTO? Wallet { get; set; }
 }

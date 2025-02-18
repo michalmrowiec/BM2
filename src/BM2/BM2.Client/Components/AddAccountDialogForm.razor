@@ -16,16 +16,20 @@
                  ValidationDelay="0">
             <MudCardContent>
                 <MudAutocomplete T="WalletDTO"
+                                 @bind-Value="@_selectedWallet"
                                  SearchFunc="WalletSearch"
                                  Label="Wallet"
                                  ToStringFunc="@((i) => WalletDisplay(i))"
-                                 Clearable MaxItems="100"/>
+                                 Clearable
+                                 MaxItems="100"/>
                 
                 <MudAutocomplete T="CurrencyDTO"
+                                 @bind-Value="@_selectedCurrency"
                                  SearchFunc="Search"
                                  Label="Account currency"
                                  ToStringFunc="@((i) => CurrencyDisplay(i))"
-                                 Clearable MaxItems="1000"/>
+                                 Clearable
+                                 MaxItems="1000"/>
 
                 <MudTextField @bind-Value="_model.AccountName"
                               For="@(() => _model.AccountName)"
@@ -47,11 +51,17 @@
     private AddAccountCommand _model = new();
     private IEnumerable<CurrencyDTO> _currencies = [];
     private IEnumerable<WalletDTO> _wallets = [];
-
+    private CurrencyDTO _selectedCurrency;
+    private WalletDTO _selectedWallet;
+    
+    
     private void Cancel() => MudDialog.Cancel();
 
     private async Task Submit()
     {
+        _model.DefaultCurrencyId = _selectedCurrency.Id;
+        _model.WalletId = _selectedWallet.Id;
+        
         await _form.Validate();
 
         if (_form.IsValid)

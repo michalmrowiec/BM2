@@ -12,6 +12,7 @@
 
 <MudDataGrid T="AccountDTO" Items="@AccountList">
     <Columns>
+        <PropertyColumn Title="Wallet" Property="x => x.Wallet.WalletName" />
         <PropertyColumn Title="Name" Property="x => x.AccountName" />
         <PropertyColumn Title="Is active" Property="x => x.IsActive"  />
         <PropertyColumn Title="Currency" Property="x => x.DefaultCurrency" SortBy="x => x.DefaultCurrency!.Name">
