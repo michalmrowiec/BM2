@@ -32,7 +32,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSingleton<IAlertService, AlertService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
-builder.Services.AddTransient<IApiOperator, ApiOperator>();
+builder.Services.AddTransient<IApiClient, ApiClient>();
 builder.Services.AddHttpClient();
 
 builder.Services.AddMudServices();

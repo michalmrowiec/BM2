@@ -5,16 +5,16 @@ using Newtonsoft.Json;
 
 namespace BM2.Client.Services.API;
 
-public interface IApiOperator
+public interface IApiClient
 {
     Task<HttpResponseMessage> Get(string uri, Dictionary<string, string>? queryParams = null);
     Task<HttpResponseMessage> Create(string uri, object item);
 
 }
 
-public class ApiOperator(
+public class ApiClient(
     HttpClient httpClient,
-    IAuthService authService) : IApiOperator
+    IAuthService authService) : IApiClient
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly IAuthService _authService = authService;

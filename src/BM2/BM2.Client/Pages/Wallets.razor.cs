@@ -7,15 +7,15 @@ using Newtonsoft.Json;
 
 namespace BM2.Client.Pages;
 
-public partial class Wallets(IApiOperator apiOperator, IDialogService dialogService) : ComponentBase
+public partial class Wallets(IApiClient apiClient, IDialogService dialogService) : ComponentBase
 {
-    [Inject] private IApiOperator ApiOperator { get; set; } = apiOperator;
+    [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
     private IList<WalletDTO> WalletList { get; set; } = new List<WalletDTO>();
 
     private async Task GetWallets()
     {
-        var response = await ApiOperator.Get("api/v1/wallets");
+        var response = await ApiClient.Get("api/v1/wallets");
         var r = await response.Content.ReadAsStringAsync();
         WalletList = JsonConvert.DeserializeObject<IList<WalletDTO>>(r) ?? [];
         StateHasChanged();
