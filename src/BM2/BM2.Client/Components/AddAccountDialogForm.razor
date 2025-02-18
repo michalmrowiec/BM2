@@ -22,14 +22,9 @@
                                  ToStringFunc="@((i) => WalletDisplay(i))"
                                  Clearable
                                  MaxItems="100"/>
-                
-                <MudAutocomplete T="CurrencyDTO"
-                                 @bind-Value="@_selectedCurrency"
-                                 SearchFunc="Search"
-                                 Label="Account currency"
-                                 ToStringFunc="@((i) => CurrencyDisplay(i))"
-                                 Clearable
-                                 MaxItems="1000"/>
+
+                <CurrencyAutocomplete Label="Wallet default currency"
+                                      SelectedCurrency="@((c) => _model.DefaultCurrencyId = c.Id)"/>
 
                 <MudTextField @bind-Value="_model.AccountName"
                               For="@(() => _model.AccountName)"
@@ -49,9 +44,9 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
     private MudForm _form;
     private AddAccountCommand _model = new();
-    private IEnumerable<CurrencyDTO> _currencies = [];
+    //private IEnumerable<CurrencyDTO> _currencies = [];
     private IEnumerable<WalletDTO> _wallets = [];
-    private CurrencyDTO _selectedCurrency;
+    //private CurrencyDTO _selectedCurrency;
     private WalletDTO _selectedWallet;
     
     
@@ -59,7 +54,7 @@
 
     private async Task Submit()
     {
-        _model.DefaultCurrencyId = _selectedCurrency.Id;
+        //_model.DefaultCurrencyId = _selectedCurrency.Id;
         _model.WalletId = _selectedWallet.Id;
         
         await _form.Validate();
@@ -85,10 +80,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await ApiOperator.Get(@"api/v1/currencies");
-        var r = await response.Content.ReadAsStringAsync();
-        var crs = JsonConvert.DeserializeObject<List<CurrencyDTO>>(r) ?? new List<CurrencyDTO>();
-        _currencies = crs.OrderBy(x => x.Name);
+        // var response = await ApiOperator.Get(@"api/v1/currencies");
+        // var r = await response.Content.ReadAsStringAsync();
+        // var crs = JsonConvert.DeserializeObject<List<CurrencyDTO>>(r) ?? new List<CurrencyDTO>();
+        // _currencies = crs.OrderBy(x => x.Name);
         
         var response2 = await ApiOperator.Get(@"api/v1/wallets");
         var r2 = await response2.Content.ReadAsStringAsync();
@@ -98,23 +93,23 @@
         StateHasChanged();
     }
 
-    private async Task<IEnumerable<CurrencyDTO>> Search(string value, CancellationToken token)
-    {
-        if (string.IsNullOrEmpty(value))
-            return _currencies;
-
-        return _currencies.Where(x => x.Name.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.Symbol.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.IsoCode.Contains(value, StringComparison.InvariantCultureIgnoreCase));
-    }
-
-    private string CurrencyDisplay(CurrencyDTO? currencyDto)
-    {
-        if (currencyDto == null)
-            return string.Empty;
-
-        _model.DefaultCurrencyId = currencyDto.Id;
-
-        return $"[{currencyDto.IsoCode}] {currencyDto.Name}";
-    }
+    // private async Task<IEnumerable<CurrencyDTO>> Search(string value, CancellationToken token)
+    // {
+    //     if (string.IsNullOrEmpty(value))
+    //         return _currencies;
+    //
+    //     return _currencies.Where(x => x.Name.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.Symbol.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.IsoCode.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    // }
+    //
+    // private string CurrencyDisplay(CurrencyDTO? currencyDto)
+    // {
+    //     if (currencyDto == null)
+    //         return string.Empty;
+    //
+    //     _model.DefaultCurrencyId = currencyDto.Id;
+    //
+    //     return $"[{currencyDto.IsoCode}] {currencyDto.Name}";
+    // }
     
     private async Task<IEnumerable<WalletDTO>> WalletSearch(string value, CancellationToken token)
     {
