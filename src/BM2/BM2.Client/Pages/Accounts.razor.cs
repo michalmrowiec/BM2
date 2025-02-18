@@ -1,7 +1,6 @@
 ﻿using BM2.Client.Components;
 using BM2.Client.Services.API;
 using BM2.Shared.DTOs;
-using BM2.Shared.Requests.Commands.Account;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Newtonsoft.Json;
