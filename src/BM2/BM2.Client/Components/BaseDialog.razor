@@ -1,0 +1,34 @@
+﻿<MudDialog>
+    <TitleContent>
+        @DialogTitle
+    </TitleContent>
+    <DialogContent>
+        @BodyContent
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(async () => await Cancel())">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
+                   OnClick="@(async () => await Submit())">Add
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public string DialogTitle { get; set; } = string.Empty;
+    [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
+    [Parameter] public List<EventCallback>? FuncsOnCancel { get; set; } = new();
+    [Parameter] public RenderFragment? BodyContent { get; set; }
+
+    private async Task Cancel()
+    {
+        FuncsOnCancel?.ForEach(async x => await x.InvokeAsync());
+    }
+
+
+    private async Task Submit()
+    {
+        FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+    }
+
+}

@@ -34,19 +34,13 @@ public class GenericRepository<T>(
         throw new NotImplementedException();
     }
 
-    public async Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Expression<Func<T, object>>[] includes)
+    public async Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Func<IQueryable<T>, IQueryable<T>>[] includes)
     {
         IQueryable<T> query = _dbSet.Where(x => ((IOwnedByUser)x).OwnedByUserId == userId);
 
-        foreach (var include in includes)
-        {
-            query = query.Include(include);
-        }
+        query = ApplyIncludes(query, includes);
 
-        if (typeof(IEntityAudit).IsAssignableFrom(typeof(T)))
-        {
-            query = query.Where(x => ((IEntityAudit)x).DeletedAt == null);
-        }
+        query = SoftDeleteFilter(query);
 
         return await query.ToListAsync();
     }
@@ -100,7 +94,6 @@ public class GenericRepository<T>(
         query = ApplyIncludes(query, includes);
 
         query = SoftDeleteFilter(query);
-
 
         return await query.Where(predicate).ToListAsync();
     }
