@@ -16,7 +16,7 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>
 builder.Services.AddAuthorizationCore();
 builder.Services.AddSingleton<IAlertService, AlertService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
-builder.Services.AddTransient<IApiOperator, ApiOperator>();
+builder.Services.AddTransient<IApiClient, ApiClient>();
 
 builder.Services.AddMudServices();
 builder.Services.AddMudBlazorSnackbar(config =>

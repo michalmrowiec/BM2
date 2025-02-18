@@ -5,7 +5,7 @@
 @using Newtonsoft.Json
 @inject ISnackbar Snackbar
 @inject IAlertService AlertService
-@inject IApiOperator ApiOperator
+@inject IApiClient ApiClient
 
 <BaseDialog DialogTitle="New wallet" MudDialog="@MudDialog"
             FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
@@ -45,7 +45,7 @@
 
         if (_form.IsValid)
         {
-            var response = await ApiOperator.Create(@"api/v1/wallets", _model);
+            var response = await ApiClient.Create(@"api/v1/wallets", _model);
             if (response.StatusCode == HttpStatusCode.Created)
             {
                 var content = await response.Content.ReadAsStringAsync();

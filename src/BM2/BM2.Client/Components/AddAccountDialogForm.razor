@@ -5,7 +5,7 @@
 @using BM2.Shared.Requests.Commands.Wallet
 @inject ISnackbar Snackbar
 @inject IAlertService AlertService
-@inject IApiOperator ApiOperator
+@inject IApiClient ApiClient
 
 <BaseDialog DialogTitle="New wallet" MudDialog="@MudDialog"
             FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
@@ -44,9 +44,7 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
     private MudForm _form;
     private AddAccountCommand _model = new();
-    //private IEnumerable<CurrencyDTO> _currencies = [];
     private IEnumerable<WalletDTO> _wallets = [];
-    //private CurrencyDTO _selectedCurrency;
     private WalletDTO _selectedWallet;
     
     
@@ -54,14 +52,13 @@
 
     private async Task Submit()
     {
-        //_model.DefaultCurrencyId = _selectedCurrency.Id;
         _model.WalletId = _selectedWallet.Id;
         
         await _form.Validate();
 
         if (_form.IsValid)
         {
-            var response = await ApiOperator.Create(@"api/v1/accounts", _model);
+            var response = await ApiClient.Create(@"api/v1/accounts", _model);
             if (response.StatusCode == System.Net.HttpStatusCode.Created)
             {
                 var content = await response.Content.ReadAsStringAsync();
@@ -80,36 +77,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // var response = await ApiOperator.Get(@"api/v1/currencies");
-        // var r = await response.Content.ReadAsStringAsync();
-        // var crs = JsonConvert.DeserializeObject<List<CurrencyDTO>>(r) ?? new List<CurrencyDTO>();
-        // _currencies = crs.OrderBy(x => x.Name);
-        
-        var response2 = await ApiOperator.Get(@"api/v1/wallets");
+        var response2 = await ApiClient.Get(@"api/v1/wallets");
         var r2 = await response2.Content.ReadAsStringAsync();
         var crs2 = JsonConvert.DeserializeObject<List<WalletDTO>>(r2) ?? new List<WalletDTO>();
         _wallets = crs2.OrderBy(x => x.WalletName);
         
         StateHasChanged();
     }
-
-    // private async Task<IEnumerable<CurrencyDTO>> Search(string value, CancellationToken token)
-    // {
-    //     if (string.IsNullOrEmpty(value))
-    //         return _currencies;
-    //
-    //     return _currencies.Where(x => x.Name.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.Symbol.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.IsoCode.Contains(value, StringComparison.InvariantCultureIgnoreCase));
-    // }
-    //
-    // private string CurrencyDisplay(CurrencyDTO? currencyDto)
-    // {
-    //     if (currencyDto == null)
-    //         return string.Empty;
-    //
-    //     _model.DefaultCurrencyId = currencyDto.Id;
-    //
-    //     return $"[{currencyDto.IsoCode}] {currencyDto.Name}";
-    // }
     
     private async Task<IEnumerable<WalletDTO>> WalletSearch(string value, CancellationToken token)
     {

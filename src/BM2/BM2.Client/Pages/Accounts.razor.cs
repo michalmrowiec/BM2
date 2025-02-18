@@ -7,15 +7,15 @@ using Newtonsoft.Json;
 
 namespace BM2.Client.Pages;
 
-public partial class Accounts(IApiOperator apiOperator, IDialogService dialogService) : ComponentBase
+public partial class Accounts(IApiClient apiClient, IDialogService dialogService) : ComponentBase
 {
-    [Inject] private IApiOperator ApiOperator { get; set; } = apiOperator;
+    [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
     private IList<AccountDTO> AccountList { get; set; } = new List<AccountDTO>();
 
     private async Task GetAccounts()
     {
-        var response = await ApiOperator.Get("api/v1/accounts");
+        var response = await ApiClient.Get("api/v1/accounts");
         var r = await response.Content.ReadAsStringAsync();
         AccountList = JsonConvert.DeserializeObject<IList<AccountDTO>>(r) ?? [];
         StateHasChanged();
