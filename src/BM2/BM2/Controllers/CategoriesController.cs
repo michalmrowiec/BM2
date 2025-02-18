@@ -25,11 +25,20 @@ public class CategoriesController(
 
         return result.HandleCreatedResult(this, "");
     }
-    
+
     [HttpGet]
     public async Task<ActionResult<IList<CategoryDTO>>> GetAllCategories()
     {
         var result = await mediator.Send(new GetAllCategoriesForUserQuery(userContextService.GetUserId));
+
+        return result.HandleOkResult(this);
+    }
+
+    [HttpGet("wallet-relations")]
+    public async Task<ActionResult<IList<CategoryDTO>>> GetAllCategoriesWithWalletRelations()
+    {
+        var result =
+            await mediator.Send(new GetAllCategoriesForUserWithWalletRelationsQuery(userContextService.GetUserId));
 
         return result.HandleOkResult(this);
     }

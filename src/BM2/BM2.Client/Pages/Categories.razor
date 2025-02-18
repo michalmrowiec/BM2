@@ -14,3 +14,25 @@
         <PropertyColumn Title="Name" Property="x => x.CategoryName" />
     </Columns>
 </MudDataGrid>
+
+
+<MudDivider />
+
+<MudTable Items="CBL" Hover="true">
+    <HeaderContent>
+        <MudTh>Category Name</MudTh>
+        @foreach (var walletId in CBL?.FirstOrDefault()?.WalletRelations ?? [])
+        {
+            <MudTh>@walletId.WalletId</MudTh>
+        }
+    </HeaderContent>
+
+    <RowTemplate Context="category">
+        <MudTd>@category.CategoryName</MudTd>
+        @foreach (var relation in category.WalletRelations)
+        {
+            <MudTd>@(relation?.RelationExists == true ? "Yes" : "No")</MudTd>
+        }
+    </RowTemplate>
+</MudTable>
+
