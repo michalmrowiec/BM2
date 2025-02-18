@@ -65,7 +65,7 @@
                 var content = await response.Content.ReadAsStringAsync();
                 var newItem = JsonConvert.DeserializeObject<AccountDTO>(content) ?? new();
 
-                Snackbar.Add(new MarkupString($"Created<b>{newItem.AccountName}</b>"), Severity.Success);
+                Snackbar.Add(new MarkupString($"Created <b>{newItem.AccountName}</b>"), Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
                 FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
             }
