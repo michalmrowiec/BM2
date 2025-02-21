@@ -9,6 +9,12 @@
     Add category
 </MudButton>
 
+<MudToggleIconButton @bind-Toggled="BlockedView"
+                     Icon="@Icons.Material.Filled.LockOpen"
+                     Color="@Color.Warning"
+                     ToggledIcon="@Icons.Material.Filled.Lock"
+                     ToggledColor="@Color.Default" />
+
 <MudTable Items="CategoryWithWalletRelationList" Hover Bordered>
     <HeaderContent>
         <MudTh>Category Name</MudTh>
@@ -23,7 +29,7 @@
         @foreach (var relation in category.WalletRelations)
         {
             <MudTd>
-                <MudSelect @bind-Value="@relation.Status" Variant="Variant.Text" Dense>
+                <MudSelect @bind-Value="@relation.Status" Variant="Variant.Text" Dense Disabled="BlockedView">
                     <MudSelectItem Value="@RelationStatus.Active">Yes</MudSelectItem>
                     <MudSelectItem Value="@RelationStatus.NotExist">No</MudSelectItem>
                     <MudSelectItem Value="@RelationStatus.Inactive">Blocked</MudSelectItem>
