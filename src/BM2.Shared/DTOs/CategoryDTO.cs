@@ -17,28 +17,10 @@ public class WalletCategoryRelationDTO
     public RelationStatus Status { get; set; }
 }
 
+// TODO: Move this to the correct location
 public enum RelationStatus
 {
-    Active,
-    Inactive,
-    NotExist
+    Inactive = 0,
+    Active = 1,
+    NotExist = 2
 }
-
-// TODO
-// public class CategoryWithWalletRelationDTO2
-// {
-//     public List<WalletBasicDTO> Wallets { get; set; } = new();
-//     public List<WalletCategoryRelationDTO2> CategoWalletCategoryRelationDTO { get; set; } = new();
-// }
-//
-// public class WalletCategoryRelationDTO2
-// {
-//     public CategoryDTO Category { get; set; }
-//     public List<WalletRelationDTO> WalletRelations  { get; set; } = new();
-// }
-//
-// public class WalletRelationDTO
-// {
-//     public Guid WalletId { get; set; }
-//     public bool RelationExists { get; set; }
-// }
