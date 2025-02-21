@@ -9,21 +9,12 @@
     Add category
 </MudButton>
 
-<MudDataGrid T="CategoryDTO" Items="@CategoryList">
-    <Columns>
-        <PropertyColumn Title="Name" Property="x => x.CategoryName" />
-    </Columns>
-</MudDataGrid>
-
-
-<MudDivider />
-
-<MudTable Items="CBL" Hover="true">
+<MudTable Items="CategoryWithWalletRelationList" Hover Bordered>
     <HeaderContent>
         <MudTh>Category Name</MudTh>
-        @foreach (var walletId in CBL?.FirstOrDefault()?.WalletRelations ?? [])
+        @foreach (var wallet in WalletList)
         {
-            <MudTh>@walletId.WalletId</MudTh>
+            <MudTh>@wallet.WalletName</MudTh>
         }
     </HeaderContent>
 
@@ -31,7 +22,13 @@
         <MudTd>@category.CategoryName</MudTd>
         @foreach (var relation in category.WalletRelations)
         {
-            <MudTd>@(relation?.RelationExists == true ? "Yes" : "No")</MudTd>
+            <MudTd>
+                <MudSelect @bind-Value="@relation.Status" Variant="Variant.Text" Dense>
+                    <MudSelectItem Value="@RelationStatus.Active">Yes</MudSelectItem>
+                    <MudSelectItem Value="@RelationStatus.NotExist">No</MudSelectItem>
+                    <MudSelectItem Value="@RelationStatus.Inactive">Blocked</MudSelectItem>
+                </MudSelect>
+            </MudTd>
         }
     </RowTemplate>
 </MudTable>

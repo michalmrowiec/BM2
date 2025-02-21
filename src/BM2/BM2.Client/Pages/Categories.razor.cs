@@ -11,19 +11,19 @@ public partial class Categories(IApiClient apiClient, IDialogService dialogServi
 {
     [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
-    private IList<CategoryDTO> CategoryList { get; set; } = new List<CategoryDTO>();
-    private IList<CategoryWithWalletRelationDTO> CBL { get; set; } = new List<CategoryWithWalletRelationDTO>();
+    private IList<CategoryWithWalletRelationDTO> CategoryWithWalletRelationList { get; set; } = new List<CategoryWithWalletRelationDTO>();
+    private IList<WalletDTO> WalletList { get; set; } = new List<WalletDTO>();
 
     private async Task GetCategories()
     {
-        var response = await ApiClient.Get("api/v1/categories");
-        var responseString = await response.Content.ReadAsStringAsync();
-        CategoryList = JsonConvert.DeserializeObject<IList<CategoryDTO>>(responseString) ?? [];
-        
         var response2 = await ApiClient.Get("api/v1/categories/wallet-relations");
         var responseString2 = await response2.Content.ReadAsStringAsync();
-        CBL = JsonConvert.DeserializeObject<IList<CategoryWithWalletRelationDTO>>(responseString2) ?? [];
-        
+        CategoryWithWalletRelationList = JsonConvert.DeserializeObject<IList<CategoryWithWalletRelationDTO>>(responseString2) ?? [];
+
+        var response = await ApiClient.Get("api/v1/wallets");
+        var r = await response.Content.ReadAsStringAsync();
+        WalletList = JsonConvert.DeserializeObject<IList<WalletDTO>>(r) ?? [];
+
         StateHasChanged();
     }
 
@@ -50,5 +50,4 @@ public partial class Categories(IApiClient apiClient, IDialogService dialogServi
         };
         return DialogService.ShowAsync<AddCategoryDialogForm>(null, parameters, options);
     }
-    
 }

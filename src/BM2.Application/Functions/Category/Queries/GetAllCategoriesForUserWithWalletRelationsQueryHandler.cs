@@ -17,11 +17,15 @@ public class GetAllCategoriesForUserWithWalletRelationsQueryHandler(IUnitOfWork 
         CancellationToken cancellationToken)
     {
         var categories = await unitOfWork.CategoryRepository.GetAllForUserAsync(request.UserId);
-        var wallets =
-            await unitOfWork.WalletRepository.GetAllForUserAsync(request.UserId, q => q.Include(w => w.Categories));
+        var walletCategoryRelations =
+            await unitOfWork.WalletCategoryRelationRepository.GetAllForUserAsync(request.UserId);
+        var wallets = await unitOfWork.WalletRepository.GetAllForUserAsync(request.UserId);
 
         categories.ThrowExceptionIfNull();
         categories!.CheckPermission(request.UserId);
+
+        walletCategoryRelations.ThrowExceptionIfNull();
+        walletCategoryRelations!.CheckPermission(request.UserId);
 
         wallets.ThrowExceptionIfNull();
         wallets!.CheckPermission(request.UserId);
@@ -39,13 +43,59 @@ public class GetAllCategoriesForUserWithWalletRelationsQueryHandler(IUnitOfWork 
 
             foreach (var wallet in wallets)
             {
-                c.WalletRelations.Add(
-                    new()
-                        { WalletId = wallet.Id, RelationExists = wallet.Categories.Contains(category) });
+                var status = RelationStatus.NotExist;
+
+                var thisRelation =
+                    walletCategoryRelations.FirstOrDefault(x => x.WalletId == wallet.Id && x.CategoryId == category.Id);
+                if (thisRelation != null)
+                    status = thisRelation.IsActive ? RelationStatus.Active : RelationStatus.Inactive;
+
+                c.WalletRelations.Add(new WalletCategoryRelationDTO()
+                {
+                    WalletId = wallet.Id,
+                    Status = status
+                });
             }
+
             categoriesDto.Add(c);
         }
 
         return request.ReturnSuccessWithObject(categoriesDto);
+
+
+        // var wallets =
+        //     await unitOfWork.WalletRepository.GetAllForUserAsync(request.UserId, q => q.Include(w => w.Categories));
+        //
+        // categories.ThrowExceptionIfNull();
+        // categories!.CheckPermission(request.UserId);
+        //
+        // wallets.ThrowExceptionIfNull();
+        // wallets!.CheckPermission(request.UserId);
+        //
+        // IList<CategoryWithWalletRelationDTO> categoriesDto = new List<CategoryWithWalletRelationDTO>();
+        //
+        // foreach (var category in categories)
+        // {
+        //     var c = new CategoryWithWalletRelationDTO()
+        //     {
+        //         Id = category.Id,
+        //         CategoryName = category.CategoryName,
+        //         WalletRelations = new List<WalletCategoryRelationDTO>()
+        //     };
+        //
+        //     foreach (var wallet in wallets)
+        //     {
+        //
+        //         c.WalletRelations.Add(
+        //             new()
+        //             {
+        //                 WalletId = wallet.Id,
+        //                 IsActive = wallet.Categories.Contains(category)
+        //             });
+        //     }
+        //     categoriesDto.Add(c);
+        // }
+        //
+        // return request.ReturnSuccessWithObject(categoriesDto);
     }
 }

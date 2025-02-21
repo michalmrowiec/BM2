@@ -376,6 +376,9 @@ namespace BM2.Infrastructure.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("OwnedByUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -398,6 +401,9 @@ namespace BM2.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<Guid>("OwnedByUserId")
                         .HasColumnType("uniqueidentifier");

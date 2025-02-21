@@ -6,7 +6,6 @@ namespace BM2.Domain.Entities.UserProfile;
 public class Category : IEntity, IEntityAudit, IOwnedByUser
 {
     public Guid Id { get; set; }
-    //public Guid WalletId { get; set; }
     public string CategoryName { get; set; } = null!;
     public Guid OwnedByUserId { get; set; }
     public DateTime CreatedAt { get; set; }
