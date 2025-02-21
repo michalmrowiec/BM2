@@ -32,12 +32,12 @@
         return _currencies.Where(x => x.Name.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.Symbol.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.IsoCode.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 
-    private string CurrencyDisplay(CurrencyDTO? currencyId)
+    private string CurrencyDisplay(CurrencyDTO? currency)
     {
-        if (currencyId == null)
+        if (currency == null)
             return string.Empty;
 
-        return $"[{currencyId.IsoCode}] {currencyId.Name}";
+        return currency.ToString();
     }
 
 }

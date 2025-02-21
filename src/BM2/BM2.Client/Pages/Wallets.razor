@@ -1,5 +1,6 @@
 ﻿@page "/wallets"
 @using BM2.Shared.DTOs
+@using BM2.Client.Components
 @rendermode InteractiveAuto
 
 <h3>Wallets</h3>
@@ -12,11 +13,15 @@
 
 <MudDataGrid T="WalletDTO" Items="@WalletList">
     <Columns>
-        <PropertyColumn Title="Name" Property="x => x.WalletName" />
-        <PropertyColumn Title="Is active" Property="x => x.IsActive"  />
+        <PropertyColumn Title="Name" Property="x => x.WalletName"/>
+        <PropertyColumn Title="Is active" Property="x => x.IsActive">
+            <CellTemplate>
+                <IsActiveGridIcon IsActive="context.Item.IsActive"/>
+            </CellTemplate>
+        </PropertyColumn>
         <PropertyColumn Title="Currency" Property="x => x.DefaultCurrency" SortBy="x => x.DefaultCurrency!.Name">
             <CellTemplate>
-                @string.Concat($"[{context.Item.DefaultCurrency?.IsoCode}] {context.Item.DefaultCurrency?.Name}")
+                @context.Item.DefaultCurrency?.ToString()
             </CellTemplate>
         </PropertyColumn>
     </Columns>

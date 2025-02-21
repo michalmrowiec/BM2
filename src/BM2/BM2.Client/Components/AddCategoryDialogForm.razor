@@ -1,4 +1,5 @@
 ﻿@using System.Net
+@using BM2.Domain.Entities.UserProfile
 @using BM2.Shared.DTOs
 @using BM2.Shared.Requests.Commands.Category
 @using Newtonsoft.Json
@@ -20,7 +21,18 @@
                               Label="Name"
                               MaxLength="@ModelsRequirements.CategoryNameMaxLength"
                               Required/>
+
+                <MudSelect T="WalletDTO"
+                           @bind-SelectedValues="_selectedRelatedWallets"
+                           MultiSelection
+                           Label="Available for wallets">
+                    @foreach (var wallet in _wallets)
+                    {
+                        <MudSelectItem T="WalletDTO" Value="@wallet">@wallet.ToString()</MudSelectItem>
+                    }
+                </MudSelect>
             </MudCardContent>
+
         </MudForm>
     </BodyContent>
 </BaseDialog>
@@ -30,11 +42,15 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
     private MudForm _form;
     private AddCategoryCommand _model = new();
+    private IEnumerable<WalletDTO> _wallets = [];
+    private IEnumerable<WalletDTO> _selectedRelatedWallets { get; set; } = new HashSet<WalletDTO>();
 
     private void Cancel() => MudDialog.Cancel();
 
     private async Task Submit()
     {
+        _model.WalletIds = _selectedRelatedWallets.Select(x => x.Id).ToList();
+
         await _form.Validate();
 
         if (_form.IsValid)
@@ -54,6 +70,16 @@
                 await response.HandleFailure(AlertService);
             }
         }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ApiClient.Get(@"api/v1/wallets");
+        var responseString = await response.Content.ReadAsStringAsync();
+        var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
+        _wallets = walletDtos.OrderBy(x => x.WalletName);
+
+        StateHasChanged();
     }
 
 }
