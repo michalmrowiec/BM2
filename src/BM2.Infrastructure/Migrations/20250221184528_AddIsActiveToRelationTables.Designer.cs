@@ -4,6 +4,7 @@ using BM2.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BM2.Infrastructure.Migrations
 {
     [DbContext(typeof(BM2DbContext))]
-    partial class BM2DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250221184528_AddIsActiveToRelationTables")]
+    partial class AddIsActiveToRelationTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

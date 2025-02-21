@@ -14,7 +14,14 @@ public class CategoryWithWalletRelationDTO : CategoryDTO
 public class WalletCategoryRelationDTO
 {
     public Guid WalletId { get; set; }
-    public bool RelationExists { get; set; }
+    public RelationStatus Status { get; set; }
+}
+
+public enum RelationStatus
+{
+    Active,
+    Inactive,
+    NotExist
 }
 
 // TODO
