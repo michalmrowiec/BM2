@@ -1,6 +1,6 @@
 ﻿namespace BM2.Shared.DTOs;
 
-public class WalletBasicDTO
+public class WalletBaseDTO
 {
     public Guid Id { get; set; }
     public string WalletName { get; set; } = null!;
@@ -10,10 +10,16 @@ public class WalletBasicDTO
 
     public CurrencyDTO? DefaultCurrency { get; set; }
     //public ICollection<AccountDTO> Accounts { get; set; } = [];
+
+    public override string ToString()
+    {
+        return this.DefaultCurrency != null
+            ? string.Concat(this.IsActive ? "" : "(Off) ", this.WalletName, " ", $"[{this.DefaultCurrency?.IsoCode}]")
+            : this.WalletName;
+    }
 }
 
-public class WalletDTO : WalletBasicDTO
+public class WalletDTO : WalletBaseDTO
 {
-
     public ICollection<AccountBasicDTO> Accounts { get; set; } = [];
 }

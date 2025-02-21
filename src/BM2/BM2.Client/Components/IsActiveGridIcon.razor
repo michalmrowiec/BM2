@@ -1,0 +1,20 @@
+﻿@if (IsActive)
+{
+    <MudTooltip Text="Active">
+        <MudIcon Icon="@Icons.Material.Filled.Check"
+                 Color="Color.Default"
+                 Size="Size.Small"/>
+    </MudTooltip>
+}
+else
+{
+    <MudTooltip Text="Inactive">
+        <MudIcon Icon="@Icons.Material.Filled.Close"
+                 Color="Color.Default"
+                 Size="Size.Small"/>
+    </MudTooltip>
+}
+
+@code {
+    [Parameter] public bool IsActive { get; set; }
+}

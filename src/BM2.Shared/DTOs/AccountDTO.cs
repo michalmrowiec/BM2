@@ -15,5 +15,5 @@ public class AccountBasicDTO
 
 public class AccountDTO : AccountBasicDTO
 {
-    public WalletBasicDTO? Wallet { get; set; }
+    public WalletBaseDTO? Wallet { get; set; }
 }

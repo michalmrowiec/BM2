@@ -7,4 +7,9 @@ public class CurrencyDTO
     public string Symbol { get; set; } = null!;
     public string IsoCode { get; set; } = null!;
     public string Country { get; set; } = null!;
+
+    public override string ToString()
+    {
+        return string.Concat($"[{this.IsoCode}] {this.Name}");
+    }
 }

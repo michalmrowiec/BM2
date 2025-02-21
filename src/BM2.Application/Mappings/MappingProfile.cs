@@ -24,7 +24,7 @@ public class MappingProfile : Profile
         CreateMap<User, UserDTO>();
 
         CreateMap<AddWalletCommand, Wallet>();
-        CreateMap<Wallet, WalletBasicDTO>();
+        CreateMap<Wallet, WalletBaseDTO>();
         CreateMap<Wallet, WalletDTO>();
         
         CreateMap<AddAccountCommand, Account>();
