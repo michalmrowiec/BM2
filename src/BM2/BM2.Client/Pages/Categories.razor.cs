@@ -13,6 +13,7 @@ public partial class Categories(IApiClient apiClient, IDialogService dialogServi
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
     private IList<CategoryWithWalletRelationDTO> CategoryWithWalletRelationList { get; set; } = new List<CategoryWithWalletRelationDTO>();
     private IList<WalletDTO> WalletList { get; set; } = new List<WalletDTO>();
+    private bool BlockedView  { get; set; } = true;
 
     private async Task GetCategories()
     {
