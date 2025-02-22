@@ -6,6 +6,11 @@ public class CategoryDTO : IEntityDTO
 {
     public Guid Id { get; set; }
     public string CategoryName { get; set; }
+    
+    public override string ToString()
+    {
+        return CategoryName;
+    }
 }
 
 public class CategoryWalletRelationDTO : CategoryDTO

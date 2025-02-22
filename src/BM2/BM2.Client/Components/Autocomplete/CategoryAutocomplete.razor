@@ -1,0 +1,18 @@
+﻿@using BM2.Shared.DTOs
+@inherits AutocompleteBase<CategoryDTO>
+
+@{
+    base.BuildRenderTree(__builder);
+}
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        Uri = "api/v1/categories";
+        SearchFunc = (entity, value) => entity.CategoryName.Contains(value, StringComparison.InvariantCultureIgnoreCase);
+        OrderFunc = x => x.CategoryName;
+        base.OnInitialized();
+    }
+
+}

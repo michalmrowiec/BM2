@@ -11,13 +11,13 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
 {
     [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
-    private IList<AccountDTO> AccountList { get; set; } = new List<AccountDTO>();
+    private IList<RecordDTO> RecordList { get; set; } = new List<RecordDTO>();
 
     private async Task GetAccounts()
     {
-        var response = await ApiClient.Get("api/v1/accounts");
+        var response = await ApiClient.Get("api/v1/records");
         var r = await response.Content.ReadAsStringAsync();
-        AccountList = JsonConvert.DeserializeObject<IList<AccountDTO>>(r) ?? [];
+        RecordList = JsonConvert.DeserializeObject<IList<RecordDTO>>(r) ?? [];
         StateHasChanged();
     }
 
@@ -26,7 +26,7 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
         await GetAccounts();
     }
     
-    private Task OpenAddAccountDialogAsync()
+    private Task OpenAddRecordDialogAsync()
     {
         var options = new DialogOptions
         {
@@ -35,13 +35,13 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
             MaxWidth = MaxWidth.Small,
             FullWidth = true
         };
-        var parameters = new DialogParameters<AddAccountDialogForm>
+        var parameters = new DialogParameters<AddRecordDialogForm>
         {
             {
                 x => x.FuncsOnCreated,
                 [EventCallback.Factory.Create(this, GetAccounts)]
             }
         };
-        return DialogService.ShowAsync<AddAccountDialogForm>(null, parameters, options);
+        return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
     }
 }
