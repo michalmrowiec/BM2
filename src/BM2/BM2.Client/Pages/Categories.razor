@@ -9,11 +9,21 @@
     Add category
 </MudButton>
 
+<MudButton @onclick="UpdateCategoryWalletRelationAsync"
+           Variant="Variant.Filled"
+           Color="Color.Secondary">
+    Save
+</MudButton>
+
 <MudToggleIconButton @bind-Toggled="BlockedView"
                      Icon="@Icons.Material.Filled.LockOpen"
                      Color="@Color.Warning"
                      ToggledIcon="@Icons.Material.Filled.Lock"
-                     ToggledColor="@Color.Default" />
+                     ToggledColor="@Color.Default"/>
+
+<MudIconButton @onclick="GetCategories"
+               Icon="@Icons.Material.Filled.Refresh"/>
+
 
 <MudTable Items="CategoryWithWalletRelationList" Hover Bordered>
     <HeaderContent>
@@ -30,9 +40,27 @@
         {
             <MudTd>
                 <MudSelect @bind-Value="@relation.Status" Variant="Variant.Text" Dense Disabled="BlockedView">
-                    <MudSelectItem Value="@RelationStatus.Active">Yes</MudSelectItem>
-                    <MudSelectItem Value="@RelationStatus.NotExist">No</MudSelectItem>
-                    <MudSelectItem Value="@RelationStatus.Inactive">Blocked</MudSelectItem>
+                    <MudSelectItem Value="@RelationStatus.Active">
+                        <MudTooltip Text="Active">
+                            <MudIcon Icon="@Icons.Material.Filled.Check"
+                                     Color="Color.Success"
+                                     Size="Size.Small"/>
+                        </MudTooltip>
+                    </MudSelectItem>
+                    <MudSelectItem Value="@RelationStatus.NotExist">
+                        <MudTooltip Text="Inactive">
+                            <MudIcon Icon="@Icons.Material.Filled.Close"
+                                     Color="Color.Error"
+                                     Size="Size.Small"/>
+                        </MudTooltip>
+                    </MudSelectItem>
+                    <MudSelectItem Value="@RelationStatus.Inactive">
+                        <MudTooltip Text="Blocked to add new">
+                            <MudIcon Icon="@Icons.Material.Filled.Block"
+                                     Color="Color.Default"
+                                     Size="Size.Small"/>
+                        </MudTooltip>
+                    </MudSelectItem>
                 </MudSelect>
             </MudTd>
         }

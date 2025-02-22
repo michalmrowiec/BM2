@@ -22,13 +22,13 @@ public class AddCategoryCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
         var category = mapper.Map<AddCategoryCommand, Domain.Entities.UserProfile.Category>(request);
         category.Id = Guid.NewGuid();
         category.CreatedAt = DateTime.UtcNow;
-        category.CreatedBy = request.OwnedByUserId;
+        category.CreatedBy = request.UserId;
 
         List<WalletCategoryRelation> walletCategoryRelations = new List<WalletCategoryRelation>();
 
         foreach (var walletId in request.WalletIds.Distinct())
         {
-            walletCategoryRelations.Add(WalletCategoryRelation.CreateInstance(walletId, category.Id, request.OwnedByUserId));
+            walletCategoryRelations.Add(WalletCategoryRelation.CreateInstance(walletId, category.Id, request.UserId));
         }
         
         try

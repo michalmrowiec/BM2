@@ -20,7 +20,7 @@ public class AccountsController(
     [HttpPost]
     public async Task<ActionResult<AccountDTO>> AddAccount([FromBody] AddAccountCommand command)
     {
-        command.OwnedByUserId = userContextService.GetUserId;
+        command.UserId = userContextService.GetUserId;
 
         var result = await mediator.Send(command);
 

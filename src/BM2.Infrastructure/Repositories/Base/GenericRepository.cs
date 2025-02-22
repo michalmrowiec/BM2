@@ -34,7 +34,20 @@ public class GenericRepository<T>(
         throw new NotImplementedException();
     }
 
-    public async Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Func<IQueryable<T>, IQueryable<T>>[] includes)
+    public async Task<IEnumerable<T>> UpdateRange(IList<T> entities)
+    {
+        _dbSet.UpdateRange(entities);
+        return await Task.FromResult(entities);
+    }
+
+    public Task Delete(params IList<T> entity)
+    {
+        _dbSet.RemoveRange(entity);
+        return Task.CompletedTask;
+    }
+
+    public async Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId,
+        params Func<IQueryable<T>, IQueryable<T>>[] includes)
     {
         IQueryable<T> query = _dbSet.Where(x => ((IOwnedByUser)x).OwnedByUserId == userId);
 
@@ -43,11 +56,6 @@ public class GenericRepository<T>(
         query = SoftDeleteFilter(query);
 
         return await query.ToListAsync();
-    }
-
-    public Task Delete(T entity)
-    {
-        throw new NotImplementedException();
     }
 
     public async Task Save()

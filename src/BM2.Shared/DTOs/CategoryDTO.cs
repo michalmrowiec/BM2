@@ -6,21 +6,7 @@ public class CategoryDTO
     public string CategoryName { get; set; }
 }
 
-public class CategoryWithWalletRelationDTO : CategoryDTO
+public class CategoryWalletRelationDTO : CategoryDTO
 {
-    public IList<WalletCategoryRelationDTO> WalletRelations { get; set; }
-}
-
-public class WalletCategoryRelationDTO
-{
-    public Guid WalletId { get; set; }
-    public RelationStatus Status { get; set; }
-}
-
-// TODO: Move this to the correct location
-public enum RelationStatus
-{
-    Inactive = 0,
-    Active = 1,
-    NotExist = 2
+    public IList<WalletRelationDTO> WalletRelations { get; set; }
 }
