@@ -23,6 +23,7 @@
     [Parameter] public EventCallback<TEntityDTO?> SelectedValue { get; set; }
     protected Func<TEntityDTO, object>? OrderFunc { get; set; }
     protected Func<TEntityDTO, string, bool> SearchFunc { get; set; }
+    [Parameter] public Func<TEntityDTO, bool>? SelectStartValue { get; set; }
     private IEnumerable<TEntityDTO> _values = [];
     private MudAutocomplete<TEntityDTO>? _mudAutocomplete;
     private TEntityDTO? _selectedValue;
@@ -30,15 +31,12 @@
     protected override async Task OnInitializedAsync()
     {
         await GetValues();
-    }
 
-    // protected override async Task OnParametersSetAsync()
-    // {
-    //     await GetValues();
-    //
-    //     if (_selectedValue is not null && !_values.Contains(_selectedValue))
-    //         await _mudAutocomplete!.ClearAsync();
-    // }
+        if (SelectStartValue is not null)
+        {
+            await SelectValueBy(SelectStartValue);
+        }
+    }
 
     public async Task SetUri(string uri = "")
     {
@@ -53,6 +51,26 @@
          StateHasChanged();
     }
 
+    public async Task SelectValueById(Guid? id)
+    {
+        if (_values.Any(x => x.Id == id))
+        {
+            await _mudAutocomplete!.SelectOptionAsync(_values.First(x => x.Id == id));
+
+            await SelectedValue.InvokeAsync(_values.First(x => x.Id == id));
+        }
+    }
+    
+    public async Task SelectValueBy(Func<TEntityDTO, bool> predicate)
+    {
+        if (_values.Any(predicate))
+        {
+            await _mudAutocomplete!.SelectOptionAsync(_values.First(predicate));
+
+            await SelectedValue.InvokeAsync(_values.First(predicate));
+        }
+    }
+    
     private async Task GetValues()
     {
         if (string.IsNullOrWhiteSpace(Uri))
@@ -65,16 +83,6 @@
             _values = values.OrderBy(OrderFunc);
 
         StateHasChanged();
-    }
-
-    public async Task SelectValueById(Guid? Id)
-    {
-        if (_values.Any(x => x.Id == Id))
-        {
-            await _mudAutocomplete!.SelectOptionAsync(_values.First(x => x.Id == Id));
-
-            await SelectedValue.InvokeAsync(_values.First(x => x.Id == Id));
-        }
     }
 
     private async Task<IEnumerable<TEntityDTO>> Search(string value, CancellationToken token)

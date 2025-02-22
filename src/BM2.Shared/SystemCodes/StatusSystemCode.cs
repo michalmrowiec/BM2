@@ -1,4 +1,4 @@
-﻿namespace BM2.Domain.SystemCodes;
+﻿namespace BM2.Shared.SystemCodes;
 
 public static class StatusSystemCode
 {
