@@ -62,6 +62,9 @@ public partial class Categories(IApiClient apiClient, IDialogService dialogServi
 
     private async Task UpdateCategoryWalletRelationAsync()
     {
+        BlockedView = true;
+        StateHasChanged();
+        
         var command = new SetWalletCategoryRelationsCommand()
         {
             CategoryWalletRelations = new List<CategoryWalletRelationCommand>()

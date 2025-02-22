@@ -18,7 +18,7 @@ public class RecordsController(
     [HttpPost]
     public async Task<ActionResult<RecordDTO>> AddTag([FromBody] AddRecordCommand command)
     {
-        command.OwnedByUserId = userContextService.GetUserId;
+        command.OwnedByUserId = userContextService.UserId;
 
         var result = await mediator.Send(command);
 

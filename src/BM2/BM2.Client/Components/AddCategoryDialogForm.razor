@@ -25,6 +25,8 @@
                 <MudSelect T="WalletDTO"
                            @bind-SelectedValues="_selectedRelatedWallets"
                            MultiSelection
+                           SelectAll
+                           SelectAllText="Select all"
                            Label="Available for wallets">
                     @foreach (var wallet in _wallets)
                     {

@@ -19,7 +19,7 @@ public class CategoriesController(
     [HttpPost]
     public async Task<ActionResult<CategoryDTO>> AddCategory([FromBody] AddCategoryCommand command)
     {
-        command.UserId = userContextService.GetUserId;
+        command.UserId = userContextService.UserId;
 
         var result = await mediator.Send(command);
 
@@ -27,19 +27,20 @@ public class CategoriesController(
     }
 
     [HttpPost("wallet-relations")]
-    public async Task<ActionResult<CategoryDTO>> SetCategoryWalletRelations([FromBody] SetWalletCategoryRelationsCommand command)
+    public async Task<ActionResult<CategoryDTO>> SetCategoryWalletRelations(
+        [FromBody] SetWalletCategoryRelationsCommand command)
     {
-        command.UserId = userContextService.GetUserId;
+        command.UserId = userContextService.UserId;
 
         var result = await mediator.Send(command);
 
         return result.HandleOkResult(this);
     }
-    
+
     [HttpGet]
     public async Task<ActionResult<IList<CategoryDTO>>> GetAllCategories()
     {
-        var result = await mediator.Send(new GetAllCategoriesForUserQuery(userContextService.GetUserId));
+        var result = await mediator.Send(new GetAllCategoriesForUserQuery(userContextService.UserId));
 
         return result.HandleOkResult(this);
     }
@@ -48,7 +49,7 @@ public class CategoriesController(
     public async Task<ActionResult<IList<CategoryDTO>>> GetAllCategoriesWithWalletRelations()
     {
         var result =
-            await mediator.Send(new GetAllCategoriesForUserWithWalletRelationsQuery(userContextService.GetUserId));
+            await mediator.Send(new GetAllCategoriesForUserWithWalletRelationsQuery(userContextService.UserId));
 
         return result.HandleOkResult(this);
     }

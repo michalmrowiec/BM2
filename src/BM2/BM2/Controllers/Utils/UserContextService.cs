@@ -4,7 +4,7 @@ namespace BM2.Controllers.Utils;
 
 public interface IUserContextService
 {
-    Guid GetUserId { get; }
+    Guid UserId { get; }
     ClaimsPrincipal? User { get; }
 }
 
@@ -24,5 +24,5 @@ public class UserContextService(IHttpContextAccessor httpContextAccessor) : IUse
         }
     }
 
-    public Guid GetUserId => Guid.Parse(GetUserIdAsString);
+    public Guid UserId => Guid.Parse(GetUserIdAsString);
 };
