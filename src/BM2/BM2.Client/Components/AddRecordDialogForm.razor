@@ -1,6 +1,7 @@
 ﻿@using System.Net
 @using BM2.Shared.DTOs
 @using BM2.Shared.Requests.Commands.Record
+@using BM2.Shared.SystemCodes
 @using Newtonsoft.Json
 @inject ISnackbar Snackbar
 @inject IAlertService AlertService
@@ -29,14 +30,27 @@
                 <CategoryAutocomplete Label="Category"
                                       Required
                                       @ref="_categoryAutocomplete"
-                                      SelectedValue="@((c) => _model.CategoryId = c?.Id ?? Guid.Empty )"/>
+                                      SelectedValue="@((c) => _model.CategoryId = c?.Id ?? Guid.Empty)"/>
 
                 <MudTextField @bind-Value="_model.Name"
                               For="@(() => _model.Name)"
-                              Immediate="true"
+                              Immediate
                               Label="Name"
                               MaxLength="@ModelsRequirements.AccountNameMaxLength"
                               Required/>
+
+                <MudNumericField T="decimal"
+                                 @bind-Value="_model.Amount"
+                                 For="@(() => _model.Amount)"
+                                 Immediate
+                                 Label="Amount"
+                                 Required/>
+
+                <RecordStatusAutocomplete Label="Status"
+                                          Required
+                                          StatusType="RecordStatusAutocomplete.RecordStatusType.Record"
+                                          SelectedValue="@((s) => _model.StatusId = s?.Id ?? Guid.Empty)"
+                                          SelectStartValue="@(x => x.SystemCode == StatusSystemCode.Realized)"/>
 
             </MudCardContent>
         </MudForm>

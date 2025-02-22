@@ -1,0 +1,30 @@
+﻿@inherits AutocompleteBase<BM2.Shared.DTOs.RecordStatusDTO>
+
+@{
+    base.BuildRenderTree(__builder);
+}
+
+@code {
+
+    [Parameter] public RecordStatusType StatusType { get; set; } = RecordStatusType.Record;
+
+    protected override void OnInitialized()
+    {
+        Uri = StatusType switch
+        {
+            RecordStatusType.Record => "api/v1/recordStatuses/for-records",
+            //RecordStatusType.PeriodicRecord => "api/v1/recordStatuses/for-periodic-records",
+            _ => "api/v1/recordStatuses/for-records"
+        };
+        SearchFunc = (entity, value) => entity.RecordStatusName.Contains(value, StringComparison.InvariantCultureIgnoreCase);
+        OrderFunc = x => x.RecordStatusName;
+        base.OnInitialized();
+    }
+
+    public enum RecordStatusType
+    {
+        Record,
+        PeriodicRecord
+    }
+
+}
