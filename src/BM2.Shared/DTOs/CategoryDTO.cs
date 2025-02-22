@@ -1,6 +1,8 @@
-﻿namespace BM2.Shared.DTOs;
+﻿using BM2.Shared.DTOs.Interfaces;
 
-public class CategoryDTO
+namespace BM2.Shared.DTOs;
+
+public class CategoryDTO : IEntityDTO
 {
     public Guid Id { get; set; }
     public string CategoryName { get; set; }

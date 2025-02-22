@@ -1,6 +1,8 @@
-﻿namespace BM2.Shared.DTOs;
+﻿using BM2.Shared.DTOs.Interfaces;
 
-public class RecordStatusDTO
+namespace BM2.Shared.DTOs;
+
+public class RecordStatusDTO : IEntityDTO
 {
     public Guid Id { get; set; }
     public string RecordStatusName { get; set; } = null!;
