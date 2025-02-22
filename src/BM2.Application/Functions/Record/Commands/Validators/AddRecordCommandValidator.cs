@@ -63,6 +63,13 @@ public class AddRecordCommandValidator : AddBaseRecordCommandValidator<AddRecord
             context.AddFailure(
                 $"Category {request.CategoryId} cannot be added to account {request.AccountId} due to missing wallet relations."
             );
+            return;
+        }
+
+        if (!relation!.IsActive)
+        {
+            context.AddFailure(
+                $"Category {request.CategoryId} cannot be added to account {request.AccountId} because the associated wallet relation is inactive.");
         }
     }
 

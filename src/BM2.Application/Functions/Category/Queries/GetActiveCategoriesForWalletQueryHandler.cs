@@ -7,14 +7,14 @@ using MediatR;
 
 namespace BM2.Application.Functions.Category.Queries;
 
-public class GetCategoriesForWalletQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
-    : IRequestHandler<GetCategoriesForWalletQuery, BaseResponse<IEnumerable<CategoryDTO>>>
+public class GetActiveCategoriesForWalletQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    : IRequestHandler<GetActiveCategoriesForWalletQuery, BaseResponse<IEnumerable<CategoryDTO>>>
 {
-    public async Task<BaseResponse<IEnumerable<CategoryDTO>>> Handle(GetCategoriesForWalletQuery request,
+    public async Task<BaseResponse<IEnumerable<CategoryDTO>>> Handle(GetActiveCategoriesForWalletQuery request,
         CancellationToken cancellationToken)
     {
         var items =
-            await unitOfWork.CategoryRepository.GetCategoryForWalletAsync(request.UserId, request.WalletId);
+            await unitOfWork.CategoryRepository.GetCategoryForWalletAsync(request.UserId, request.WalletId, true);
 
         items.ThrowExceptionIfNull();
         items!.CheckPermission(request.UserId);
