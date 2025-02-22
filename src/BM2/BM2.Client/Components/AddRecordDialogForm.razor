@@ -20,8 +20,8 @@
                 @* <WalletAutocomplete Label="Wallet" *@
                 @*                     SelectedWallet="@((w) => _model.AccountId = w.Id)"/> *@
 
-                <CurrencyAutocomplete Label="Wallet default currency"
-                                      SelectedCurrency="@((c) => _model.CurrencyId = c.Id)"/>
+                <CurrencyAutocomplete Label="Default currency"
+                                      SelectedValue="@((c) => _model.CurrencyId = c.Id)"/>
 
                 <MudTextField @bind-Value="_model.Name"
                               For="@(() => _model.Name)"

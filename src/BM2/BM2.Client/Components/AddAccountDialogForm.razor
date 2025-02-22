@@ -6,7 +6,7 @@
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
 
-<BaseDialog DialogTitle="New wallet" MudDialog="@MudDialog"
+<BaseDialog DialogTitle="New account" MudDialog="@MudDialog"
             FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
             FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
     <BodyContent>
@@ -15,15 +15,17 @@
                  ValidationDelay="0">
             <MudCardContent>
                 <WalletAutocomplete Label="Wallet"
-                                    SelectedWallet="@(async (w) =>
+                                    Required
+                                    SelectedValue="@(async (w) =>
                                                     {
                                                         _model.WalletId = w.Id;
-                                                        await _currencyAutocompleteRef?.SelectCurrency(w.DefaultCurrencyId)!;
+                                                        await _currencyAutocompleteRef?.SelectValueById(w.DefaultCurrencyId)!;
                                                     })"/>
 
                 <CurrencyAutocomplete @ref="_currencyAutocompleteRef"
                                       Label="Account default currency"
-                                      SelectedCurrency="@((c) => _model.DefaultCurrencyId = c.Id)"/>
+                                      Required
+                                      SelectedValue="@((c) => _model.DefaultCurrencyId = c.Id)"/>
 
                 <MudTextField @bind-Value="_model.AccountName"
                               For="@(() => _model.AccountName)"
@@ -43,7 +45,9 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
     private MudForm _form;
     private AddAccountCommand _model = new();
+
     private IEnumerable<WalletDTO> _wallets = [];
+
     //private WalletDTO _selectedWallet;
     private CurrencyAutocomplete? _currencyAutocompleteRef;
 

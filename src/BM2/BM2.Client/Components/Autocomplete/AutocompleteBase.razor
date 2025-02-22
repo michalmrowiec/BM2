@@ -7,16 +7,18 @@
                  ValueChanged="@(async (c) => await SelectedValue.InvokeAsync(c))"
                  SearchFunc="Search"
                  Label="@Label"
+                 Required="@Required"
                  ToStringFunc="@((c) => CurrencyDisplay(c))"
                  Clearable
                  MaxItems="1000"/>
 
 @code {
-    [Parameter] public required string Uri { get; set; }
+    protected string Uri { get; set; }
     [Parameter] public string Label { get; set; } = "Autocomplete";
+    [Parameter] public bool Required { get; set; }
     [Parameter] public EventCallback<TEntityDTO> SelectedValue { get; set; }
-    [Parameter] public Func<TEntityDTO, object>? OrderFunc { get; set; }
-    [Parameter] public required Func<TEntityDTO, string, bool> SearchFunc { get; set; }
+    protected Func<TEntityDTO, object>? OrderFunc { get; set; }
+    protected Func<TEntityDTO, string, bool> SearchFunc { get; set; }
     private IEnumerable<TEntityDTO> _values = [];
     private MudAutocomplete<TEntityDTO>? _mudAutocomplete;
 
