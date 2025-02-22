@@ -16,10 +16,10 @@ public class SetWalletCategoryRelationsCommandHandler(IMediator mediator, IUnitO
         SetWalletCategoryRelationsCommand request, CancellationToken cancellationToken)
     {
         var walletCategoryRelations =
-            await unitOfWork.WalletCategoryRelationRepository.GetAllForUserAsync(request.UserId);
+            await unitOfWork.WalletCategoryRelationRepository.GetAllForUserAsync(request.OwnedByUserId);
 
         walletCategoryRelations.ThrowExceptionIfNull();
-        walletCategoryRelations!.CheckPermission(request.UserId);
+        walletCategoryRelations!.CheckPermission(request.OwnedByUserId);
 
         var toAdd = new List<WalletCategoryRelation>();
         var toUpdate = new List<WalletCategoryRelation>();
@@ -35,7 +35,7 @@ public class SetWalletCategoryRelationsCommandHandler(IMediator mediator, IUnitO
             {
                 if (cwr.Status != RelationStatus.NotExist)
                 {
-                    toAdd.Add(WalletCategoryRelation.CreateInstance(cwr.WalletId, cwr.CategoryId, request.UserId,
+                    toAdd.Add(WalletCategoryRelation.CreateInstance(cwr.WalletId, cwr.CategoryId, request.OwnedByUserId,
                         cwr.Status == RelationStatus.Active));
                 }
 
@@ -75,7 +75,7 @@ public class SetWalletCategoryRelationsCommandHandler(IMediator mediator, IUnitO
             await unitOfWork.WalletCategoryRelationRepository.Delete(toDelete);
             await unitOfWork.SaveAsync();
 
-            var result = await mediator.Send(new GetAllCategoriesForUserWithWalletRelationsQuery(request.UserId));
+            var result = await mediator.Send(new GetAllCategoriesForUserWithWalletRelationsQuery(request.OwnedByUserId));
 
             return request.ReturnSuccessWithObject(result.ReturnedObj ?? []);
         }

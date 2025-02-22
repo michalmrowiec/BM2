@@ -18,13 +18,13 @@ public class AddCategoryCommandValidator : AbstractValidator<AddCategoryCommand>
         RuleFor(x => x)
             .CustomAsync(async (request, context, cancellationToken) =>
             {
-                await request.WalletIds.ValidateAllWalletsBelongToUser(request.UserId, unitOfWork, cancellationToken);
+                await request.WalletIds.ValidateAllWalletsBelongToUser(request.OwnedByUserId, unitOfWork, cancellationToken);
             });
 
         RuleFor(x => x)
             .CustomAsync(async (request, context, cancellationToken) =>
             {
-                var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId,
+                var user = await unitOfWork.UserRepository.GetByIdAsync(request.OwnedByUserId,
                     q => q.Include(u => u.Categories));
                 user.ThrowExceptionIfNull();
 

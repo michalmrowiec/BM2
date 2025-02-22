@@ -8,7 +8,7 @@ public class SetWalletCategoryRelationsCommand : IBaseRequestCollection<Category
 {
     public IList<CategoryWalletRelationCommand> CategoryWalletRelations { get; set; } = [];
     [JsonIgnore]
-    public Guid UserId { get; set; }
+    public Guid OwnedByUserId { get; set; }
 }
 
 public class CategoryWalletRelationCommand : WalletRelationCommand

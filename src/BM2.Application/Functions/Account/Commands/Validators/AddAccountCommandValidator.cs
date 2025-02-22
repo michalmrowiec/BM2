@@ -18,7 +18,7 @@ public class AddAccountCommandValidator : AbstractValidator<AddAccountCommand>
         RuleFor(x => x)
             .CustomAsync(async (request, context, cancellationToken) =>
             {
-                var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId,
+                var user = await unitOfWork.UserRepository.GetByIdAsync(request.OwnedByUserId,
                     q => q.Include(u => u.Wallets).ThenInclude(w => w.Accounts));
                 user.ThrowExceptionIfNull();
                 var walletForAccount = user!.Wallets.FirstOrDefault(w => w.Id == request.WalletId);

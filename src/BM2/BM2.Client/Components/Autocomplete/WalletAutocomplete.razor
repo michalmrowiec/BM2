@@ -1,0 +1,43 @@
+﻿@using BM2.Shared.DTOs
+@using Newtonsoft.Json
+@inject IApiClient ApiClient
+
+<MudAutocomplete T="WalletDTO"
+                 ValueChanged="@(async (w) => await SelectedWallet.InvokeAsync(w))"
+                 SearchFunc="Search"
+                 Label="Wallet"
+                 ToStringFunc="@((w) => WalletDisplay(w))"
+                 Clearable
+                 MaxItems="100"/>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Wallet";
+    [Parameter] public EventCallback<WalletDTO> SelectedWallet { get; set; }
+    private IEnumerable<WalletDTO> _wallets = [];
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ApiClient.Get(@"api/v1/wallets");
+        var responseString = await response.Content.ReadAsStringAsync();
+        var wallets = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? [];
+        _wallets = wallets.OrderBy(x => x.WalletName);
+        StateHasChanged();
+    }
+
+    private async Task<IEnumerable<WalletDTO>> Search(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return _wallets;
+
+        return _wallets.Where(x => x.WalletName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private string WalletDisplay(WalletDTO? wallet)
+    {
+        if (wallet == null)
+            return string.Empty;
+
+        return wallet.ToString();
+    }
+
+}

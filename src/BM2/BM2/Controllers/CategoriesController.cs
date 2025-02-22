@@ -19,7 +19,7 @@ public class CategoriesController(
     [HttpPost]
     public async Task<ActionResult<CategoryDTO>> AddCategory([FromBody] AddCategoryCommand command)
     {
-        command.UserId = userContextService.UserId;
+        command.OwnedByUserId = userContextService.UserId;
 
         var result = await mediator.Send(command);
 
@@ -30,7 +30,7 @@ public class CategoriesController(
     public async Task<ActionResult<CategoryDTO>> SetCategoryWalletRelations(
         [FromBody] SetWalletCategoryRelationsCommand command)
     {
-        command.UserId = userContextService.UserId;
+        command.OwnedByUserId = userContextService.UserId;
 
         var result = await mediator.Send(command);
 

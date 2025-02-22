@@ -16,7 +16,7 @@ public class RecordsController(
     : ControllerBase
 {
     [HttpPost]
-    public async Task<ActionResult<RecordDTO>> AddTag([FromBody] AddRecordCommand command)
+    public async Task<ActionResult<RecordDTO>> AddRecord([FromBody] AddRecordCommand command)
     {
         command.OwnedByUserId = userContextService.UserId;
 
