@@ -1,13 +1,18 @@
 ﻿@using BM2.Shared.DTOs
+@inherits AutocompleteBase<AccountDTO>
 
-<AutocompleteBase TEntityDTO="AccountDTO"
-                  Label="@Label"
-                  Uri="api/v1/accounts"
-                  SearchFunc="@((entity, value) => entity.AccountName.Contains(value, StringComparison.InvariantCultureIgnoreCase))"
-                  OrderFunc="@(x => x.AccountName)"
-                  SelectedValue="SelectedAccount"/>
+@{
+    base.BuildRenderTree(__builder);
+}
 
 @code {
-    [Parameter] public string Label { get; set; } = "Account";
-    [Parameter] public EventCallback<AccountDTO> SelectedAccount { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Uri = "api/v1/accounts";
+        SearchFunc = (entity, value) => entity.AccountName.Contains(value, StringComparison.InvariantCultureIgnoreCase);
+        OrderFunc = x => x.AccountName;
+        base.OnInitialized();
+    }
+
 }

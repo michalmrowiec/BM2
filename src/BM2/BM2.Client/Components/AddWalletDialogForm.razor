@@ -15,8 +15,9 @@
                  @ref="@_form"
                  ValidationDelay="0">
             <MudCardContent>
-                <CurrencyAutocomplete Label="Wallet default currency"
-                                      SelectedCurrency="@((c) => _model.DefaultCurrencyId = c.Id)"/>
+                <CurrencyAutocomplete Label="Default currency"
+                                      Required
+                                      SelectedValue="@((c) => _model.DefaultCurrencyId = c.Id)"/>
 
                 <MudTextField @bind-Value="_model.WalletName"
                               For="@(() => _model.WalletName)"
