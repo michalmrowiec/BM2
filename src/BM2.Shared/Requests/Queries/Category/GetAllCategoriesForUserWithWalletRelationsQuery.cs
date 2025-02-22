@@ -2,4 +2,4 @@
 
 namespace BM2.Shared.Requests.Queries.Category;
 
-public record GetAllCategoriesForUserWithWalletRelationsQuery(Guid UserId) : IBaseRequestCollection<CategoryWithWalletRelationDTO>;
+public record GetAllCategoriesForUserWithWalletRelationsQuery(Guid UserId) : IBaseRequestCollection<CategoryWalletRelationDTO>;

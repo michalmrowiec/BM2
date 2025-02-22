@@ -1,6 +1,9 @@
-﻿using BM2.Client.Components;
+﻿using System.Net;
+using BM2.Client.Components;
 using BM2.Client.Services.API;
+using BM2.Client.Services.Notification;
 using BM2.Shared.DTOs;
+using BM2.Shared.Requests.Commands.Category;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Newtonsoft.Json;
@@ -11,15 +14,20 @@ public partial class Categories(IApiClient apiClient, IDialogService dialogServi
 {
     [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
-    private IList<CategoryWithWalletRelationDTO> CategoryWithWalletRelationList { get; set; } = new List<CategoryWithWalletRelationDTO>();
+    [Inject] private ISnackbar Snackbar { get; set; }
+    [Inject] private IAlertService AlertService { get; set; }
+    private IList<CategoryWalletRelationDTO> CategoryWithWalletRelationList { get; set; } =
+        new List<CategoryWalletRelationDTO>();
+
     private IList<WalletDTO> WalletList { get; set; } = new List<WalletDTO>();
-    private bool BlockedView  { get; set; } = true;
+    private bool BlockedView { get; set; } = true;
 
     private async Task GetCategories()
     {
         var response2 = await ApiClient.Get("api/v1/categories/wallet-relations");
         var responseString2 = await response2.Content.ReadAsStringAsync();
-        CategoryWithWalletRelationList = JsonConvert.DeserializeObject<IList<CategoryWithWalletRelationDTO>>(responseString2) ?? [];
+        CategoryWithWalletRelationList =
+            JsonConvert.DeserializeObject<IList<CategoryWalletRelationDTO>>(responseString2) ?? [];
 
         var response = await ApiClient.Get("api/v1/wallets");
         var r = await response.Content.ReadAsStringAsync();
@@ -50,5 +58,38 @@ public partial class Categories(IApiClient apiClient, IDialogService dialogServi
             }
         };
         return DialogService.ShowAsync<AddCategoryDialogForm>(null, parameters, options);
+    }
+
+    private async Task UpdateCategoryWalletRelationAsync()
+    {
+        var command = new SetWalletCategoryRelationsCommand()
+        {
+            CategoryWalletRelations = new List<CategoryWalletRelationCommand>()
+        };
+
+        foreach (var category in CategoryWithWalletRelationList)
+        {
+            foreach (var walletRelation in category.WalletRelations)
+            {
+                command.CategoryWalletRelations.Add(new CategoryWalletRelationCommand()
+                {
+                    CategoryId = category.Id,
+                    WalletId = walletRelation.WalletId,
+                    Status = walletRelation.Status
+                });
+            }
+        }
+        
+        var response = await ApiClient.Create(@"api/v1/categories/wallet-relations", command);
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            Snackbar.Add(new MarkupString($"Saved changes"), Severity.Success);
+        }
+        else
+        {
+            await response.HandleFailure(AlertService);
+        }
+
+        await GetCategories();
     }
 }

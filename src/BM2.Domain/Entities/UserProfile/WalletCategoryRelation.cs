@@ -26,6 +26,6 @@ public class WalletCategoryRelation : IEntity, IOwnedByUser
     public static WalletCategoryRelation CreateInstance(Guid walletId, Guid categoryId, Guid ownedByUserId,
         bool isActive = true)
     {
-        return new WalletCategoryRelation(walletId, categoryId, ownedByUserId);
+        return new WalletCategoryRelation(walletId, categoryId, ownedByUserId, isActive);
     }
 }

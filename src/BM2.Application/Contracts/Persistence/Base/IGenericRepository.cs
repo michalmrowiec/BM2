@@ -7,7 +7,8 @@ public interface IGenericRepository<T>
     Task<T> Add(T entity);
     Task<IEnumerable<T>> AddRange(IList<T> entities);
     Task<T> Update(T entity);
-    Task Delete(T entity);
+    Task<IEnumerable<T>> UpdateRange(IList<T> entities);
+    Task Delete(params IList<T> entity);
     Task<IReadOnlyList<T>> GetAllAsync();
     Task<IReadOnlyList<T>> GetAllForUserAsync(Guid userId, params Func<IQueryable<T>, IQueryable<T>>[] includes);
     Task<T?> GetByIdAsync(Guid id);

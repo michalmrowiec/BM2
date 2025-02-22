@@ -1,22 +1,18 @@
 ﻿using System.Text.Json.Serialization;
 using BM2.Shared.DTOs;
+using BM2.Shared.Requests.Commands.CommonCommands;
 
 namespace BM2.Shared.Requests.Commands.Category;
 
-public class SetWalletCategoryRelationsCommand : IBaseRequestCollection<CategoryWithWalletRelationDTO>
+public class SetWalletCategoryRelationsCommand : IBaseRequestCollection<CategoryWalletRelationDTO>
 {
-    public IList<CategoryWithWalletRelationCommand>? CategoryWalletRelations { get; set; }
+    public IList<CategoryWalletRelationCommand> CategoryWalletRelations { get; set; } = [];
     [JsonIgnore]
-    public Guid OwnedByUserId { get; set; }
+    public Guid UserId { get; set; }
 }
 
-public class CategoryWithWalletRelationCommand
+public class CategoryWalletRelationCommand : WalletRelationCommand
 {
     public Guid CategoryId { get; set; }
-    public IList<WalletCategoryRelationCommand>? WalletRelations { get; set; }}
-
-public class WalletCategoryRelationCommand
-{
-    public Guid WalletId { get; set; }
-    public RelationStatus Status { get; set; }
+    //public IList<WalletRelationCommand>? WalletRelations { get; set; }
 }

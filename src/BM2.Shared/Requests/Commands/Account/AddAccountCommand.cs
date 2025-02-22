@@ -10,5 +10,5 @@ public class AddAccountCommand : IBaseRequest<AccountDTO>
     public bool IsActive { get; set; } = true;
     public Guid DefaultCurrencyId { get; set; }
     [JsonIgnore]
-    public Guid OwnedByUserId { get; set; }
+    public Guid UserId { get; set; }
 }
