@@ -2,6 +2,7 @@
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Commands.Wallet;
 using BM2.Shared.Requests.Queries.Account;
+using BM2.Shared.Requests.Queries.Category;
 using BM2.Shared.Requests.Wallet;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -20,7 +21,7 @@ public class WalletsController(
     [HttpPost]
     public async Task<ActionResult<WalletDTO>> AddWallet([FromBody] AddWalletCommand addWalletCommand)
     {
-        addWalletCommand.OwnedByUserId = userContextService.GetUserId;
+        addWalletCommand.OwnedByUserId = userContextService.UserId;
 
         var result = await mediator.Send(addWalletCommand);
 
@@ -30,7 +31,7 @@ public class WalletsController(
     [HttpGet("{walletId:guid}")]
     public async Task<ActionResult<WalletDTO>> GetWalletById([FromRoute] Guid walletId)
     {
-        var result = await mediator.Send(new GetWalletByIdQuery(walletId, userContextService.GetUserId));
+        var result = await mediator.Send(new GetWalletByIdQuery(walletId, userContextService.UserId));
 
         return result.HandleOkResult(this);
     }
@@ -38,7 +39,7 @@ public class WalletsController(
     [HttpGet]
     public async Task<ActionResult<IList<WalletDTO>>> GetAllWallets()
     {
-        var result = await mediator.Send(new GetAllWalletsForUserQuery(userContextService.GetUserId));
+        var result = await mediator.Send(new GetAllWalletsForUserQuery(userContextService.UserId));
 
         return result.HandleOkResult(this);
     }
@@ -46,7 +47,18 @@ public class WalletsController(
     [HttpGet("{walletId:guid}/accounts")]
     public async Task<ActionResult<IList<WalletDTO>>> GetAccountsForWallet([FromRoute] Guid walletId)
     {
-        var result = await mediator.Send(new GetAccountsForWalletByIdQuery(walletId, userContextService.GetUserId));
+        var result = await mediator.Send(new GetAccountsForWalletByIdQuery(walletId, userContextService.UserId));
+
+        return result.HandleOkResult(this);
+    }
+    
+    [HttpGet("{walletId:guid}/categories")]
+    public async Task<ActionResult<IList<CategoryDTO>>> GetCategoriesForWallet([FromRoute] Guid walletId)
+    {
+        var result =
+            await mediator.Send(new GetCategoriesForWalletQuery(
+                UserId: userContextService.UserId,
+                WalletId: walletId));
 
         return result.HandleOkResult(this);
     }

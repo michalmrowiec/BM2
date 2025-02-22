@@ -18,7 +18,7 @@ public class TagsController(
     [HttpPost]
     public async Task<ActionResult<TagDTO>> AddTag([FromBody] AddTagCommand command)
     {
-        command.OwnedByUserId = userContextService.GetUserId;
+        command.OwnedByUserId = userContextService.UserId;
 
         var result = await mediator.Send(command);
 

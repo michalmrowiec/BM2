@@ -20,7 +20,7 @@ public class AccountsController(
     [HttpPost]
     public async Task<ActionResult<AccountDTO>> AddAccount([FromBody] AddAccountCommand command)
     {
-        command.UserId = userContextService.GetUserId;
+        command.UserId = userContextService.UserId;
 
         var result = await mediator.Send(command);
 
@@ -30,7 +30,7 @@ public class AccountsController(
     [HttpGet]
     public async Task<ActionResult<IList<AccountDTO>>> GetAllAccounts()
     {
-        var result = await mediator.Send(new GetAllAccountsForUserQuery(userContextService.GetUserId));
+        var result = await mediator.Send(new GetAllAccountsForUserQuery(userContextService.UserId));
 
         return result.HandleOkResult(this);
     }
