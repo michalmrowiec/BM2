@@ -1,6 +1,8 @@
-﻿namespace BM2.Shared.DTOs;
+﻿using BM2.Shared.DTOs.Interfaces;
 
-public class CurrencyDTO
+namespace BM2.Shared.DTOs;
+
+public class CurrencyDTO : IEntityDTO
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;

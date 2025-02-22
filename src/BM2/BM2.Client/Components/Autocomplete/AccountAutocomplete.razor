@@ -1,0 +1,13 @@
+﻿@using BM2.Shared.DTOs
+
+<AutocompleteBase TEntityDTO="AccountDTO"
+                  Label="@Label"
+                  Uri="api/v1/accounts"
+                  SearchFunc="@((entity, value) => entity.AccountName.Contains(value, StringComparison.InvariantCultureIgnoreCase))"
+                  OrderFunc="@(x => x.AccountName)"
+                  SelectedValue="SelectedAccount"/>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Account";
+    [Parameter] public EventCallback<AccountDTO> SelectedAccount { get; set; }
+}

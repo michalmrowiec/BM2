@@ -1,6 +1,8 @@
-﻿namespace BM2.Shared.DTOs;
+﻿using BM2.Shared.DTOs.Interfaces;
 
-public class AccountBasicDTO
+namespace BM2.Shared.DTOs;
+
+public class AccountBasicDTO : IEntityDTO
 {
     public Guid Id { get; set; }
     public Guid WalletId { get; set; }

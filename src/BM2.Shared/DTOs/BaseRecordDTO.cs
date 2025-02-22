@@ -1,6 +1,8 @@
-﻿namespace BM2.Shared.DTOs;
+﻿using BM2.Shared.DTOs.Interfaces;
 
-public abstract class BaseRecordDTO
+namespace BM2.Shared.DTOs;
+
+public abstract class BaseRecordDTO : IEntityDTO
 {
     public Guid Id { get; set; }
     public Guid CategoryId { get; set; }

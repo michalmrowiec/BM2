@@ -1,0 +1,58 @@
+﻿@inject IApiClient ApiClient
+@using Newtonsoft.Json
+@typeparam TEntityDTO where TEntityDTO : class, BM2.Shared.DTOs.Interfaces.IEntityDTO
+
+<MudAutocomplete T="TEntityDTO"
+                 @ref="_mudAutocomplete"
+                 ValueChanged="@(async (c) => await SelectedValue.InvokeAsync(c))"
+                 SearchFunc="Search"
+                 Label="@Label"
+                 ToStringFunc="@((c) => CurrencyDisplay(c))"
+                 Clearable
+                 MaxItems="1000"/>
+
+@code {
+    [Parameter] public required string Uri { get; set; }
+    [Parameter] public string Label { get; set; } = "Autocomplete";
+    [Parameter] public EventCallback<TEntityDTO> SelectedValue { get; set; }
+    [Parameter] public Func<TEntityDTO, object>? OrderFunc { get; set; }
+    [Parameter] public required Func<TEntityDTO, string, bool> SearchFunc { get; set; }
+    private IEnumerable<TEntityDTO> _values = [];
+    private MudAutocomplete<TEntityDTO>? _mudAutocomplete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ApiClient.Get(Uri);
+        var responseString = await response.Content.ReadAsStringAsync();
+        var values = JsonConvert.DeserializeObject<List<TEntityDTO>>(responseString) ?? [];
+        if (OrderFunc is not null)
+            _values = values.OrderBy(OrderFunc);
+
+        StateHasChanged();
+    }
+
+    public async Task SelectValueById(Guid? Id)
+    {
+        if (_values.Any(x => x.Id == Id))
+            await _mudAutocomplete.SelectOptionAsync(_values.First(x => x.Id == Id));
+
+        await SelectedValue.InvokeAsync(_values.First(x => x.Id == Id));
+    }
+
+    private async Task<IEnumerable<TEntityDTO>> Search(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return _values;
+        
+        return _values.Where(x => SearchFunc(x, value));
+    }
+
+    private string CurrencyDisplay(TEntityDTO? value)
+    {
+        if (value == null)
+            return string.Empty;
+
+        return value.ToString()!;
+    }
+
+}
