@@ -1,0 +1,100 @@
+﻿@using BM2.Domain.Entities.UserProfile
+@using BM2.Shared.DTOs
+
+@using BM2.Shared.Requests.Commands.Account
+@using BM2.Shared.Requests.Commands.Record
+@using Newtonsoft.Json
+@using BM2.Shared.Requests.Commands.Wallet
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IApiClient ApiClient
+
+<BaseDialog DialogTitle="New record" MudDialog="@MudDialog"
+            FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
+            FuncsOnCancel="@([EventCallback.Factory.Create(this, Cancel)])">
+    <BodyContent>
+        <MudForm Model="@_model"
+                 @ref="@_form"
+                 ValidationDelay="0">
+            <MudCardContent>
+                @* <WalletAutocomplete Label="Wallet" *@
+                @*                     SelectedWallet="@((w) => _model.AccountId = w.Id)"/> *@
+
+                <CurrencyAutocomplete Label="Wallet default currency"
+                                      SelectedCurrency="@((c) => _model.CurrencyId = c.Id)"/>
+
+                <MudTextField @bind-Value="_model.Name"
+                              For="@(() => _model.Name)"
+                              Immediate="true"
+                              Label="Name"
+                              MaxLength="@ModelsRequirements.AccountNameMaxLength"
+                              Required/>
+
+            </MudCardContent>
+        </MudForm>
+    </BodyContent>
+</BaseDialog>
+
+@code {
+    [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    private MudForm _form;
+    private AddRecordCommand _model = new();
+    private IEnumerable<WalletDTO> _wallets = [];
+    private WalletDTO _selectedWallet;
+    
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        //_model.WalletId = _selectedWallet.Id;
+        
+        await _form.Validate();
+
+        if (_form.IsValid)
+        {
+            var response = await ApiClient.Create(@"api/v1/records", _model);
+            if (response.StatusCode == System.Net.HttpStatusCode.Created)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var newItem = JsonConvert.DeserializeObject<AccountDTO>(content) ?? new();
+
+                Snackbar.Add(new MarkupString($"Created <b>{newItem.AccountName}</b>"), Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+                FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+            }
+            else
+            {
+                await response.HandleFailure(AlertService);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ApiClient.Get(@"api/v1/wallets");
+        var responseString = await response.Content.ReadAsStringAsync();
+        var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
+        _wallets = walletDtos.OrderBy(x => x.WalletName);
+        
+        StateHasChanged();
+    }
+    
+    private async Task<IEnumerable<WalletDTO>> WalletSearch(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return _wallets;
+
+        return _wallets.Where(x => x.WalletName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+    
+    private string WalletDisplay(WalletDTO? walletDto)
+    {
+        if (walletDto == null)
+            return string.Empty;
+
+        //_model.WalletId = walletDto.Id;
+
+        return walletDto.ToString();
+    }
+}

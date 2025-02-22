@@ -21,7 +21,7 @@ public class AddAccountCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
         var entity = mapper.Map<AddAccountCommand, Domain.Entities.UserProfile.Account>(request);
         entity.Id = Guid.NewGuid();
         entity.CreatedAt = DateTime.UtcNow;
-        entity.CreatedBy = request.UserId;
+        entity.CreatedBy = request.OwnedByUserId;
 
         try
         {

@@ -3,6 +3,7 @@
 @inject IApiClient ApiClient
 
 <MudAutocomplete T="CurrencyDTO"
+                 @ref="_mudAutocomplete"
                  ValueChanged="@(async (c) => await SelectedCurrency.InvokeAsync(c))"
                  SearchFunc="Search"
                  Label="@Label"
@@ -14,7 +15,8 @@
     [Parameter] public string Label { get; set; } = "Currency";
     [Parameter] public EventCallback<CurrencyDTO> SelectedCurrency { get; set; }
     private IEnumerable<CurrencyDTO> _currencies = [];
-    
+    private MudAutocomplete<CurrencyDTO>? _mudAutocomplete;
+
     protected override async Task OnInitializedAsync()
     {
         var response = await ApiClient.Get(@"api/v1/currencies");
@@ -24,10 +26,19 @@
         StateHasChanged();
     }
 
+    public async Task SelectCurrency(Guid? currencyId)
+    {
+        if (_currencies.Any(x => x.Id == currencyId))
+            await _mudAutocomplete.SelectOptionAsync(_currencies.First(x => x.Id == currencyId));
+
+        await SelectedCurrency.InvokeAsync(_currencies.First(x => x.Id == currencyId));
+    }
+
     private async Task<IEnumerable<CurrencyDTO>> Search(string value, CancellationToken token)
     {
         if (string.IsNullOrEmpty(value))
             return _currencies;
+
 
         return _currencies.Where(x => x.Name.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.Symbol.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.IsoCode.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }

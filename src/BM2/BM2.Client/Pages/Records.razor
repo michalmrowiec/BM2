@@ -1,0 +1,32 @@
+﻿@page "/records"
+@using BM2.Shared.DTOs
+@using BM2.Client.Components
+
+<h3>Records</h3>
+
+@* <MudButton @onclick="OpenAddAccountDialogAsync" *@
+@*            Variant="Variant.Filled" *@
+@*            Color="Color.Primary"> *@
+@*     Add account *@
+@* </MudButton> *@
+
+@* <MudDataGrid T="AccountDTO" Items="@AccountList"> *@
+@*     <Columns> *@
+@*         <PropertyColumn Title="Wallet" Property="x => x.Wallet!.WalletName"> *@
+@*             <CellTemplate> *@
+@*                 @context.Item.Wallet?.ToString() *@
+@*             </CellTemplate> *@
+@*         </PropertyColumn> *@
+@*         <PropertyColumn Title="Name" Property="x => x.AccountName" /> *@
+@*         <PropertyColumn Title="Is active" Property="x => x.IsActive"> *@
+@*             <CellTemplate> *@
+@*                 <IsActiveGridIcon IsActive="context.Item.IsActive"/> *@
+@*             </CellTemplate> *@
+@*         </PropertyColumn> *@
+@*         <PropertyColumn Title="Currency" Property="x => x.DefaultCurrency" SortBy="x => x.DefaultCurrency!.Name"> *@
+@*             <CellTemplate> *@
+@*                 @context.Item.DefaultCurrency?.ToString() *@
+@*             </CellTemplate> *@
+@*         </PropertyColumn> *@
+@*     </Columns> *@
+@* </MudDataGrid> *@

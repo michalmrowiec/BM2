@@ -1,30 +1,28 @@
-﻿@using BM2.Domain.Entities.UserProfile
+﻿@using System.Net
 @using BM2.Shared.DTOs
-
 @using BM2.Shared.Requests.Commands.Account
 @using Newtonsoft.Json
-@using BM2.Shared.Requests.Commands.Wallet
 @inject ISnackbar Snackbar
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
 
 <BaseDialog DialogTitle="New wallet" MudDialog="@MudDialog"
             FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
-            FuncsOnCancel="@([EventCallback.Factory.Create(this, Cancel)])">
+            FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
     <BodyContent>
         <MudForm Model="@_model"
                  @ref="@_form"
                  ValidationDelay="0">
             <MudCardContent>
-                <MudAutocomplete T="WalletDTO"
-                                 @bind-Value="@_selectedWallet"
-                                 SearchFunc="WalletSearch"
-                                 Label="Wallet"
-                                 ToStringFunc="@((i) => WalletDisplay(i))"
-                                 Clearable
-                                 MaxItems="100"/>
+                <WalletAutocomplete Label="Wallet"
+                                    SelectedWallet="@(async (w) =>
+                                                    {
+                                                        _model.WalletId = w.Id;
+                                                        await _currencyAutocompleteRef?.SelectCurrency(w.DefaultCurrencyId)!;
+                                                    })"/>
 
-                <CurrencyAutocomplete Label="Wallet default currency"
+                <CurrencyAutocomplete @ref="_currencyAutocompleteRef"
+                                      Label="Account default currency"
                                       SelectedCurrency="@((c) => _model.DefaultCurrencyId = c.Id)"/>
 
                 <MudTextField @bind-Value="_model.AccountName"
@@ -46,21 +44,21 @@
     private MudForm _form;
     private AddAccountCommand _model = new();
     private IEnumerable<WalletDTO> _wallets = [];
-    private WalletDTO _selectedWallet;
-    
-    
+    //private WalletDTO _selectedWallet;
+    private CurrencyAutocomplete? _currencyAutocompleteRef;
+
     private void Cancel() => MudDialog.Cancel();
 
     private async Task Submit()
     {
-        _model.WalletId = _selectedWallet.Id;
-        
+        //_model.WalletId = _selectedWallet.Id;
+
         await _form.Validate();
 
         if (_form.IsValid)
         {
             var response = await ApiClient.Create(@"api/v1/accounts", _model);
-            if (response.StatusCode == System.Net.HttpStatusCode.Created)
+            if (response.StatusCode == HttpStatusCode.Created)
             {
                 var content = await response.Content.ReadAsStringAsync();
                 var newItem = JsonConvert.DeserializeObject<AccountDTO>(content) ?? new();
@@ -76,31 +74,4 @@
         }
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-        var response = await ApiClient.Get(@"api/v1/wallets");
-        var responseString = await response.Content.ReadAsStringAsync();
-        var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
-        _wallets = walletDtos.OrderBy(x => x.WalletName);
-        
-        StateHasChanged();
-    }
-    
-    private async Task<IEnumerable<WalletDTO>> WalletSearch(string value, CancellationToken token)
-    {
-        if (string.IsNullOrEmpty(value))
-            return _wallets;
-
-        return _wallets.Where(x => x.WalletName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
-    }
-    
-    private string WalletDisplay(WalletDTO? walletDto)
-    {
-        if (walletDto == null)
-            return string.Empty;
-
-        _model.WalletId = walletDto.Id;
-
-        return walletDto.ToString();
-    }
 }

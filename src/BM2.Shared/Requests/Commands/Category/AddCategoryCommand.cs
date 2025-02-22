@@ -8,5 +8,5 @@ public class AddCategoryCommand : IBaseRequest<CategoryDTO>
     public string CategoryName { get; set; } = null!;
     public List<Guid> WalletIds  { get; set; } = [];
     [JsonIgnore]
-    public Guid UserId { get; set; }
+    public Guid OwnedByUserId { get; set; }
 }
