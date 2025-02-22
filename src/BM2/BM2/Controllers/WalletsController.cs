@@ -56,7 +56,7 @@ public class WalletsController(
     public async Task<ActionResult<IList<CategoryDTO>>> GetCategoriesForWallet([FromRoute] Guid walletId)
     {
         var result =
-            await mediator.Send(new GetCategoriesForWalletQuery(
+            await mediator.Send(new GetActiveCategoriesForWalletQuery(
                 UserId: userContextService.UserId,
                 WalletId: walletId));
 
