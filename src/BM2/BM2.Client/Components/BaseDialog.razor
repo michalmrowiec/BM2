@@ -3,7 +3,10 @@
         @DialogTitle
     </TitleContent>
     <DialogContent>
-        @BodyContent
+        @if (BodyContent is not null)
+        {
+            @BodyContent
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(async () => await Cancel())">Cancel</MudButton>

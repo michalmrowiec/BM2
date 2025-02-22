@@ -4,7 +4,11 @@
 
 <MudAutocomplete T="TEntityDTO"
                  @ref="_mudAutocomplete"
-                 ValueChanged="@(async (c) => await SelectedValue.InvokeAsync(c))"
+                 ValueChanged="@(async (value) =>
+                               {
+                                   await SelectedValue.InvokeAsync(value);
+                                   _selectedValue = value;
+                               })"
                  SearchFunc="Search"
                  Label="@Label"
                  Required="@Required"
@@ -13,17 +17,47 @@
                  MaxItems="1000"/>
 
 @code {
-    protected string Uri { get; set; }
+    protected string Uri { get; set; } = string.Empty;
     [Parameter] public string Label { get; set; } = "Autocomplete";
     [Parameter] public bool Required { get; set; }
-    [Parameter] public EventCallback<TEntityDTO> SelectedValue { get; set; }
+    [Parameter] public EventCallback<TEntityDTO?> SelectedValue { get; set; }
     protected Func<TEntityDTO, object>? OrderFunc { get; set; }
     protected Func<TEntityDTO, string, bool> SearchFunc { get; set; }
     private IEnumerable<TEntityDTO> _values = [];
     private MudAutocomplete<TEntityDTO>? _mudAutocomplete;
+    private TEntityDTO? _selectedValue;
 
     protected override async Task OnInitializedAsync()
     {
+        await GetValues();
+    }
+
+    // protected override async Task OnParametersSetAsync()
+    // {
+    //     await GetValues();
+    //
+    //     if (_selectedValue is not null && !_values.Contains(_selectedValue))
+    //         await _mudAutocomplete!.ClearAsync();
+    // }
+
+    public async Task SetUri(string uri = "")
+    {
+        var temp = _selectedValue;
+        await _mudAutocomplete!.ClearAsync();
+        Uri = uri;
+        await GetValues();
+
+         if (temp is not null && !_values.Contains(temp))
+             await SelectValueById(temp.Id);
+        
+         StateHasChanged();
+    }
+
+    private async Task GetValues()
+    {
+        if (string.IsNullOrWhiteSpace(Uri))
+            return;
+
         var response = await ApiClient.Get(Uri);
         var responseString = await response.Content.ReadAsStringAsync();
         var values = JsonConvert.DeserializeObject<List<TEntityDTO>>(responseString) ?? [];
@@ -36,16 +70,18 @@
     public async Task SelectValueById(Guid? Id)
     {
         if (_values.Any(x => x.Id == Id))
-            await _mudAutocomplete.SelectOptionAsync(_values.First(x => x.Id == Id));
+        {
+            await _mudAutocomplete!.SelectOptionAsync(_values.First(x => x.Id == Id));
 
-        await SelectedValue.InvokeAsync(_values.First(x => x.Id == Id));
+            await SelectedValue.InvokeAsync(_values.First(x => x.Id == Id));
+        }
     }
 
     private async Task<IEnumerable<TEntityDTO>> Search(string value, CancellationToken token)
     {
         if (string.IsNullOrEmpty(value))
             return _values;
-        
+
         return _values.Where(x => SearchFunc(x, value));
     }
 
