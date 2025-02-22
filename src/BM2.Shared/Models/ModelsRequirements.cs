@@ -6,5 +6,6 @@ public static class ModelsRequirements
     public static int AccountNameMaxLength => 100;
     public static int CategoryNameMaxLength => 80;
     public static int TagNameMaxLength => 150;
-
+    public static int RecordNameMaxLength => 150;
+    public static int RecordDescriptionMaxLength => 500;
 }

@@ -27,7 +27,4 @@ public abstract class BaseRecord : IEntity, IEntityAudit, IOwnedByUser
     public User? OwnedByUser { get; set; }
     public RecordStatus? Status { get; set; }
     public ICollection<Tag> Tags { get; set; } = [];
-    
-    public static int RecordNameMaxLength => 150;
-    public static int RecordDescriptionMaxLength => 500;
 }
