@@ -16,7 +16,6 @@ public class GetActiveCategoriesForWalletQueryHandler(IUnitOfWork unitOfWork, IM
         var items =
             await unitOfWork.CategoryRepository.GetCategoryForWalletAsync(request.UserId, request.WalletId, true);
 
-        items.ThrowExceptionIfNull();
         items!.CheckPermission(request.UserId);
 
         return request.ReturnSuccessWithObject(mapper.Map<IEnumerable<CategoryDTO>>(items));

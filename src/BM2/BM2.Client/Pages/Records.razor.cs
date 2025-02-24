@@ -12,20 +12,48 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
     [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
     private IList<RecordDTO> RecordList { get; set; } = new List<RecordDTO>();
-
-    private async Task GetAccounts()
+    private int SelectedYear
     {
-        var response = await ApiClient.Get("api/v1/records");
-        var r = await response.Content.ReadAsStringAsync();
-        RecordList = JsonConvert.DeserializeObject<IList<RecordDTO>>(r) ?? [];
+        get => _selectedYear;
+        set
+        {
+            _selectedYear = value;
+            _ = GetRecords();
+        }
+    }
+
+    private int SelectedMonth
+    {
+        get => _selectedMonth;
+        set
+        {
+            _selectedMonth = value;
+            _ = GetRecords();
+        }
+    }
+    private int _selectedYear = DateTime.Today.Year;
+    private int _selectedMonth = DateTime.Today.Month;
+    private readonly List<(int Value, string Text)> _months =
+    [
+        (1, "January"), (2, "February"), (3, "March"), (4, "April"),
+        (5, "May"), (6, "June"), (7, "July"), (8, "August"),
+        (9, "September"), (10, "October"), (11, "November"), (12, "December")
+    ];
+    
+    private async Task GetRecords()
+    {
+        var response = await ApiClient.Get($"api/v1/records?year={_selectedYear}&month={_selectedMonth}");
+        var responseString = await response.Content.ReadAsStringAsync();
+        var records = JsonConvert.DeserializeObject<IList<RecordDTO>>(responseString) ?? [];
+        RecordList = records.OrderBy(x => x.RecordDateTime).ToList();
         StateHasChanged();
     }
 
     protected override async Task OnInitializedAsync()
     {
-        await GetAccounts();
+        await GetRecords();
     }
-    
+
     private Task OpenAddRecordDialogAsync()
     {
         var options = new DialogOptions
@@ -39,7 +67,7 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
         {
             {
                 x => x.FuncsOnCreated,
-                [EventCallback.Factory.Create(this, GetAccounts)]
+                [EventCallback.Factory.Create(this, GetRecords)]
             }
         };
         return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);

@@ -22,14 +22,11 @@ public class GetAllCategoriesForUserWithWalletRelationsQueryHandler(IUnitOfWork 
             await unitOfWork.WalletCategoryRelationRepository.GetAllForUserAsync(request.UserId);
         var wallets = await unitOfWork.WalletRepository.GetAllForUserAsync(request.UserId);
 
-        categories.ThrowExceptionIfNull();
-        categories!.CheckPermission(request.UserId);
+        categories.CheckPermission(request.UserId);
 
-        walletCategoryRelations.ThrowExceptionIfNull();
-        walletCategoryRelations!.CheckPermission(request.UserId);
+        walletCategoryRelations.CheckPermission(request.UserId);
 
-        wallets.ThrowExceptionIfNull();
-        wallets!.CheckPermission(request.UserId);
+        wallets.CheckPermission(request.UserId);
 
         IList<CategoryWalletRelationDTO> categoriesDto = new List<CategoryWalletRelationDTO>();
 

@@ -16,7 +16,6 @@ public class GetAllCategoriesForUserQueryHandler(IUnitOfWork unitOfWork, IMapper
         var items =
             await unitOfWork.CategoryRepository.GetAllForUserAsync(request.UserId);
 
-        items.ThrowExceptionIfNull();
         items!.CheckPermission(request.UserId);
 
         return request.ReturnSuccessWithObject(mapper.Map<IEnumerable<CategoryDTO>>(items));
