@@ -1,6 +1,7 @@
 ﻿using BM2.Controllers.Utils;
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Commands.Record;
+using BM2.Shared.Requests.Queries.Record;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,5 +24,13 @@ public class RecordsController(
         var result = await mediator.Send(command);
 
         return result.HandleCreatedResult(this, "");
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IList<RecordDTO>>> GetRecord([FromQuery] int year, [FromQuery] int month)
+    {
+        var result = await mediator.Send(new GetRecordsForMonthQuery(userContextService.UserId, year, month));
+
+        return result.HandleOkResult(this);
     }
 }

@@ -1,6 +1,6 @@
 ﻿@page "/records"
+@using BM2.Client.Services.DisplayServices
 @using BM2.Shared.DTOs
-@using BM2.Client.Components
 
 <h3>Records</h3>
 
@@ -10,23 +10,42 @@
     Add record
 </MudButton>
 
-@* <MudDataGrid T="AccountDTO" Items="@AccountList"> *@
-@*     <Columns> *@
-@*         <PropertyColumn Title="Wallet" Property="x => x.Wallet!.WalletName"> *@
-@*             <CellTemplate> *@
-@*                 @context.Item.Wallet?.ToString() *@
-@*             </CellTemplate> *@
-@*         </PropertyColumn> *@
-@*         <PropertyColumn Title="Name" Property="x => x.AccountName" /> *@
-@*         <PropertyColumn Title="Is active" Property="x => x.IsActive"> *@
-@*             <CellTemplate> *@
-@*                 <IsActiveGridIcon IsActive="context.Item.IsActive"/> *@
-@*             </CellTemplate> *@
-@*         </PropertyColumn> *@
-@*         <PropertyColumn Title="Currency" Property="x => x.DefaultCurrency" SortBy="x => x.DefaultCurrency!.Name"> *@
-@*             <CellTemplate> *@
-@*                 @context.Item.DefaultCurrency?.ToString() *@
-@*             </CellTemplate> *@
-@*         </PropertyColumn> *@
-@*     </Columns> *@
-@* </MudDataGrid> *@
+<MudIconButton @onclick="GetRecords"
+               Icon="@Icons.Material.Filled.Refresh"/>
+
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudNumericField Label="Year:" @bind-Value="SelectedYear" />
+    </MudItem>
+    
+    <MudItem xs="12" sm="6">
+        <MudSelect @bind-Value="SelectedMonth" Label="Month:">
+            @foreach (var month in _months)
+            {
+                <MudSelectItem Value="month.Value">@month.Text</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+</MudGrid>
+
+<MudDataGrid T="RecordDTO" Items="@RecordList">
+    <Columns>
+        <PropertyColumn Title="Name" Property="x => x.Name">
+        </PropertyColumn>
+        <PropertyColumn Title="Amount/Planned" Property="x => x.Amount">
+            <CellTemplate>
+                @string.Concat(context.Item.Amount, '/', context.Item.PlannedAmount, context.Item.Currency?.Symbol)
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Category" Property="x => x.Category" SortBy="x => x.Category!.CategoryName">
+            <CellTemplate>
+                @context.Item.Category?.ToString()
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Date of operation" Property="x => x.RecordDateTime">
+            <CellTemplate>
+                @context.Item.RecordDateTime.DateTimeUtcToLocal()
+            </CellTemplate>
+        </PropertyColumn>
+    </Columns>
+</MudDataGrid>
