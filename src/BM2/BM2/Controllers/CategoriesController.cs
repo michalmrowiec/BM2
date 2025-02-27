@@ -46,7 +46,7 @@ public class CategoriesController(
     }
 
     [HttpGet("wallet-relations")]
-    public async Task<ActionResult<IList<CategoryDTO>>> GetAllCategoriesWithWalletRelations()
+    public async Task<ActionResult<IList<CategoryWalletRelationDTO>>> GetAllCategoriesWithWalletRelations()
     {
         var result =
             await mediator.Send(new GetAllCategoriesForUserWithWalletRelationsQuery(userContextService.UserId));

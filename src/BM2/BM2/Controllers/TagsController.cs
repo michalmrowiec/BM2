@@ -1,6 +1,7 @@
 ﻿using BM2.Controllers.Utils;
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Commands.Tag;
+using BM2.Shared.Requests.Queries.Tag;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,5 +24,14 @@ public class TagsController(
         var result = await mediator.Send(command);
 
         return result.HandleCreatedResult(this, "");
+    }
+    
+    [HttpGet("wallet-relations")]
+    public async Task<ActionResult<IList<TagWalletRelationDTO>>> GetAllTagsWithWalletRelations()
+    {
+        var result =
+            await mediator.Send(new GetAllTagsForUserWithWalletRelationsQuery(userContextService.UserId));
+
+        return result.HandleOkResult(this);
     }
 }
