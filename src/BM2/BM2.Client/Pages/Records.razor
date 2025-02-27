@@ -40,7 +40,10 @@
         <PropertyColumn Title="Status" Property="x => x.Status" SortBy="x => x.Status!.RecordStatusName">
             <CellTemplate>
                 <MudChip Size="Size.Small" Label="true" Variant="Variant.Text"
-                         Color="@context.Item.Status!.GetColorForRecordStatus()">@context.Item.Status?.ToString()</MudChip>
+                         Icon="@context.Item.Status!.GetIconForRecordStatus()"
+                         Color="@context.Item.Status!.GetColorForRecordStatus()">
+                    @context.Item.Status?.ToString()
+                </MudChip>
             </CellTemplate>
         </PropertyColumn>
         <PropertyColumn Title="Category" Property="x => x.Category" SortBy="x => x.Category!.CategoryName">
