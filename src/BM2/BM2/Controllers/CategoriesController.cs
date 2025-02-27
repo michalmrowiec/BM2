@@ -27,7 +27,7 @@ public class CategoriesController(
     }
 
     [HttpPost("wallet-relations")]
-    public async Task<ActionResult<CategoryDTO>> SetCategoryWalletRelations(
+    public async Task<ActionResult<IList<CategoryWalletRelationDTO>>> SetCategoryWalletRelations(
         [FromBody] SetWalletCategoryRelationsCommand command)
     {
         command.OwnedByUserId = userContextService.UserId;

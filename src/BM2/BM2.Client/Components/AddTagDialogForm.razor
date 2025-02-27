@@ -1,0 +1,88 @@
+﻿@using System.Net
+@using BM2.Domain.Entities.UserProfile
+@using BM2.Shared.DTOs
+@using BM2.Shared.Requests.Commands.Category
+@using BM2.Shared.Requests.Commands.Tag
+@using Newtonsoft.Json
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IApiClient ApiClient
+
+<BaseDialog DialogTitle="New tag" MudDialog="@MudDialog"
+            FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
+            FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
+    <BodyContent>
+        <MudForm Model="@_model"
+                 @ref="@_form"
+                 ValidationDelay="0">
+            <MudCardContent>
+                <MudTextField @bind-Value="_model.TagName"
+                              For="@(() => _model.TagName)"
+                              Immediate="true"
+                              Label="Name"
+                              MaxLength="@ModelsRequirements.CategoryNameMaxLength"
+                              Required/>
+
+                <MudSelect T="WalletDTO"
+                           @bind-SelectedValues="_selectedRelatedWallets"
+                           MultiSelection
+                           SelectAll
+                           SelectAllText="Select all"
+                           Label="Available for wallets">
+                    @foreach (var wallet in _wallets)
+                    {
+                        <MudSelectItem T="WalletDTO" Value="@wallet">@wallet.ToString()</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudCardContent>
+
+        </MudForm>
+    </BodyContent>
+</BaseDialog>
+
+@code {
+    [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    private MudForm _form;
+    private AddTagCommand _model = new();
+    private IEnumerable<WalletDTO> _wallets = [];
+    private IEnumerable<WalletDTO> _selectedRelatedWallets { get; set; } = new HashSet<WalletDTO>();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        _model.WalletIds = _selectedRelatedWallets.Select(x => x.Id).ToList();
+
+        await _form.Validate();
+
+        if (_form.IsValid)
+        {
+            var response = await ApiClient.Create(@"api/v1/tags", _model);
+            if (response.StatusCode == HttpStatusCode.Created)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var addedItem = JsonConvert.DeserializeObject<TagDTO>(content) ?? new();
+
+                Snackbar.Add(new MarkupString($"Created <b>{addedItem.TagName}</b>"), Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+                FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+            }
+            else
+            {
+                await response.HandleFailure(AlertService);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ApiClient.Get(@"api/v1/wallets");
+        var responseString = await response.Content.ReadAsStringAsync();
+        var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
+        _wallets = walletDtos.OrderBy(x => x.WalletName);
+
+        StateHasChanged();
+    }
+
+}

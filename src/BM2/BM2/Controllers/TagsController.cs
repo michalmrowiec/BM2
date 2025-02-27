@@ -25,7 +25,18 @@ public class TagsController(
 
         return result.HandleCreatedResult(this, "");
     }
-    
+
+    [HttpPost("wallet-relations")]
+    public async Task<ActionResult<IList<TagWalletRelationDTO>>> SetTagWalletRelations(
+        [FromBody] SetWalletTagRelationsCommand command)
+    {
+        command.OwnedByUserId = userContextService.UserId;
+
+        var result = await mediator.Send(command);
+
+        return result.HandleOkResult(this);
+    }
+
     [HttpGet("wallet-relations")]
     public async Task<ActionResult<IList<TagWalletRelationDTO>>> GetAllTagsWithWalletRelations()
     {

@@ -9,7 +9,7 @@
     Add tag
 </MudButton>
 
-<MudButton @onclick="UpdateCategoryWalletRelationAsync"
+<MudButton @onclick="UpdateTagWalletRelationAsync"
            Variant="Variant.Filled"
            Color="Color.Secondary">
     Save
@@ -27,16 +27,16 @@
 
 <MudTable Items="TagWithWalletRelationList" Hover Bordered>
     <HeaderContent>
-        <MudTh>Category Name</MudTh>
+        <MudTh>Tag name</MudTh>
         @foreach (var wallet in WalletList)
         {
             <MudTh>@wallet.ToString()</MudTh>
         }
     </HeaderContent>
 
-    <RowTemplate Context="category">
-        <MudTd>@category.TagName</MudTd>
-        @foreach (var relation in category.WalletRelations)
+    <RowTemplate Context="tag">
+        <MudTd>@tag.TagName</MudTd>
+        @foreach (var relation in tag.WalletRelations)
         {
             <MudTd>
                 <MudSelect @bind-Value="@relation.Status" Variant="Variant.Text" Dense Disabled="BlockedView">
