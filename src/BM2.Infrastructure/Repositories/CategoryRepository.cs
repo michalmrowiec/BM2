@@ -10,7 +10,7 @@ public class CategoryRepository(
 {
     private readonly BM2DbContext _context = context;
 
-    public async Task<IReadOnlyList<Category>> GetCategoryForWalletAsync(Guid userId, Guid walletId,
+    public async Task<IReadOnlyList<Category>> GetCategoriesForWalletAsync(Guid userId, Guid walletId,
         bool? isActive = null)
     {
         var relations = _context.WalletCategoryRelations.Where(x =>
