@@ -22,6 +22,7 @@
                                                         _model.AccountId = a.Id;
                                                         await _categoryAutocomplete.SetUri($"api/v1/wallets/{a.WalletId}/categories");
                                                         await _currencyAutocomplete.SelectValueById(a.DefaultCurrencyId);
+                                                        await GetTags(a.WalletId);
                                                     })"/>
 
                 <CurrencyAutocomplete Label="Currency"
@@ -76,6 +77,16 @@
                               Immediate
                               Label="Note"
                               MaxLength="@ModelsRequirements.RecordDescriptionMaxLength"/>
+
+                <MudSelect T="TagDTO"
+                           @bind-SelectedValues="_selectedTags"
+                           MultiSelection
+                           Label="Tags">
+                    @foreach (var tag in _tags)
+                    {
+                        <MudSelectItem T="TagDTO" Value="@tag">@tag.ToString()</MudSelectItem>
+                    }
+                </MudSelect>
             </MudCardContent>
         </MudForm>
     </BodyContent>
@@ -94,6 +105,8 @@
     private DateTime? _date = DateTime.Now;
     private TimeSpan? _time = DateTime.Now.TimeOfDay;
     private void Cancel() => MudDialog.Cancel();
+    private IEnumerable<TagDTO> _tags = [];
+    private IEnumerable<TagDTO> _selectedTags = new HashSet<TagDTO>();
 
     private async Task Submit()
     {
@@ -101,6 +114,8 @@
             _date = date.Date.Add(time);
 
         _model.RecordDateTime = _date?.ToUniversalTime() ?? DateTime.UtcNow;
+
+        _model.TagIds = _selectedTags.Select(t => t.Id).ToList();
 
         await _form.Validate();
 
@@ -129,6 +144,16 @@
         var responseString = await response.Content.ReadAsStringAsync();
         var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
         _wallets = walletDtos.OrderBy(x => x.WalletName);
+
+        StateHasChanged();
+    }
+
+    private async Task GetTags(Guid walletId)
+    {
+        var responseTags = await ApiClient.Get($"api/v1/wallets/{walletId}/tags");
+        var responseTagsString = await responseTags.Content.ReadAsStringAsync();
+        var tagDtos = JsonConvert.DeserializeObject<List<TagDTO>>(responseTagsString) ?? new List<TagDTO>();
+        _tags = tagDtos.OrderBy(x => x.TagName);
 
         StateHasChanged();
     }

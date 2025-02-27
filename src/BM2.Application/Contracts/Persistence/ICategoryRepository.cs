@@ -20,5 +20,5 @@ public interface ICategoryRepository : IGenericRepository<Category>
     /// </list>
     /// </param>
     /// <returns>A read-only list of categories that match the filtering criteria.</returns>
-    Task<IReadOnlyList<Category>> GetCategoryForWalletAsync (Guid userId, Guid walletId, bool? isActive = null);
+    Task<IReadOnlyList<Category>> GetCategoriesForWalletAsync (Guid userId, Guid walletId, bool? isActive = null);
 }

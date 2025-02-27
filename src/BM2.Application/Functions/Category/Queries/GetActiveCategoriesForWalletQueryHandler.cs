@@ -14,7 +14,7 @@ public class GetActiveCategoriesForWalletQueryHandler(IUnitOfWork unitOfWork, IM
         CancellationToken cancellationToken)
     {
         var items =
-            await unitOfWork.CategoryRepository.GetCategoryForWalletAsync(request.UserId, request.WalletId, true);
+            await unitOfWork.CategoryRepository.GetCategoriesForWalletAsync(request.UserId, request.WalletId, true);
 
         items!.CheckPermission(request.UserId);
 

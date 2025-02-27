@@ -15,9 +15,9 @@
 
 <MudGrid>
     <MudItem xs="12" sm="6">
-        <MudNumericField Label="Year:" @bind-Value="SelectedYear" />
+        <MudNumericField Label="Year:" @bind-Value="SelectedYear"/>
     </MudItem>
-    
+
     <MudItem xs="12" sm="6">
         <MudSelect @bind-Value="SelectedMonth" Label="Month:">
             @foreach (var month in _months)
@@ -37,9 +37,23 @@
                 @string.Concat(context.Item.Amount, '/', context.Item.PlannedAmount, context.Item.Currency?.Symbol)
             </CellTemplate>
         </PropertyColumn>
+        <PropertyColumn Title="Status" Property="x => x.Status" SortBy="x => x.Status!.RecordStatusName">
+            <CellTemplate>
+                <MudChip Size="Size.Small" Label="true" Variant="Variant.Text"
+                         Color="@context.Item.Status!.GetColorForRecordStatus()">@context.Item.Status?.ToString()</MudChip>
+            </CellTemplate>
+        </PropertyColumn>
         <PropertyColumn Title="Category" Property="x => x.Category" SortBy="x => x.Category!.CategoryName">
             <CellTemplate>
                 @context.Item.Category?.ToString()
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Tags" Property="x => x.Tags" SortBy="x => x.Tags.Count">
+            <CellTemplate>
+                @foreach (var tag in context.Item.Tags)
+                {
+                    <MudChip Color="Color.Tertiary" Size="Size.Small">@tag.TagName</MudChip>
+                }
             </CellTemplate>
         </PropertyColumn>
         <PropertyColumn Title="Date of operation" Property="x => x.RecordDateTime">
