@@ -4,6 +4,6 @@ internal static class DisplayService
 {
     public static string DateTimeUtcToLocal(this DateTime dateTime)
     {
-        return dateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+        return dateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
     }
 }

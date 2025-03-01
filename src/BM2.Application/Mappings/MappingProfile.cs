@@ -41,5 +41,15 @@ public class MappingProfile : Profile
         
         CreateMap<AddRecordCommand, Record>();
         CreateMap<Record, RecordDTO>();
+
+        CreateMap<UpdateRecordCommand, Record>()
+            .ForMember(x => x.Id, opt => opt.UseDestinationValue())
+            .ForMember(x => x.CreatedAt, opt => opt.UseDestinationValue())
+            .ForMember(x => x.CreatedBy, opt => opt.UseDestinationValue())
+            .ForMember(x => x.UpdatedAt, opt => opt.Ignore())
+            .ForMember(x => x.UpdatedBy, opt => opt.Ignore())
+            .ForMember(x => x.DeletedAt, opt => opt.Ignore())
+            .ForMember(x => x.DeletedBy, opt => opt.Ignore())
+            .ForMember(x => x.OwnedByUserId, opt => opt.UseDestinationValue());
     }
 }

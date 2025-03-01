@@ -64,5 +64,12 @@
                 @context.Item.RecordDateTime.DateTimeUtcToLocal()
             </CellTemplate>
         </PropertyColumn>
+        <TemplateColumn StickyRight="true">
+            <CellTemplate>
+                <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.Edit"
+                               Size="@Size.Small"/>
+            </CellTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>

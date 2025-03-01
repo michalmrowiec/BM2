@@ -8,6 +8,7 @@
 @inject IApiClient ApiClient
 
 <BaseDialog DialogTitle="New operation" MudDialog="@MudDialog"
+            ConfirmButtonText="@(FormType == DialogFormType.Add ? BaseDialog.ConfirmText.Add : BaseDialog.ConfirmText.Update)"
             FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
             FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
     <BodyContent>
@@ -17,11 +18,25 @@
             <MudCardContent>
                 <AccountAutocomplete Label="Account"
                                      Required
+                                     @ref="_accountAutocomplete"
+                                     SelectStartValue="@(x => RecordToUpdate is not null && x.Id == RecordToUpdate.AccountId)"
                                      SelectedValue="@(async (a) =>
                                                     {
                                                         _model.AccountId = a.Id;
-                                                        await _categoryAutocomplete.SetUri($"api/v1/wallets/{a.WalletId}/categories");
-                                                        await _currencyAutocomplete.SelectValueById(a.DefaultCurrencyId);
+
+                                                        if (RecordToUpdate is not null && FormType == DialogFormType.Edit)
+                                                        {
+                                                            await _categoryAutocomplete.SetUri(
+                                                                $"api/v1/wallets/{a.WalletId}/categories",
+                                                                RecordToUpdate.CategoryId);
+                                                            await _currencyAutocomplete.SelectValueById(RecordToUpdate.CurrencyId);
+                                                        }
+                                                        else
+                                                        {
+                                                            await _categoryAutocomplete.SetUri($"api/v1/wallets/{a.WalletId}/categories");
+                                                            await _currencyAutocomplete.SelectValueById(a.DefaultCurrencyId);
+                                                        }
+
                                                         await GetTags(a.WalletId);
                                                     })"/>
 
@@ -60,8 +75,11 @@
                 <RecordStatusAutocomplete Label="Status"
                                           Required
                                           StatusType="RecordStatusAutocomplete.RecordStatusType.Record"
-                                          SelectedValue="@((s) => _model.StatusId = s?.Id ?? Guid.Empty)"
-                                          SelectStartValue="@(x => x.SystemCode == StatusSystemCode.Realized)"/>
+                                          SelectStartValue="@(x =>
+                                                                RecordToUpdate is null
+                                                                    ? x.SystemCode == StatusSystemCode.Realized
+                                                                    : x.Id == RecordToUpdate.StatusId)"
+                                          SelectedValue="@((s) => _model.StatusId = s?.Id ?? Guid.Empty)"/>
 
                 <MudDatePicker @bind-Date="_date"
                                Label="Date of (planned) operation"
@@ -95,15 +113,17 @@
 @code {
     [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public RecordDTO? RecordToUpdate { get; set; }
+    [Parameter] public DialogFormType FormType { get; set; } = DialogFormType.Add;
     private MudForm _form;
-    private AddRecordCommand _model = new();
+    private UpdateRecordCommand _model = new();
     private IEnumerable<WalletDTO> _wallets = [];
-    private WalletDTO _selectedWallet;
     private CurrencyDTO? _selectedCurrency;
+    private AccountAutocomplete _accountAutocomplete;
     private CategoryAutocomplete _categoryAutocomplete;
     private CurrencyAutocomplete _currencyAutocomplete;
-    private DateTime? _date = DateTime.Now;
-    private TimeSpan? _time = DateTime.Now.TimeOfDay;
+    private DateTime? _date;
+    private TimeSpan? _time;
     private void Cancel() => MudDialog.Cancel();
     private IEnumerable<TagDTO> _tags = [];
     private IEnumerable<TagDTO> _selectedTags = new HashSet<TagDTO>();
@@ -119,15 +139,24 @@
 
         await _form.Validate();
 
+        AddRecordCommand addRecord = _model;
+
         if (_form.IsValid)
         {
-            var response = await ApiClient.Create(@"api/v1/records", _model);
-            if (response.StatusCode == HttpStatusCode.Created)
+            var response =
+                FormType == DialogFormType.Add
+                    ? await ApiClient.Create(@"api/v1/records", addRecord)
+                    : await ApiClient.Put(@"api/v1/records", _model);
+            if (response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK)
             {
                 var content = await response.Content.ReadAsStringAsync();
                 var newItem = JsonConvert.DeserializeObject<RecordDTO>(content) ?? new();
 
-                Snackbar.Add(new MarkupString($"Created <b>{newItem.Name}</b>"), Severity.Success);
+                if (response.StatusCode == HttpStatusCode.Created)
+                    Snackbar.Add(new MarkupString($"Created <b>{newItem.Name}</b>"), Severity.Success);
+                if (response.StatusCode == HttpStatusCode.OK)
+                    Snackbar.Add(new MarkupString($"Updated <b>{newItem.Name}</b>"), Severity.Success);
+
                 MudDialog.Close(DialogResult.Ok(true));
                 FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
             }
@@ -140,10 +169,33 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _date = RecordToUpdate?.RecordDateTime.ToLocalTime().Date ?? DateTime.Now;
+        _time = RecordToUpdate?.RecordDateTime.ToLocalTime().TimeOfDay ?? DateTime.Now.TimeOfDay;
+
         var response = await ApiClient.Get(@"api/v1/wallets");
         var responseString = await response.Content.ReadAsStringAsync();
         var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
         _wallets = walletDtos.OrderBy(x => x.WalletName);
+
+        if (FormType == DialogFormType.Edit && RecordToUpdate is not null)
+        {
+            _model = new UpdateRecordCommand
+            {
+                Id = RecordToUpdate.Id,
+                Name = RecordToUpdate.Name,
+                Amount = RecordToUpdate.Amount,
+                PlannedAmount = RecordToUpdate.PlannedAmount,
+                AccountId = RecordToUpdate.AccountId,
+                CategoryId = RecordToUpdate.CategoryId,
+                CurrencyId = RecordToUpdate.CurrencyId,
+                StatusId = RecordToUpdate.StatusId,
+                Description = RecordToUpdate.Description,
+                RecordDateTime = RecordToUpdate.RecordDateTime,
+                TagIds = RecordToUpdate.Tags.Select(t => t.Id).ToList()
+            };
+
+            _selectedCurrency = RecordToUpdate.Currency;
+        }
 
         StateHasChanged();
     }
@@ -154,6 +206,9 @@
         var responseTagsString = await responseTags.Content.ReadAsStringAsync();
         var tagDtos = JsonConvert.DeserializeObject<List<TagDTO>>(responseTagsString) ?? new List<TagDTO>();
         _tags = tagDtos.OrderBy(x => x.TagName);
+
+        if (RecordToUpdate?.Tags != null)
+            _selectedTags = _tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
 
         StateHasChanged();
     }
@@ -170,8 +225,6 @@
     {
         if (walletDto == null)
             return string.Empty;
-
-        //_model.WalletId = walletDto.Id;
 
         return walletDto.ToString();
     }

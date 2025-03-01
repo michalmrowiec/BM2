@@ -29,9 +29,10 @@ public class GenericRepository<T>(
         return entities;
     }
 
-    public Task<T> Update(T entity)
+    public async Task<T> Update(T entity)
     {
-        throw new NotImplementedException();
+        _dbSet.Update(entity);
+        return await Task.FromResult(entity);
     }
 
     public async Task<IEnumerable<T>> UpdateRange(IList<T> entities)

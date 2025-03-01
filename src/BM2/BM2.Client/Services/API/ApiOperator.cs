@@ -9,6 +9,7 @@ public interface IApiClient
 {
     Task<HttpResponseMessage> Get(string uri, Dictionary<string, string>? queryParams = null);
     Task<HttpResponseMessage> Create(string uri, object item);
+    Task<HttpResponseMessage> Put(string uri, object item);
 
 }
 
@@ -57,6 +58,14 @@ public class ApiClient(
     {
         return await BaseRequestWithAuth(
             HttpMethod.Post,
+            uri: uri,
+            item: item);
+    }
+    
+    public async Task<HttpResponseMessage> Put(string uri, object item)
+    {
+        return await BaseRequestWithAuth(
+            HttpMethod.Put,
             uri: uri,
             item: item);
     }

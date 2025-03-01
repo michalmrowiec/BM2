@@ -25,6 +25,16 @@ public class RecordsController(
 
         return result.HandleCreatedResult(this, "");
     }
+    
+    [HttpPut]
+    public async Task<ActionResult<RecordDTO>> UpdateRecord([FromBody] UpdateRecordCommand command)
+    {
+        command.OwnedByUserId = userContextService.UserId;
+
+        var result = await mediator.Send(command);
+
+        return result.HandleOkResult(this);
+    }
 
     [HttpGet]
     public async Task<ActionResult<IList<RecordDTO>>> GetRecord([FromQuery] int year, [FromQuery] int month)
