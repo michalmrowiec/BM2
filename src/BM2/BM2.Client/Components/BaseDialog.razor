@@ -11,7 +11,7 @@
     <DialogActions>
         <MudButton OnClick="@(async () => await Cancel())">Cancel</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
-                   OnClick="@(async () => await Submit())">Add
+                   OnClick="@(async () => await Submit())">@_confirmTextDictionary[ConfirmButtonText]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -22,6 +22,15 @@
     [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
     [Parameter] public List<EventCallback>? FuncsOnCancel { get; set; } = new();
     [Parameter] public RenderFragment? BodyContent { get; set; }
+    [Parameter] public ConfirmText ConfirmButtonText { get; set; } = ConfirmText.Ok;
+
+    private Dictionary<ConfirmText, string> _confirmTextDictionary = new Dictionary<ConfirmText, string>()
+    {
+        { ConfirmText.Add, "Add" },
+        { ConfirmText.Update, "Update" },
+        { ConfirmText.Delete, "Delete" },
+        { ConfirmText.Ok, "Ok" }
+    };
 
     private async Task Cancel()
     {
@@ -32,6 +41,14 @@
     private async Task Submit()
     {
         FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+    }
+
+    public enum ConfirmText
+    {
+        Add,
+        Update,
+        Delete,
+        Ok
     }
 
 }

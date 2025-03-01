@@ -38,17 +38,24 @@
         }
     }
 
-    public async Task SetUri(string uri = "")
+    public async Task SetUri(string uri = "", Guid? selectId = null)
     {
-        var temp = _selectedValue;
-        await _mudAutocomplete!.ClearAsync();
+        TEntityDTO? temp = null;
+        if (_selectedValue is not null)
+        {
+            temp = _selectedValue;
+            await _mudAutocomplete!.ClearAsync();
+        }
+
         Uri = uri;
         await GetValues();
 
-         if (temp is not null && !_values.Contains(temp))
-             await SelectValueById(temp.Id);
-        
-         StateHasChanged();
+        if (selectId is not null)
+            await SelectValueById(selectId);
+        else if (temp is not null && !_values.Contains(temp))
+            await SelectValueById(temp.Id);
+
+        StateHasChanged();
     }
 
     public async Task SelectValueById(Guid? id)
@@ -60,7 +67,7 @@
             await SelectedValue.InvokeAsync(_values.First(x => x.Id == id));
         }
     }
-    
+
     public async Task SelectValueBy(Func<TEntityDTO, bool> predicate)
     {
         if (_values.Any(predicate))
@@ -70,7 +77,7 @@
             await SelectedValue.InvokeAsync(_values.First(predicate));
         }
     }
-    
+
     private async Task GetValues()
     {
         if (string.IsNullOrWhiteSpace(Uri))

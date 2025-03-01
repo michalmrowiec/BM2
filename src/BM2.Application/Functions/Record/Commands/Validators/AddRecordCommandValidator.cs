@@ -11,7 +11,7 @@ public class AddRecordCommandValidator : AddBaseRecordCommandValidator<AddRecord
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public AddRecordCommandValidator(IUnitOfWork unitOfWork) : base(unitOfWork)
+    public AddRecordCommandValidator(IUnitOfWork unitOfWork, bool validateRecordPerMonthLimit = true) : base(unitOfWork)
     {
         _unitOfWork = unitOfWork;
 
@@ -24,8 +24,9 @@ public class AddRecordCommandValidator : AddBaseRecordCommandValidator<AddRecord
         RuleFor(x => x)
             .CustomAsync(ValidateWalletTagRelationsAsync);
 
-        RuleFor(x => x)
-            .CustomAsync(ValidateMaxRecordsPerMonthAsync);
+        if (validateRecordPerMonthLimit)
+            RuleFor(x => x)
+                .CustomAsync(ValidateMaxRecordsPerMonthAsync);
     }
 
     private async Task ValidateAccountAccessAsync(
