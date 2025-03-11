@@ -45,4 +45,28 @@ public partial class Wallets(IApiClient apiClient, IDialogService dialogService)
         return DialogService.ShowAsync<AddWalletDialogForm>(null, parameters, options);
     }
     
+    private Task OpenUpdateWalletDialogAsync(WalletDTO wallet)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<AddWalletDialogForm>
+        {
+            {
+                x => x.FuncsOnCreated,
+                [EventCallback.Factory.Create(this, GetWallets)]
+            },
+            {
+                x => x.FormType, DialogFormType.Edit
+            },
+            {
+                x => x.WalletToUpdate, wallet
+            }
+        };
+        return DialogService.ShowAsync<AddWalletDialogForm>(null, parameters, options);
+    }
 }
