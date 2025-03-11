@@ -1,5 +1,6 @@
 ﻿using BM2.Controllers.Utils;
 using BM2.Shared.DTOs;
+using BM2.Shared.Requests.Commands.Account;
 using BM2.Shared.Requests.Commands.Record;
 using BM2.Shared.Requests.Queries.Record;
 using MediatR;
@@ -28,6 +29,16 @@ public class RecordsController(
     
     [HttpPut]
     public async Task<ActionResult<RecordDTO>> UpdateRecord([FromBody] UpdateRecordCommand command)
+    {
+        command.OwnedByUserId = userContextService.UserId;
+
+        var result = await mediator.Send(command);
+
+        return result.HandleOkResult(this);
+    }
+
+    [HttpPatch]
+    public async Task<ActionResult> UpdateRecordAccount([FromBody] UpdateAccountAssignmentCommand command)
     {
         command.OwnedByUserId = userContextService.UserId;
 

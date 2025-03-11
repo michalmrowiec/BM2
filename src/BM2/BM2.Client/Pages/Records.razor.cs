@@ -12,6 +12,7 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
     [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
     private IList<RecordDTO> RecordList { get; set; } = new List<RecordDTO>();
+    private IList<AccountDTO> AccountList { get; set; } = new List<AccountDTO>();
 
     private int SelectedYear
     {
@@ -52,9 +53,19 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
         StateHasChanged();
     }
 
+    private async Task GetAccounts()
+    {
+        var response = await ApiClient.Get($"api/v1/accounts");
+        var responseString = await response.Content.ReadAsStringAsync();
+        var accounts = JsonConvert.DeserializeObject<IList<AccountDTO>>(responseString) ?? [];
+        AccountList = accounts.OrderBy(x => x.AccountName).ToList();
+        StateHasChanged();
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         await GetRecords();
+        await GetAccounts();
     }
 
     private Task OpenAddRecordDialogAsync()

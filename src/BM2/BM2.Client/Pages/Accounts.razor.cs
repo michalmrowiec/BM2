@@ -44,4 +44,25 @@ public partial class Accounts(IApiClient apiClient, IDialogService dialogService
         };
         return DialogService.ShowAsync<AddAccountDialogForm>(null, parameters, options);
     }
+    
+    private Task OpenUpdateAccountAssignmentDialogAsync(AccountDTO account)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<UpdateAccountAssignment>
+        {
+            {
+                x => x.FuncsOnUpdated, [EventCallback.Factory.Create(this, GetAccounts)]
+            },
+            {
+                x => x.OldAccount, account
+            }
+        };
+        return DialogService.ShowAsync<UpdateAccountAssignment>(null, parameters, options);
+    }
 }

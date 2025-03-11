@@ -29,5 +29,12 @@
                 @context.Item.DefaultCurrency?.ToString()
             </CellTemplate>
         </PropertyColumn>
+        <TemplateColumn StickyRight="true">
+            <CellTemplate>
+                <MudIconButton @onclick="@(async () => await OpenUpdateAccountAssignmentDialogAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.CompareArrows"
+                               Size="@Size.Small"/>
+            </CellTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>

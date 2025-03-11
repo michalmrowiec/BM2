@@ -12,12 +12,22 @@ internal static class ResponseHelper
         return new BaseResponse<T>(BaseResponse.ResponseStatus.ServerError, "Something went wrong.");
     }
 
+    internal static BaseResponse ReturnServerError(this IRequest<BaseResponse> request)
+    {
+        return new BaseResponse(BaseResponse.ResponseStatus.ServerError, "Something went wrong.");
+    }
+    
     internal static BaseResponse<T> ReturnSuccessWithObject<T>(this IRequest<BaseResponse<T>> request, T obj)
         where T : class
     {
         return new BaseResponse<T>(obj);
     }
 
+    internal static BaseResponse ReturnSuccess(this IRequest<BaseResponse> request)
+    {
+        return new BaseResponse();
+    }
+    
     internal static BaseResponse<T> ReturnNotFound<T>(this IRequest<BaseResponse<T>> request) where T : class
     {
         return new BaseResponse<T>(BaseResponse.ResponseStatus.NotFound, "Not found.");
