@@ -1,0 +1,52 @@
+﻿@using System.Net
+@using BM2.Shared.DTOs
+@using BM2.Shared.Requests.Commands.Account
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IApiClient ApiClient
+
+<BaseDialog DialogTitle="Change" MudDialog="@MudDialog"
+            ConfirmButtonText="BaseDialog.ConfirmText.Update"
+            FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
+            FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
+    <BodyContent>
+        <MudTextField Value="@OldAccount.ToString()"/>
+
+        <AccountAutocomplete Label="Account"
+                             Required
+                             SelectedValue="@((a) => _newAccount = a)"/>
+    </BodyContent>
+</BaseDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public List<EventCallback>? FuncsOnUpdated { get; set; } = new();
+    [Parameter] public AccountDTO OldAccount { get; set; }
+    private AccountDTO? _newAccount { get; set; }
+    private void Cancel() => MudDialog.Cancel();
+    
+    private async Task Submit()
+    {
+        UpdateAccountAssignmentCommand command = new UpdateAccountAssignmentCommand()
+        {
+            OldAccountId = OldAccount.Id,
+            NewAccountId = _newAccount.Id
+        };
+
+        var response = await ApiClient.Patch(@"api/v1/records", command);
+
+        if (response.StatusCode is HttpStatusCode.OK)
+        {
+            if (response.StatusCode == HttpStatusCode.OK)
+                Snackbar.Add(new MarkupString($"Updated"), Severity.Success);
+
+            MudDialog.Close(DialogResult.Ok(true));
+            FuncsOnUpdated?.ForEach(async x => await x.InvokeAsync());
+        }
+        else
+        {
+            await response.HandleFailure(AlertService);
+        }
+    }
+
+}

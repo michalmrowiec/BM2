@@ -30,7 +30,11 @@
 
 <MudDataGrid T="RecordDTO" Items="@RecordList" Dense>
     <Columns>
-        <PropertyColumn Title="Name" Property="x => x.Name">
+        <PropertyColumn Title="Name" Property="x => x.Name"/>
+        <PropertyColumn Title="Account" Property="x => x.AccountId">
+            <CellTemplate>
+                @string.Concat(AccountList.SingleOrDefault(x => x.Id == context.Item.AccountId)?.ToString() ?? "")
+            </CellTemplate>
         </PropertyColumn>
         <PropertyColumn Title="Amount/Planned" Property="x => x.Amount">
             <CellTemplate>

@@ -20,6 +20,20 @@ public static class ResponseHandler
         };
     }
 
+    public static ActionResult HandleOkResult
+        (this BaseResponse result, ControllerBase controller)
+    {
+        return result.Status switch
+        {
+            BaseResponse.ResponseStatus.Success => controller.Ok(),
+            BaseResponse.ResponseStatus.ValidationError => controller.BadRequest(result.ValidationErrors),
+            BaseResponse.ResponseStatus.ServerError => controller.StatusCode(500, result.Message),
+            BaseResponse.ResponseStatus.NotFound => controller.NotFound(result.Message),
+            BaseResponse.ResponseStatus.BadQuery => controller.BadRequest(result.Message),
+            _ => controller.BadRequest()
+        };
+    }
+    
     public static ActionResult HandleNoContentResult
         (this BaseResponse result, ControllerBase controller)
     {
