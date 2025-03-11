@@ -24,5 +24,12 @@
                 @context.Item.DefaultCurrency?.ToString()
             </CellTemplate>
         </PropertyColumn>
+        <TemplateColumn StickyRight="true">
+            <CellTemplate>
+                <MudIconButton @onclick="@(async () => await OpenUpdateWalletDialogAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.Edit"
+                               Size="@Size.Small"/>
+            </CellTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>

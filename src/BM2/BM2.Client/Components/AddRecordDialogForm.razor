@@ -7,7 +7,7 @@
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
 
-<BaseDialog DialogTitle="New operation" MudDialog="@MudDialog"
+<BaseDialog DialogTitle="@(FormType == DialogFormType.Add ? "New operation" : "Edit operation")" MudDialog="@MudDialog"
             ConfirmButtonText="@(FormType == DialogFormType.Add ? BaseDialog.ConfirmText.Add : BaseDialog.ConfirmText.Update)"
             FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
             FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
@@ -147,6 +147,7 @@
                 FormType == DialogFormType.Add
                     ? await ApiClient.Create(@"api/v1/records", addRecord)
                     : await ApiClient.Put(@"api/v1/records", _model);
+            
             if (response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK)
             {
                 var content = await response.Content.ReadAsStringAsync();

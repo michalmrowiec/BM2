@@ -9,25 +9,26 @@ namespace BM2.Application.Functions.Wallet.Commands.Validators;
 
 public class AddWalletCommandValidator : AbstractValidator<AddWalletCommand>
 {
-    public AddWalletCommandValidator(IUnitOfWork unitOfWork)
+    public AddWalletCommandValidator(IUnitOfWork unitOfWork, bool validateWalletLimit = true)
     {
         RuleFor(x => x.WalletName)
             .NotEmpty()
             .MaximumLength(ModelsRequirements.WalletNameMaxLength);
 
-        RuleFor(x => x)
-            .CustomAsync(async (request, context, cancellationToken) =>
-            {
-                var user = await unitOfWork.UserRepository.GetByIdAsync(request.OwnedByUserId,
-                    q => q.Include(u => u.Wallets));
-                user.ThrowExceptionIfNull();
-
-                var maxWallets = user!.MaxWallets;
-
-                if (user.Wallets.Count >= maxWallets)
+        if (validateWalletLimit)
+            RuleFor(x => x)
+                .CustomAsync(async (request, context, cancellationToken) =>
                 {
-                    context.AddFailure($"The user has reached the maximum number of wallets ({maxWallets}).");
-                }
-            });
+                    var user = await unitOfWork.UserRepository.GetByIdAsync(request.OwnedByUserId,
+                        q => q.Include(u => u.Wallets));
+                    user.ThrowExceptionIfNull();
+
+                    var maxWallets = user!.MaxWallets;
+
+                    if (user.Wallets.Count >= maxWallets)
+                    {
+                        context.AddFailure($"The user has reached the maximum number of wallets ({maxWallets}).");
+                    }
+                });
     }
 }

@@ -28,6 +28,16 @@ public class WalletsController(
 
         return result.HandleCreatedResult(this, "");
     }
+    
+    [HttpPut]
+    public async Task<ActionResult<WalletDTO>> UpdateRecord([FromBody] UpdateWalletCommand command)
+    {
+        command.OwnedByUserId = userContextService.UserId;
+
+        var result = await mediator.Send(command);
+
+        return result.HandleOkResult(this);
+    }
 
     [HttpGet("{walletId:guid}")]
     public async Task<ActionResult<WalletDTO>> GetWalletById([FromRoute] Guid walletId)
