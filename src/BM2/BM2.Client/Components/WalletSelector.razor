@@ -1,0 +1,11 @@
+﻿<MudSelect @bind-Value="SelectedWallet"
+           Placeholder="Your wallet"
+           Variant="Variant.Outlined"
+           AdornmentIcon="@Icons.Material.Filled.Wallet"
+           Adornment="Adornment.Start"
+           MaxHeight="200">
+    @foreach (var wallet in WalletSelectionState.Wallets)
+    {
+        <MudSelectItem Value="wallet">@wallet.ToString()</MudSelectItem>
+    }
+</MudSelect>

@@ -1,3 +1,4 @@
+using BM2.Client.Services;
 using BM2.Client.Services.API;
 using BM2.Client.Services.Auth;
 using BM2.Client.Services.LocalStorage;
@@ -15,6 +16,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddSingleton<IAlertService, AlertService>();
+builder.Services.AddSingleton<IWalletSelectionState, WalletSelectionState>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddTransient<IApiClient, ApiClient>();
 
