@@ -1,28 +1,67 @@
-﻿@inherits LayoutComponentBase
+﻿@using BM2.Client.Components
+@inherits LayoutComponentBase
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
-<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode"/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
 <MudLayout>
-     <GlobalAlert /> 
+    <GlobalAlert/>
     <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="ml-3">BM2</MudText>
-        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="@((e) => DrawerToggle())"/>
+        <MudHidden Breakpoint="Breakpoint.MdAndDown">
+            <MudText Typo="Typo.h5" Class="ml-3 me-3">BM2</MudText>
+        </MudHidden>
         <AuthorizeView>
             <Authorized>
-                <MudText>@context.User.Identity?.Name <a href="#" onclick="@(async () => { await AuthService.Logout(); Navigation.NavigateTo("/", true); })">Logout</a></MudText>
+                <div class="w-50">
+                    <WalletSelector/>
+                </div>
             </Authorized>
-            <NotAuthorized>
-                <a href="/login">Login</a>
-                <a style="margin-left: 1rem" href="/register">Register</a>
-            </NotAuthorized>
         </AuthorizeView>
-        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
-        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+        <MudSpacer/>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <AuthorizeView>
+                <Authorized>
+                    <MudText>@context.User.Identity?.Name <a href="#" onclick="@(async () =>
+                                                                               {
+                                                                                   await AuthService.Logout();
+                                                                                   Navigation.NavigateTo("/", true);
+                                                                               })">Logout</a></MudText>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login">Login</a>
+                    <a style="margin-left: 1rem" href="/register">Register</a>
+                </NotAuthorized>
+            </AuthorizeView>
+            <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle"/>
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                <MudMenuItem>
+                    <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle"/>
+                </MudMenuItem>
+                <AuthorizeView>
+                    <Authorized>
+                        <MudMenuItem>
+                            <MudText>@context.User.Identity?.Name
+                                <a href="#" onclick="@(async () =>
+                                                     {
+                                                         await AuthService.Logout();
+                                                         Navigation.NavigateTo("/", true);
+                                                     })">Logout</a></MudText>
+                        </MudMenuItem>
+                    </Authorized>
+                    <NotAuthorized>
+                        <MudMenuItem><a href="/login">Login</a></MudMenuItem>
+                        <MudMenuItem><a href="/register">Register</a></MudMenuItem>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </MudMenu>
+        </MudHidden>
     </MudAppBar>
     @* <AuthorizeView> *@
     @*     <Authorized> *@
@@ -32,7 +71,7 @@
     @*     </Authorized> *@
     @* </AuthorizeView> *@
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <NavMenu />
+        <NavMenu/>
     </MudDrawer>
     <MudMainContent Class="mt-16 pa-4">
         @Body
@@ -55,11 +94,11 @@
         base.OnInitialized();
 
         _theme = new()
-            {
-                PaletteLight = _lightPalette,
-                PaletteDark = _darkPalette,
-                LayoutProperties = new LayoutProperties()
-            };
+        {
+            PaletteLight = _lightPalette,
+            PaletteDark = _darkPalette,
+            LayoutProperties = new LayoutProperties()
+        };
 
         AuthService.CheckLogin();
     }
@@ -75,47 +114,48 @@
     }
 
     private readonly PaletteLight _lightPalette = new()
-        {
-            Black = "#110e2d",
-            AppbarText = "#424242",
-            AppbarBackground = "rgba(255,255,255,0.8)",
-            DrawerBackground = "#ffffff",
-            GrayLight = "#e8e8e8",
-            GrayLighter = "#f9f9f9",
-        };
+    {
+        Black = "#110e2d",
+        AppbarText = "#424242",
+        AppbarBackground = "rgba(255,255,255,0.8)",
+        DrawerBackground = "#ffffff",
+        GrayLight = "#e8e8e8",
+        GrayLighter = "#f9f9f9",
+    };
 
     private readonly PaletteDark _darkPalette = new()
-        {
-            Primary = "#7e6fff",
-            Surface = "#1e1e2d",
-            Background = "#1a1a27",
-            BackgroundGray = "#151521",
-            AppbarText = "#92929f",
-            AppbarBackground = "rgba(26,26,39,0.8)",
-            DrawerBackground = "#1a1a27",
-            ActionDefault = "#74718e",
-            ActionDisabled = "#9999994d",
-            ActionDisabledBackground = "#605f6d4d",
-            TextPrimary = "#b2b0bf",
-            TextSecondary = "#92929f",
-            TextDisabled = "#ffffff33",
-            DrawerIcon = "#92929f",
-            DrawerText = "#92929f",
-            GrayLight = "#2a2833",
-            GrayLighter = "#1e1e2d",
-            Info = "#4a86ff",
-            Success = "#3dcb6c",
-            Warning = "#ffb545",
-            Error = "#ff3f5f",
-            LinesDefault = "#33323e",
-            TableLines = "#33323e",
-            Divider = "#292838",
-            OverlayLight = "#1e1e2d80",
-        };
+    {
+        Primary = "#7e6fff",
+        Surface = "#1e1e2d",
+        Background = "#1a1a27",
+        BackgroundGray = "#151521",
+        AppbarText = "#92929f",
+        AppbarBackground = "rgba(26,26,39,0.8)",
+        DrawerBackground = "#1a1a27",
+        ActionDefault = "#74718e",
+        ActionDisabled = "#9999994d",
+        ActionDisabledBackground = "#605f6d4d",
+        TextPrimary = "#b2b0bf",
+        TextSecondary = "#92929f",
+        TextDisabled = "#ffffff33",
+        DrawerIcon = "#92929f",
+        DrawerText = "#92929f",
+        GrayLight = "#2a2833",
+        GrayLighter = "#1e1e2d",
+        Info = "#4a86ff",
+        Success = "#3dcb6c",
+        Warning = "#ffb545",
+        Error = "#ff3f5f",
+        LinesDefault = "#33323e",
+        TableLines = "#33323e",
+        Divider = "#292838",
+        OverlayLight = "#1e1e2d80",
+    };
 
     public string DarkLightModeButtonIcon => _isDarkMode switch
     {
         true => Icons.Material.Rounded.AutoMode,
         false => Icons.Material.Outlined.DarkMode,
     };
+
 }
