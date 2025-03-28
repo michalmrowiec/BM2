@@ -18,7 +18,7 @@ public class AccountsController(
     : ControllerBase
 {
     [HttpPost]
-    public async Task<ActionResult<AccountDTO>> AddAccount([FromBody] AddAccountCommand command)
+    public async Task<ActionResult<AccountDTO>> AddAccount([FromBody] AddUpdateAccountCommand command)
     {
         command.OwnedByUserId = userContextService.UserId;
 
@@ -27,6 +27,16 @@ public class AccountsController(
         return result.HandleCreatedResult(this, "");
     }
 
+    [HttpPut]
+    public async Task<ActionResult<AccountDTO>> UpdateAccount([FromBody] AddUpdateAccountCommand command)
+    {
+        command.OwnedByUserId = userContextService.UserId;
+
+        var result = await mediator.Send(command);
+
+        return result.HandleOkResult(this);
+    }
+    
     [HttpGet]
     public async Task<ActionResult<IList<AccountDTO>>> GetAllAccounts()
     {

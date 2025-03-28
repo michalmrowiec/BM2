@@ -6,9 +6,12 @@
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
 
-<BaseDialog DialogTitle="New account" MudDialog="@MudDialog"
-            FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
-            FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
+<BaseDialog
+    DialogTitle="@(FormType == DialogFormType.Add ? "New account" : $"Edit account '{AccountToUpdate?.AccountName}'")"
+    MudDialog="@MudDialog"
+    ConfirmButtonText="@(FormType == DialogFormType.Add ? BaseDialog.ConfirmText.Add : BaseDialog.ConfirmText.Update)"
+    FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
+    FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
     <BodyContent>
         <MudForm Model="@_model"
                  @ref="@_form"
@@ -16,16 +19,18 @@
             <MudCardContent>
                 <WalletAutocomplete Label="Wallet"
                                     Required
-                                    SelectedValue="@(async (w) =>
-                                                    {
-                                                        _model.WalletId = w.Id;
-                                                        await _currencyAutocompleteRef?.SelectValueById(w.DefaultCurrencyId)!;
-                                                    })"/>
+                                    @ref="_walletAutocompleteRef"
+                                    SelectStartValue="@(x => AccountToUpdate is not null && x.Id == AccountToUpdate.WalletId)"
+                                    SelectedValue="@((w) =>
+                                                   {
+                                                       _model.WalletId = w.Id;
+                                                   })"/>
 
                 <CurrencyAutocomplete @ref="_currencyAutocompleteRef"
                                       Label="Account default currency"
                                       Required
-                                      SelectedValue="@((c) => _model.DefaultCurrencyId = c.Id)"/>
+                                      SelectStartValue="@(x => AccountToUpdate is not null && x.Id == AccountToUpdate.DefaultCurrencyId)"
+                                      SelectedValue="@((c) => _model.DefaultCurrencyId = c?.Id ?? Guid.Empty)"/>
 
                 <MudTextField @bind-Value="_model.AccountName"
                               For="@(() => _model.AccountName)"
@@ -41,35 +46,91 @@
 </BaseDialog>
 
 @code {
-    [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public AccountDTO? AccountToUpdate { get; set; }
+    [Parameter] public DialogFormType FormType { get; set; } = DialogFormType.Add;
+    [Parameter] public List<EventCallback>? FuncsOnSuccess { get; set; } = new();
+
     private MudForm _form;
-    private AddAccountCommand _model = new();
+    private AddUpdateAccountCommand _model = new() { IsActive = true };
 
-    private IEnumerable<WalletDTO> _wallets = [];
-
-    //private WalletDTO _selectedWallet;
+    private WalletAutocomplete? _walletAutocompleteRef;
     private CurrencyAutocomplete? _currencyAutocompleteRef;
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (FormType == DialogFormType.Edit && AccountToUpdate != null)
+        {
+            if (_model.Id != AccountToUpdate.Id)
+            {
+                _model = new AddUpdateAccountCommand
+                {
+                    Id = AccountToUpdate.Id,
+                    WalletId = AccountToUpdate.WalletId,
+                    DefaultCurrencyId = AccountToUpdate.DefaultCurrencyId,
+                    AccountName = AccountToUpdate.AccountName,
+                    IsActive = AccountToUpdate.IsActive
+                };
+            }
+        }
+        else if (FormType == DialogFormType.Add && _model.Id != Guid.Empty)
+        {
+            _model = new AddUpdateAccountCommand { IsActive = true };
+        }
+
+        await base.OnParametersSetAsync();
+    }
 
     private void Cancel() => MudDialog.Cancel();
 
     private async Task Submit()
     {
-        //_model.WalletId = _selectedWallet.Id;
-
         await _form.Validate();
 
         if (_form.IsValid)
         {
-            var response = await ApiClient.Create(@"api/v1/accounts", _model);
-            if (response.StatusCode == HttpStatusCode.Created)
+            HttpResponseMessage response;
+
+            if (FormType == DialogFormType.Add)
+            {
+                var createModel = new AddUpdateAccountCommand
+                {
+                    WalletId = _model.WalletId,
+                    DefaultCurrencyId = _model.DefaultCurrencyId,
+                    AccountName = _model.AccountName,
+                    IsActive = _model.IsActive
+                };
+                response = await ApiClient.Create(@"api/v1/accounts", createModel);
+            }
+            else
+            {
+                if (_model.Id == Guid.Empty)
+                {
+                    Snackbar.Add("Error: Account ID is missing for update.", Severity.Error);
+                    return;
+                }
+
+                response = await ApiClient.Put(@"api/v1/accounts", _model);
+            }
+
+            if (response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.OK)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var newItem = JsonConvert.DeserializeObject<AccountDTO>(content) ?? new();
+                var savedItem = JsonConvert.DeserializeObject<AccountDTO>(content) ?? new();
 
-                Snackbar.Add(new MarkupString($"Created <b>{newItem.AccountName}</b>"), Severity.Success);
+                if (response.StatusCode == HttpStatusCode.Created)
+                    Snackbar.Add(new MarkupString($"Created <b>{savedItem.AccountName}</b>"), Severity.Success);
+                else
+                    Snackbar.Add(new MarkupString($"Updated <b>{savedItem.AccountName}</b>"), Severity.Success);
+
                 MudDialog.Close(DialogResult.Ok(true));
-                FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+                if (FuncsOnSuccess != null)
+                {
+                    foreach (var func in FuncsOnSuccess)
+                    {
+                        await func.InvokeAsync();
+                    }
+                }
             }
             else
             {

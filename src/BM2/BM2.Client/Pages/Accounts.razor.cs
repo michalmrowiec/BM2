@@ -26,7 +26,7 @@ public partial class Accounts(IApiClient apiClient, IDialogService dialogService
         await GetAccounts();
     }
     
-    private Task OpenAddAccountDialogAsync()
+    private Task OpenAddUpdateAccountDialogAsync(AccountDTO? account = null)
     {
         var options = new DialogOptions
         {
@@ -38,8 +38,14 @@ public partial class Accounts(IApiClient apiClient, IDialogService dialogService
         var parameters = new DialogParameters<AddAccountDialogForm>
         {
             {
-                x => x.FuncsOnCreated,
+                x => x.FuncsOnSuccess,
                 [EventCallback.Factory.Create(this, GetAccounts)]
+            },
+            {
+                x => x.AccountToUpdate, account
+            },
+            {
+                x => x.FormType, DialogFormType.Edit
             }
         };
         return DialogService.ShowAsync<AddAccountDialogForm>(null, parameters, options);

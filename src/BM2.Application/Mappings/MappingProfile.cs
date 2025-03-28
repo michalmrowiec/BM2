@@ -35,10 +35,6 @@ public class MappingProfile : Profile
             .ForMember(x => x.DeletedAt, opt => opt.Ignore())
             .ForMember(x => x.DeletedBy, opt => opt.Ignore())
             .ForMember(x => x.OwnedByUserId, opt => opt.UseDestinationValue());
-        
-        CreateMap<AddAccountCommand, Account>();
-        CreateMap<Account, AccountBasicDTO>();
-        CreateMap<Account, AccountDTO>();
 
         CreateMap<AddCategoryCommand, Category>()
             .ForSourceMember(src => src.WalletIds, opt => opt.DoNotValidate());

@@ -3,8 +3,9 @@ using BM2.Shared.DTOs;
 
 namespace BM2.Shared.Requests.Commands.Account;
 
-public class AddAccountCommand : IBaseRequest<AccountDTO>
+public class AddUpdateAccountCommand : IBaseRequest<AccountDTO>
 {
+    public Guid Id { get; set; }
     public Guid WalletId { get; set; }
     public string AccountName { get; set; } = null!;
     public bool IsActive { get; set; } = true;

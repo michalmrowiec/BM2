@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Account.Commands.Validators;
 
-public class AddAccountCommandValidator : AbstractValidator<AddAccountCommand>
+public class AddUpdateAccountCommandValidator : AbstractValidator<AddUpdateAccountCommand>
 {
-    public AddAccountCommandValidator(IUnitOfWork unitOfWork)
+    public AddUpdateAccountCommandValidator(IUnitOfWork unitOfWork)
     {
         RuleFor(x => x.AccountName)
             .NotEmpty()
