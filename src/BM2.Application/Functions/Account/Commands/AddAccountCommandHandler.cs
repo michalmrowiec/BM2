@@ -9,16 +9,16 @@ using MediatR;
 namespace BM2.Application.Functions.Account.Commands;
 
 public class AddAccountCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
-    : IRequestHandler<AddAccountCommand, BaseResponse<AccountDTO>>
+    : IRequestHandler<AddUpdateAccountCommand, BaseResponse<AccountDTO>>
 {
-    public async Task<BaseResponse<AccountDTO>> Handle(AddAccountCommand request, CancellationToken cancellationToken)
+    public async Task<BaseResponse<AccountDTO>> Handle(AddUpdateAccountCommand request, CancellationToken cancellationToken)
     {
         var validationResult =
-            await new AddAccountCommandValidator(unitOfWork).ValidateAsync(request, cancellationToken);
+            await new AddUpdateAccountCommandValidator(unitOfWork).ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid) return new BaseResponse<AccountDTO>(validationResult);
 
-        var entity = mapper.Map<AddAccountCommand, Domain.Entities.UserProfile.Account>(request);
+        var entity = mapper.Map<AddUpdateAccountCommand, Domain.Entities.UserProfile.Account>(request);
         entity.Id = Guid.NewGuid();
         entity.CreatedAt = DateTime.UtcNow;
         entity.CreatedBy = request.OwnedByUserId;

@@ -5,7 +5,7 @@
 
 <h3>Accounts</h3>
 
-<MudButton @onclick="OpenAddAccountDialogAsync"
+<MudButton @onclick="@(() => OpenAddUpdateAccountDialogAsync())"
            Variant="Variant.Filled"
            Color="Color.Primary">
     Add account
@@ -31,6 +31,9 @@
         </PropertyColumn>
         <TemplateColumn StickyRight="true">
             <CellTemplate>
+                <MudIconButton @onclick="@(async () => await OpenAddUpdateAccountDialogAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.Edit"
+                               Size="@Size.Small"/>
                 <MudIconButton @onclick="@(async () => await OpenUpdateAccountAssignmentDialogAsync(context.Item))"
                                Icon="@Icons.Material.Outlined.CompareArrows"
                                Size="@Size.Small"/>

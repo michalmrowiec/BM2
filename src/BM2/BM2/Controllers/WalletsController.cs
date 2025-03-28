@@ -30,7 +30,7 @@ public class WalletsController(
     }
     
     [HttpPut]
-    public async Task<ActionResult<WalletDTO>> UpdateRecord([FromBody] UpdateWalletCommand command)
+    public async Task<ActionResult<WalletDTO>> UpdateWallet([FromBody] UpdateWalletCommand command)
     {
         command.OwnedByUserId = userContextService.UserId;
 
