@@ -48,9 +48,9 @@ public class RecordsController(
     }
 
     [HttpGet]
-    public async Task<ActionResult<IList<RecordDTO>>> GetRecord([FromQuery] int year, [FromQuery] int month)
+    public async Task<ActionResult<IList<RecordDTO>>> GetRecord([FromQuery] Guid? wallet, [FromQuery] int year, [FromQuery] int month)
     {
-        var result = await mediator.Send(new GetRecordsForMonthQuery(userContextService.UserId, year, month));
+        var result = await mediator.Send(new GetRecordsForMonthQuery(userContextService.UserId, year, month, wallet));
 
         return result.HandleOkResult(this);
     }
