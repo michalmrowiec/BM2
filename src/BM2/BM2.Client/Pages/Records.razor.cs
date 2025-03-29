@@ -1,4 +1,5 @@
 ﻿using BM2.Client.Components;
+using BM2.Client.Services;
 using BM2.Client.Services.API;
 using BM2.Shared.DTOs;
 using Microsoft.AspNetCore.Components;
@@ -7,10 +8,14 @@ using Newtonsoft.Json;
 
 namespace BM2.Client.Pages;
 
-public partial class Records(IApiClient apiClient, IDialogService dialogService) : ComponentBase
+public partial class Records(
+    IApiClient apiClient,
+    IDialogService dialogService,
+    IWalletSelectionState walletSelectionState) : ComponentBase, IDisposable
 {
     [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
+    [Inject] private IWalletSelectionState WalletSelectionState { get; set; } = walletSelectionState;
     private IList<RecordDTO> RecordList { get; set; } = new List<RecordDTO>();
     private IList<AccountDTO> AccountList { get; set; } = new List<AccountDTO>();
 
@@ -46,7 +51,9 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
 
     private async Task GetRecords()
     {
-        var response = await ApiClient.Get($"api/v1/records?year={_selectedYear}&month={_selectedMonth}");
+        var response =
+            await ApiClient.Get(
+                $"api/v1/records?wallet={WalletSelectionState.SelectedWallet?.Id}&year={_selectedYear}&month={_selectedMonth}");
         var responseString = await response.Content.ReadAsStringAsync();
         var records = JsonConvert.DeserializeObject<IList<RecordDTO>>(responseString) ?? [];
         RecordList = records.OrderBy(x => x.RecordDateTime).ToList();
@@ -61,9 +68,10 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
         AccountList = accounts.OrderBy(x => x.AccountName).ToList();
         StateHasChanged();
     }
-    
+
     protected override async Task OnInitializedAsync()
     {
+        WalletSelectionState.OnWalletChanged += GetRecords;
         await GetRecords();
         await GetAccounts();
     }
@@ -109,5 +117,46 @@ public partial class Records(IApiClient apiClient, IDialogService dialogService)
             }
         };
         return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
+    }
+
+    private async Task PreviousMonth()
+    {
+        if (SelectedMonth == 1)
+        {
+            SelectedMonth = 12;
+            SelectedYear--;
+        }
+        else
+        {
+            SelectedMonth--;
+        }
+        await GetRecords();
+    }
+
+    private async Task NextMonth()
+    {
+        if (SelectedMonth == 12)
+        {
+            SelectedMonth = 1;
+            SelectedYear++;
+        }
+        else
+        {
+            SelectedMonth++;
+        }
+        await GetRecords();
+    }
+    
+    private async Task Today()
+    {
+        SelectedYear = DateTime.Now.Year;
+        SelectedMonth = DateTime.Now.Month;
+
+        await GetRecords();
+    }
+    
+    public void Dispose()
+    {
+        WalletSelectionState.OnWalletChanged -= GetRecords;
     }
 }

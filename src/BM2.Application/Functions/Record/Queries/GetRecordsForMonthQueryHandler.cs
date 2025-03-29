@@ -15,7 +15,7 @@ public class GetRecordsForMonthQueryHandler(IMapper mapper, IUnitOfWork unitOfWo
         CancellationToken cancellationToken)
     {
         var records =
-            await unitOfWork.RecordRepository.GetAllForMonthAsync(request.UserId, request.Year, request.Month);
+            await unitOfWork.RecordRepository.GetAllForMonthAsync(request.UserId, request.Year, request.Month, request.WalletId);
 
         records.CheckPermission(request.UserId);
 

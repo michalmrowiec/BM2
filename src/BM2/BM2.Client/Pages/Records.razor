@@ -5,36 +5,47 @@
 
 <h3>Records</h3>
 
-<MudButton @onclick="OpenAddRecordDialogAsync"
-           Variant="Variant.Filled"
-           Color="Color.Primary">
-    Add record
-</MudButton>
+<MudToolBar WrapContent>
+    <MudButton @onclick="OpenAddRecordDialogAsync"
+               Variant="Variant.Filled"
+               Color="Color.Primary">
+        Add record
+    </MudButton>
 
-<MudIconButton @onclick="GetRecords"
-               Icon="@Icons.Material.Filled.Refresh"/>
+    <MudIconButton @onclick="GetRecords"
+                   Icon="@Icons.Material.Filled.Refresh"/>
 
-<MudGrid>
-    <MudItem xs="12" sm="6">
-        <MudNumericField Label="Year:" @bind-Value="SelectedYear"/>
-    </MudItem>
-
-    <MudItem xs="12" sm="6">
-        <MudSelect @bind-Value="SelectedMonth" Label="Month:">
-            @foreach (var month in _months)
-            {
-                <MudSelectItem Value="month.Value">@month.Text</MudSelectItem>
-            }
-        </MudSelect>
-    </MudItem>
-</MudGrid>
+    <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowLeft"
+                   OnClick="PreviousMonth"/>
+    <MudIconButton Icon="@Icons.Material.Filled.Today"
+                   OnClick="Today"/>
+    <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowRight"
+                   OnClick="NextMonth"/>
+    <MudGrid>
+        <MudItem xs="12" sm="6">
+            <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" Label="Year:" @bind-Value="SelectedYear"/>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudSelect Variant="Variant.Outlined" Dense Margin="Margin.Dense" Label="Month:"
+                       @bind-Value="SelectedMonth">
+                @foreach (var month in _months)
+                {
+                    <MudSelectItem Value="month.Value">@month.Text</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+</MudToolBar>
 
 <MudDataGrid T="RecordDTO" Items="@RecordList" Dense>
     <Columns>
         <PropertyColumn Title="Name" Property="x => x.Name"/>
         <PropertyColumn Title="Account" Property="x => x.AccountId">
             <CellTemplate>
-                @string.Concat(AccountList.SingleOrDefault(x => x.Id == context.Item.AccountId)?.ToString() ?? "")
+                <MudTooltip
+                    Text="@(AccountList.SingleOrDefault(x => x.Id == context.Item.AccountId)?.Wallet?.ToString())">
+                    @(AccountList.SingleOrDefault(x => x.Id == context.Item.AccountId)?.ToString())
+                </MudTooltip>
             </CellTemplate>
         </PropertyColumn>
         <PropertyColumn Title="Amount/Planned" Property="x => x.Amount">

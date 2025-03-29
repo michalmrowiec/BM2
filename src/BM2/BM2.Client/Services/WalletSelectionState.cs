@@ -4,8 +4,8 @@ namespace BM2.Client.Services;
 
 public interface IWalletSelectionState
 {
-    void Subscribe(Action<WalletDTO> changeAction);
-    void SetWallet(WalletDTO walletDto);
+    event Func<Task>? OnWalletChanged;
+    Task SetWallet(WalletDTO? walletDto);
     void SetWallets(List<WalletDTO> walletDtos, WalletDTO? selectedWallet = null);
     WalletDTO? SelectedWallet { get; }
     List<WalletDTO> Wallets { get; }
@@ -13,27 +13,41 @@ public interface IWalletSelectionState
 
 public class WalletSelectionState : IWalletSelectionState
 {
-    private Action<WalletDTO>? _onChange;
-    public WalletDTO? SelectedWallet { get; private set; }
-    public List<WalletDTO> Wallets { get; private set; } = [];
+    public event Func<Task>? OnWalletChanged;
 
-    public void Subscribe(Action<WalletDTO> changeAction)
+    private WalletDTO? _selectedWallet;
+
+    public WalletDTO? SelectedWallet
     {
-        _onChange = changeAction;
+        get => _selectedWallet;
+        private set
+        {
+            if (Equals(_selectedWallet, value)) return;
+            _selectedWallet = value;
+            _ = NotifyWalletChangedAsync();
+        }
     }
 
-    public void SetWallet(WalletDTO? walletDto)
-    {
-        if (walletDto is null)
-            return;
+    public List<WalletDTO> Wallets { get; private set; } = [];
 
+    public async Task SetWallet(WalletDTO? walletDto)
+    {
         SelectedWallet = walletDto;
-        _onChange?.Invoke(walletDto);
+        await NotifyWalletChangedAsync();
     }
 
     public void SetWallets(List<WalletDTO> walletDtos, WalletDTO? selectedWallet = null)
     {
-        Wallets = walletDtos;
-        SetWallet(selectedWallet ?? Wallets.FirstOrDefault());
+        Wallets = walletDtos ?? [];
+
+        _ = SetWallet(selectedWallet ?? Wallets.FirstOrDefault());
+    }
+
+    private async Task NotifyWalletChangedAsync()
+    {
+        if (OnWalletChanged != null)
+        {
+            await OnWalletChanged.Invoke();
+        }
     }
 }

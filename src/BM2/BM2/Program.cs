@@ -125,6 +125,8 @@ app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BM2.Client._Imports).Assembly);
 
+app.MapFallbackToFile("index.html");
+
 app.UseCors("AllowAll");
 
 app.Run();
