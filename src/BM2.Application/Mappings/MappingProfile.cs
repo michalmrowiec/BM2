@@ -39,11 +39,11 @@ public class MappingProfile : Profile
         CreateMap<AddCategoryCommand, Category>()
             .ForSourceMember(src => src.WalletIds, opt => opt.DoNotValidate());
         CreateMap<Category, CategoryDTO>();
-        
+
         CreateMap<AddTagCommand, Tag>()
             .ForSourceMember(src => src.WalletIds, opt => opt.DoNotValidate());
         CreateMap<Tag, TagDTO>();
-        
+
         CreateMap<AddRecordCommand, Record>();
         CreateMap<Record, RecordDTO>();
 
@@ -56,5 +56,8 @@ public class MappingProfile : Profile
             .ForMember(x => x.DeletedAt, opt => opt.Ignore())
             .ForMember(x => x.DeletedBy, opt => opt.Ignore())
             .ForMember(x => x.OwnedByUserId, opt => opt.UseDestinationValue());
+
+        CreateMap<AddRecordTemplateCommand, RecordTemplate>();
+        CreateMap<RecordTemplate, RecordTemplateDTO>();
     }
 }
