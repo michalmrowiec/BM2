@@ -6,6 +6,7 @@ using BM2.Domain.Entities.UserRecords;
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Commands.Record;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Record.Commands;
 
@@ -33,13 +34,22 @@ public class AddRecordTemplateCommandHandler(IMapper mapper, IUnitOfWork unitOfW
         
         try
         {
-            recordTemplate = await unitOfWork.RecordTemplateRepository.Add(recordTemplate);
+            await unitOfWork.RecordTemplateRepository.Add(recordTemplate);
             await unitOfWork.RecordTagRelationRepository.AddRange(recordTagRelations);
             await unitOfWork.SaveAsync();
 
-            return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserRecords.RecordTemplate, RecordTemplateDTO>(recordTemplate));
+            var createdRecordTemplate = await unitOfWork.RecordTemplateRepository.GetByIdAsync(recordTemplate.Id,
+                q => q.Include(x => x.Wallet),
+                q => q.Include(x => x.Currency),
+                q => q.Include(x => x.Category),
+                q => q.Include(x => x.Status),
+                q => q.Include(x => x.Tags));
+
+            createdRecordTemplate.ThrowExceptionIfNull();
+
+            return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserRecords.RecordTemplate, RecordTemplateDTO>(createdRecordTemplate));
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return request.ReturnServerError();
         }

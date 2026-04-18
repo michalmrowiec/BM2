@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using BM2.Client.Components;
 using BM2.Client.Services.API;
+using BM2.Client.Services.Auth;
 using BM2.Client.Services.Notification;
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Commands.Category;
@@ -16,6 +17,7 @@ public partial class Categories(IApiClient apiClient, IDialogService dialogServi
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
     [Inject] private ISnackbar Snackbar { get; set; }
     [Inject] private IAlertService AlertService { get; set; }
+    [Inject] private IAuthService AuthService { get; set; }
     private IList<CategoryWalletRelationDTO> CategoryWithWalletRelationList { get; set; } =
         new List<CategoryWalletRelationDTO>();
 
@@ -36,9 +38,15 @@ public partial class Categories(IApiClient apiClient, IDialogService dialogServi
         StateHasChanged();
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await GetCategories();
+        if (!firstRender)
+            return;
+
+        if (await AuthService.EnsureInitializedAsync())
+        {
+            await GetCategories();
+        }
     }
 
     private Task OpenAddCategoryDialogAsync()

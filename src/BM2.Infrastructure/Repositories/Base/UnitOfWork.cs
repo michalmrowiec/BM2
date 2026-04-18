@@ -25,6 +25,7 @@ public sealed class UnitOfWork(BM2DbContext context) : IUnitOfWork
     public IWalletTagRelationRepository WalletTagRelationRepository { get; } = new WalletTagRelationRepository(context);
     public IRecordRepository RecordRepository { get; } = new RecordRepository(context);
     public IRecordTemplateRepository RecordTemplateRepository { get; } = new RecordTemplateRepository(context);
+    public IPeriodicRecordDefinitionRepository PeriodicRecordDefinitionRepository { get; } = new PeriodicRecordDefinitionRepository(context);
     public IRecordTagRelationRepository RecordTagRelationRepository { get; } = new RecordTagRelationRepository(context);
 
     private bool _disposed = false;

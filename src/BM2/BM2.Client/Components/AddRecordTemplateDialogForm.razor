@@ -1,0 +1,222 @@
+﻿@using System.Net
+@using BM2.Shared.DTOs
+@using BM2.Shared.Requests.Commands.Record
+@using BM2.Shared.SystemCodes
+@using Newtonsoft.Json
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IApiClient ApiClient
+
+<BaseDialog DialogTitle="@(FormType == DialogFormType.Add ? "New record template" : "Edit record template")" MudDialog="@MudDialog"
+            ConfirmButtonText="@(FormType == DialogFormType.Add ? BaseDialog.ConfirmText.Add : BaseDialog.ConfirmText.Update)"
+            FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
+            FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
+    <BodyContent>
+        <MudForm Model="@_model"
+                 @ref="@_form"
+                 ValidationDelay="0">
+            <MudCardContent>
+                <WalletAutocomplete Label="Wallet"
+                                    Required
+                                    @ref="_walletAutocomplete"
+                                    SelectStartValue="@(x => RecordToUpdate is not null && x.Id == RecordToUpdate.WalletId)"
+                                    SelectedValue="@(async (w) =>
+                                                   {
+                                                       if (w is null)
+                                                       {
+                                                           _model.WalletId = Guid.Empty;
+                                                           await _categoryAutocomplete.SetUri(string.Empty);
+                                                           _tags = [];
+                                                           _selectedTags = [];
+                                                           StateHasChanged();
+                                                           return;
+                                                       }
+
+                                                       _model.WalletId = w.Id;
+
+                                                       if (RecordToUpdate is not null && FormType == DialogFormType.Edit)
+                                                       {
+                                                           await _categoryAutocomplete.SetUri(
+                                                               $"api/v1/wallets/{w.Id}/categories",
+                                                               RecordToUpdate.CategoryId);
+                                                           await _currencyAutocomplete.SelectValueById(RecordToUpdate.CurrencyId);
+                                                       }
+                                                       else
+                                                       {
+                                                           await _categoryAutocomplete.SetUri($"api/v1/wallets/{w.Id}/categories");
+                                                           await _currencyAutocomplete.SelectValueById(w.DefaultCurrencyId);
+                                                       }
+
+                                                       await GetTags(w.Id);
+                                                   })"/>
+
+                <CurrencyAutocomplete Label="Currency"
+                                      Required
+                                      @ref="_currencyAutocomplete"
+                                      SelectedValue="@((c) =>
+                                                     {
+                                                         _model.CurrencyId = c.Id;
+                                                         _selectedCurrency = c;
+                                                         StateHasChanged();
+                                                     })"/>
+
+                <CategoryAutocomplete Label="Category"
+                                      Required
+                                      @ref="_categoryAutocomplete"
+                                      SelectedValue="@((c) => _model.CategoryId = c?.Id ?? Guid.Empty)"/>
+
+                <MudTextField @bind-Value="_model.Name"
+                              For="@(() => _model.Name)"
+                              Immediate
+                              Label="Name"
+                              MaxLength="@ModelsRequirements.RecordNameMaxLength"
+                              Required/>
+
+                <MudTextField @bind-Value="_model.Amount"
+                              Label="Amount"
+                              Adornment="Adornment.End"
+                              AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)"/>
+
+                <MudTextField @bind-Value="_model.PlannedAmount"
+                              Label="Planned amount"
+                              Adornment="Adornment.End"
+                              AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)"/>
+
+                <RecordStatusAutocomplete Label="Status"
+                                          Required
+                                          StatusType="RecordStatusAutocomplete.RecordStatusType.Record"
+                                          SelectStartValue="@(x =>
+                                                                RecordToUpdate is null
+                                                                    ? x.SystemCode == StatusSystemCode.Realized
+                                                                    : x.Id == RecordToUpdate.StatusId)"
+                                          SelectedValue="@((s) => _model.StatusId = s?.Id ?? Guid.Empty)"/>
+
+                <MudTextField @bind-Value="_model.Description"
+                              For="@(() => _model.Description)"
+                              Immediate
+                              Label="Note"
+                              MaxLength="@ModelsRequirements.RecordDescriptionMaxLength"/>
+
+                <MudSelect T="TagDTO"
+                           @bind-SelectedValues="_selectedTags"
+                           MultiSelection
+                           Label="Tags">
+                    @foreach (var tag in _tags)
+                    {
+                        <MudSelectItem T="TagDTO" Value="@tag">@tag.ToString()</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudCardContent>
+        </MudForm>
+    </BodyContent>
+</BaseDialog>
+
+@code {
+    [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public RecordTemplateDTO? RecordToUpdate { get; set; }
+    [Parameter] public DialogFormType FormType { get; set; } = DialogFormType.Add;
+    private MudForm _form;
+    private UpdateRecordTemplateCommand _model = new();
+    private IEnumerable<WalletDTO> _wallets = [];
+    private CurrencyDTO? _selectedCurrency;
+    private WalletAutocomplete _walletAutocomplete;
+    private CategoryAutocomplete _categoryAutocomplete;
+    private CurrencyAutocomplete _currencyAutocomplete;
+    private void Cancel() => MudDialog.Cancel();
+    private IEnumerable<TagDTO> _tags = [];
+    private IEnumerable<TagDTO> _selectedTags = new HashSet<TagDTO>();
+
+    private async Task Submit()
+    {
+        _model.TagIds = _selectedTags.Select(t => t.Id).ToList();
+
+        await _form.Validate();
+
+        AddRecordTemplateCommand addRecord = _model;
+
+        if (_form.IsValid)
+        {
+            var response =
+                FormType == DialogFormType.Add
+                    ? await ApiClient.Create(@"api/v1/recordTemplates", addRecord)
+                    : await ApiClient.Put(@"api/v1/recordTemplates", _model);
+            
+            if (response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var newItem = JsonConvert.DeserializeObject<RecordTemplateDTO>(content) ?? new();
+
+                if (response.StatusCode == HttpStatusCode.Created)
+                    Snackbar.Add(new MarkupString($"Created <b>{newItem.Name}</b>"), Severity.Success);
+                if (response.StatusCode == HttpStatusCode.OK)
+                    Snackbar.Add(new MarkupString($"Updated <b>{newItem.Name}</b>"), Severity.Success);
+
+                MudDialog.Close(DialogResult.Ok(true));
+                FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+            }
+            else
+            {
+                await response.HandleFailure(AlertService);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ApiClient.Get(@"api/v1/wallets");
+        var responseString = await response.Content.ReadAsStringAsync();
+        var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
+        _wallets = walletDtos.OrderBy(x => x.WalletName);
+
+        if (FormType == DialogFormType.Edit && RecordToUpdate is not null)
+        {
+            _model = new UpdateRecordTemplateCommand
+            {
+                Id = RecordToUpdate.Id,
+                Name = RecordToUpdate.Name,
+                Amount = RecordToUpdate.Amount,
+                PlannedAmount = RecordToUpdate.PlannedAmount,
+                WalletId = RecordToUpdate.WalletId,
+                CategoryId = RecordToUpdate.CategoryId,
+                CurrencyId = RecordToUpdate.CurrencyId,
+                StatusId = RecordToUpdate.StatusId,
+                Description = RecordToUpdate.Description,
+                TagIds = RecordToUpdate.Tags.Select(t => t.Id).ToList()
+            };
+
+            _selectedCurrency = RecordToUpdate.Currency;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task GetTags(Guid walletId)
+    {
+        var responseTags = await ApiClient.Get($"api/v1/wallets/{walletId}/tags");
+        var responseTagsString = await responseTags.Content.ReadAsStringAsync();
+        var tagDtos = JsonConvert.DeserializeObject<List<TagDTO>>(responseTagsString) ?? new List<TagDTO>();
+        _tags = tagDtos.OrderBy(x => x.TagName);
+
+        if (RecordToUpdate?.Tags != null)
+            _selectedTags = _tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
+
+        StateHasChanged();
+    }
+
+    private async Task<IEnumerable<WalletDTO>> WalletSearch(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return _wallets;
+
+        return _wallets.Where(x => x.WalletName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private string WalletDisplay(WalletDTO? walletDto)
+    {
+        if (walletDto == null)
+            return string.Empty;
+
+        return walletDto.ToString();
+    }
+}

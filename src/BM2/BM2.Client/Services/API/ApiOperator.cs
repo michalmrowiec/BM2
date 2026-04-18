@@ -11,6 +11,7 @@ public interface IApiClient
     Task<HttpResponseMessage> Create(string uri, object item);
     Task<HttpResponseMessage> Put(string uri, object item);
     Task<HttpResponseMessage> Patch(string uri, object item);
+    Task<HttpResponseMessage> Delete(string uri);
 }
 
 public class ApiClient(
@@ -40,7 +41,12 @@ public class ApiClient(
             request.Content = postJson;
         }
 
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _authService.GetJwtToken());
+        var jwtToken = await _authService.GetJwtToken();
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+        }
+
         var response = await _httpClient.SendAsync(request);
 
         return response;
@@ -76,5 +82,12 @@ public class ApiClient(
             HttpMethod.Patch,
             uri: uri,
             item: item);
+    }
+
+    public async Task<HttpResponseMessage> Delete(string uri)
+    {
+        return await BaseRequestWithAuth(
+            HttpMethod.Delete,
+            uri: uri);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using BM2.Client.Components;
 using BM2.Client.Services.API;
+using BM2.Client.Services.Auth;
 using BM2.Shared.DTOs;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -11,6 +12,7 @@ public partial class Wallets(IApiClient apiClient, IDialogService dialogService)
 {
     [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
+    [Inject] private IAuthService AuthService { get; set; }
     private IList<WalletDTO> WalletList { get; set; } = new List<WalletDTO>();
 
     private async Task GetWallets()
@@ -21,9 +23,15 @@ public partial class Wallets(IApiClient apiClient, IDialogService dialogService)
         StateHasChanged();
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await GetWallets();
+        if (!firstRender)
+            return;
+
+        if (await AuthService.EnsureInitializedAsync())
+        {
+            await GetWallets();
+        }
     }
 
     private Task OpenAddWalletDialogAsync()

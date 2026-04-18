@@ -1,10 +1,8 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
-using BM2.Domain.Entities;
+using BM2.Application.Contracts.Persistence.Base;
 using BM2.Domain.Entities.System;
 
 namespace BM2.Application.Contracts.Persistence;
 
-public interface ICurrencyRepository
+public interface ICurrencyRepository : IGenericRepository<Currency>
 {
-    Task<IReadOnlyList<Currency>> GetAllAsync();
 }

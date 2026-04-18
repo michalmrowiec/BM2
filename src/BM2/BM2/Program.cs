@@ -10,6 +10,7 @@ using BM2.Infrastructure;
 using BM2.Infrastructure.Services;
 using BM2.Middleware;
 using BM2.Services;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.OpenApi.Models;
 using MudBlazor.Services;
@@ -31,17 +32,26 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>
 //builder.Services.AddAuthorizationCore();
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddSingleton<IAlertService, AlertService>();
-builder.Services.AddSingleton<IWalletSelectionState, WalletSelectionState>();
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IWalletSelectionState, WalletSelectionState>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddTransient<IApiClient, ApiClient>();
-builder.Services.AddHttpClient();
+builder.Services.AddScoped(sp =>
+{
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    return new HttpClient
+    {
+        BaseAddress = new Uri(navigationManager.BaseUri)
+    };
+});
 
 builder.Services.AddMudServices();
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+    });
 
 builder.Services.AddControllers();
 
@@ -97,7 +107,6 @@ await dbContext.SeedDatabaseAsync();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MB2"));
 }
@@ -117,15 +126,10 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.MapControllers();
 
-app.MapBlazorHub();
-
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BM2.Client._Imports).Assembly);
-
-app.MapFallbackToFile("index.html");
 
 app.UseCors("AllowAll");
 

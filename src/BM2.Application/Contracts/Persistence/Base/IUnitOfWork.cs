@@ -15,5 +15,6 @@ public interface IUnitOfWork : IDisposable
     public IWalletTagRelationRepository WalletTagRelationRepository { get; }
     public IRecordRepository RecordRepository { get; }
     public IRecordTemplateRepository RecordTemplateRepository { get; }
+    public IPeriodicRecordDefinitionRepository PeriodicRecordDefinitionRepository { get; }
     public IRecordTagRelationRepository RecordTagRelationRepository { get; }
 }
