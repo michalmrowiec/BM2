@@ -13,7 +13,7 @@
         Uri = StatusType switch
         {
             RecordStatusType.Record => "api/v1/recordStatuses/for-records",
-            //RecordStatusType.PeriodicRecord => "api/v1/recordStatuses/for-periodic-records",
+            RecordStatusType.PeriodicRecord => "api/v1/recordStatuses/for-periodic-records",
             _ => "api/v1/recordStatuses/for-records"
         };
         SearchFunc = (entity, value) => entity.RecordStatusName.Contains(value, StringComparison.InvariantCultureIgnoreCase);

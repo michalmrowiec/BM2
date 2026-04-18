@@ -1,6 +1,7 @@
 ﻿using BM2.Client.Components;
 using BM2.Client.Services;
 using BM2.Client.Services.API;
+using BM2.Client.Services.Auth;
 using BM2.Shared.DTOs;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -16,6 +17,7 @@ public partial class Records(
     [Inject] private IApiClient ApiClient { get; set; } = apiClient;
     [Inject] private IDialogService DialogService { get; set; } = dialogService;
     [Inject] private IWalletSelectionState WalletSelectionState { get; set; } = walletSelectionState;
+    [Inject] private IAuthService AuthService { get; set; }
     private IList<RecordDTO> RecordList { get; set; } = new List<RecordDTO>();
     private IList<AccountDTO> AccountList { get; set; } = new List<AccountDTO>();
 
@@ -69,11 +71,21 @@ public partial class Records(
         StateHasChanged();
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         WalletSelectionState.OnWalletChanged += GetRecords;
-        await GetRecords();
-        await GetAccounts();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        if (await AuthService.EnsureInitializedAsync())
+        {
+            await GetRecords();
+            await GetAccounts();
+        }
     }
 
     private Task OpenAddRecordDialogAsync()

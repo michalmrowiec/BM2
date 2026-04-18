@@ -1,0 +1,143 @@
+@using System.Net
+@using BM2.Shared.DTOs
+@using BM2.Shared.Requests.Commands.Record
+@using BM2.Shared.SystemCodes
+@using Newtonsoft.Json
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IApiClient ApiClient
+
+<BaseDialog DialogTitle="@(FormType == DialogFormType.Add ? "New periodic record definition" : "Edit periodic record definition")" MudDialog="@MudDialog"
+            ConfirmButtonText="@(FormType == DialogFormType.Add ? BaseDialog.ConfirmText.Add : BaseDialog.ConfirmText.Update)"
+            FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
+            FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
+    <BodyContent>
+        <MudForm Model="@_model"
+                 @ref="_form"
+                 ValidationDelay="0">
+            <MudCardContent>
+                <WalletAutocomplete Label="Wallet"
+                                    Required
+                                    SelectStartValue="@(x => DefinitionToUpdate is not null && x.Id == DefinitionToUpdate.WalletId)"
+                                    SelectedValue="@(async (w) =>
+                                                   {
+                                                       if (w is null)
+                                                       {
+                                                           _model.WalletId = Guid.Empty;
+                                                           await _recordTemplateAutocomplete.SetUri(string.Empty);
+                                                           await _accountAutocomplete.SetUri(string.Empty);
+                                                           return;
+                                                       }
+
+                                                       _model.WalletId = w.Id;
+                                                       await _recordTemplateAutocomplete.SetUri(
+                                                           $"api/v1/wallets/{w.Id}/recordTemplates",
+                                                           FormType == DialogFormType.Edit ? DefinitionToUpdate?.RecordTemplateId : null);
+                                                       await _accountAutocomplete.SetUri(
+                                                           $"api/v1/wallets/{w.Id}/accounts",
+                                                           FormType == DialogFormType.Edit ? DefinitionToUpdate?.SetRecordAccountId : null);
+                                                   })"/>
+
+                <RecordTemplateAutocomplete Label="Template"
+                                            Required
+                                            @ref="_recordTemplateAutocomplete"
+                                            SelectedValue="@((t) => _model.RecordTemplateId = t?.Id ?? Guid.Empty)"/>
+
+                <AccountAutocomplete Label="Target account"
+                                     Required
+                                     @ref="_accountAutocomplete"
+                                     SelectedValue="@((a) => _model.SetRecordAccountId = a?.Id ?? Guid.Empty)"/>
+
+                <CurrencyAutocomplete Label="Currency"
+                                      Required
+                                      @ref="_currencyAutocomplete"
+                                      SelectedValue="@((c) => _model.CurrencyId = c?.Id ?? Guid.Empty)"/>
+
+                <RecordStatusAutocomplete Label="Periodic status"
+                                          Required
+                                          StatusType="RecordStatusAutocomplete.RecordStatusType.PeriodicRecord"
+                                          SelectStartValue="@(x =>
+                                                                DefinitionToUpdate is null
+                                                                    ? x.SystemCode == StatusSystemCode.Active
+                                                                    : x.Id == DefinitionToUpdate.PeriodicRecordStatusId)"
+                                          SelectedValue="@((s) => _model.PeriodicRecordStatusId = s?.Id ?? Guid.Empty)"/>
+
+                <RecordStatusAutocomplete Label="Created record status"
+                                          Required
+                                          StatusType="RecordStatusAutocomplete.RecordStatusType.Record"
+                                          SelectStartValue="@(x =>
+                                                                DefinitionToUpdate is null
+                                                                    ? x.SystemCode == StatusSystemCode.Planned
+                                                                    : x.Id == DefinitionToUpdate.SetRecordStatusId)"
+                                          SelectedValue="@((s) => _model.SetRecordStatusId = s?.Id ?? Guid.Empty)"/>
+            </MudCardContent>
+        </MudForm>
+    </BodyContent>
+</BaseDialog>
+
+@code {
+    [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public PeriodicRecordDefinitionDTO? DefinitionToUpdate { get; set; }
+    [Parameter] public DialogFormType FormType { get; set; } = DialogFormType.Add;
+
+    private MudForm _form;
+    private UpdatePeriodicRecordDefinitionCommand _model = new();
+    private RecordTemplateAutocomplete _recordTemplateAutocomplete;
+    private AccountAutocomplete _accountAutocomplete;
+    private CurrencyAutocomplete _currencyAutocomplete;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        if (_form is null)
+            return;
+
+        await _form.Validate();
+
+        AddPeriodicRecordDefinitionCommand addCommand = _model;
+
+        if (!_form.IsValid)
+            return;
+
+        var response = FormType == DialogFormType.Add
+            ? await ApiClient.Create("api/v1/periodicRecordDefinitions", addCommand)
+            : await ApiClient.Put("api/v1/periodicRecordDefinitions", _model);
+
+        if (response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            var item = JsonConvert.DeserializeObject<PeriodicRecordDefinitionDTO>(content) ?? new();
+
+            Snackbar.Add(new MarkupString(FormType == DialogFormType.Add
+                    ? $"Created <b>{item.RecordTemplate?.Name ?? "periodic definition"}</b>"
+                    : $"Updated <b>{item.RecordTemplate?.Name ?? "periodic definition"}</b>"),
+                Severity.Success);
+
+            MudDialog.Close(DialogResult.Ok(true));
+            FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+        }
+        else
+        {
+            await response.HandleFailure(AlertService);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (FormType == DialogFormType.Edit && DefinitionToUpdate is not null)
+        {
+            _model = new UpdatePeriodicRecordDefinitionCommand
+            {
+                Id = DefinitionToUpdate.Id,
+                WalletId = DefinitionToUpdate.WalletId,
+                RecordTemplateId = DefinitionToUpdate.RecordTemplateId,
+                SetRecordAccountId = DefinitionToUpdate.SetRecordAccountId,
+                CurrencyId = DefinitionToUpdate.CurrencyId,
+                PeriodicRecordStatusId = DefinitionToUpdate.PeriodicRecordStatusId,
+                SetRecordStatusId = DefinitionToUpdate.SetRecordStatusId
+            };
+        }
+    }
+}

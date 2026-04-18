@@ -1,0 +1,113 @@
+﻿@page "/record-templates"
+@using BM2.Shared.DTOs
+@using BM2.Client.Components
+@using BM2.Client.Services.Auth
+@using System.Net
+@using Newtonsoft.Json
+
+@inject IApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IAuthService AuthService
+
+<h3>Record templates</h3>
+
+<MudButton @onclick="@(() => OpenAddUpdateRecordTemplateDialogAsync())"
+           Variant="Variant.Filled"
+           Color="Color.Primary">
+    Add record template
+</MudButton>
+
+<MudDataGrid T="RecordTemplateDTO" Items="@_recordTemplatesList">
+    <Columns>
+        <PropertyColumn Title="Wallet" Property="x => x.Wallet!.WalletName">
+            <CellTemplate>
+                @context.Item.Wallet?.ToString()
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Name" Property="x => x.Name" />
+        <PropertyColumn Title="Category" Property="x => x.Category!.CategoryName">
+            <CellTemplate>
+                @context.Item.Category?.ToString()
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Currency" Property="x => x.Currency" SortBy="x => x.Currency!.Name">
+            <CellTemplate>
+                @context.Item.Currency?.ToString()
+            </CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn StickyRight="true">
+            <CellTemplate>
+                <MudIconButton @onclick="@(async () => await OpenAddUpdateRecordTemplateDialogAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.Edit"
+                               Size="@Size.Small" />
+                <MudIconButton @onclick="@(async () => await DeleteRecordTemplateAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.Delete"
+                               Color="@Color.Error"
+                               Size="@Size.Small" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private IList<RecordTemplateDTO> _recordTemplatesList { get; set; } = [];
+
+    private async Task GetRecordTemplates()
+    {
+        var response = await ApiClient.Get("api/v1/recordTemplates");
+        var r = await response.Content.ReadAsStringAsync();
+        _recordTemplatesList = JsonConvert.DeserializeObject<IList<RecordTemplateDTO>>(r) ?? [];
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        if (await AuthService.EnsureInitializedAsync())
+        {
+            await GetRecordTemplates();
+        }
+    }
+
+    private Task OpenAddUpdateRecordTemplateDialogAsync(RecordTemplateDTO? recordTemplate = null)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<AddRecordTemplateDialogForm>
+        {
+            {
+                x => x.FuncsOnCreated, [EventCallback.Factory.Create(this, GetRecordTemplates)]
+            },
+            {
+                x => x.RecordToUpdate, recordTemplate
+            },
+            {
+                x => x.FormType, recordTemplate is null ? DialogFormType.Add : DialogFormType.Edit
+            }
+        };
+        return DialogService.ShowAsync<AddRecordTemplateDialogForm>(null, parameters, options);
+    }
+
+    private async Task DeleteRecordTemplateAsync(RecordTemplateDTO recordTemplate)
+    {
+        var response = await ApiClient.Delete($"api/v1/recordTemplates/{recordTemplate.Id}");
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            Snackbar.Add(new MarkupString($"Deleted <b>{recordTemplate.Name}</b>"), Severity.Success);
+            await GetRecordTemplates();
+            return;
+        }
+
+        await response.HandleFailure(AlertService);
+    }
+}
