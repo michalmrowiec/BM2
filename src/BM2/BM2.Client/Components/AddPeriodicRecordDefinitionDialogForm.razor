@@ -1,4 +1,5 @@
 @using System.Net
+@using BM2.Client.Services.DisplayServices
 @using BM2.Shared.DTOs
 @using BM2.Shared.Requests.Commands.Record
 @using BM2.Shared.SystemCodes
@@ -20,56 +21,77 @@
                                     Required
                                     SelectStartValue="@(x => DefinitionToUpdate is not null && x.Id == DefinitionToUpdate.WalletId)"
                                     SelectedValue="@(async (w) =>
-                                                   {
-                                                       if (w is null)
-                                                       {
-                                                           _model.WalletId = Guid.Empty;
-                                                           await _recordTemplateAutocomplete.SetUri(string.Empty);
-                                                           await _accountAutocomplete.SetUri(string.Empty);
-                                                           return;
-                                                       }
+                                                                                                                                                                                                   {
+                                        if (w is null)
+                                        {
+                                            _model.WalletId = Guid.Empty;
+                                            await _recordTemplateAutocomplete.SetUri(string.Empty);
+                                            await _accountAutocomplete.SetUri(string.Empty);
+                                            return;
+                                        }
 
-                                                       _model.WalletId = w.Id;
-                                                       await _recordTemplateAutocomplete.SetUri(
-                                                           $"api/v1/wallets/{w.Id}/recordTemplates",
-                                                           FormType == DialogFormType.Edit ? DefinitionToUpdate?.RecordTemplateId : null);
-                                                       await _accountAutocomplete.SetUri(
-                                                           $"api/v1/wallets/{w.Id}/accounts",
-                                                           FormType == DialogFormType.Edit ? DefinitionToUpdate?.SetRecordAccountId : null);
-                                                   })"/>
+                                        _model.WalletId = w.Id;
+                                        await _recordTemplateAutocomplete.SetUri(
+                                            $"api/v1/wallets/{w.Id}/recordTemplates",
+                                            FormType == DialogFormType.Edit ? DefinitionToUpdate?.RecordTemplateId : null);
+                                        await _accountAutocomplete.SetUri(
+                                            $"api/v1/wallets/{w.Id}/accounts",
+                                            FormType == DialogFormType.Edit ? DefinitionToUpdate?.SetRecordAccountId : null);
+                                    })" />
 
                 <RecordTemplateAutocomplete Label="Template"
                                             Required
                                             @ref="_recordTemplateAutocomplete"
-                                            SelectedValue="@((t) => _model.RecordTemplateId = t?.Id ?? Guid.Empty)"/>
+                                            SelectedValue="@((t) => _model.RecordTemplateId = t?.Id ?? Guid.Empty)" />
 
                 <AccountAutocomplete Label="Target account"
                                      Required
                                      @ref="_accountAutocomplete"
-                                     SelectedValue="@((a) => _model.SetRecordAccountId = a?.Id ?? Guid.Empty)"/>
+                                     SelectedValue="@((a) => _model.SetRecordAccountId = a?.Id ?? Guid.Empty)" />
 
                 <CurrencyAutocomplete Label="Currency"
                                       Required
                                       @ref="_currencyAutocomplete"
-                                      SelectedValue="@((c) => _model.CurrencyId = c?.Id ?? Guid.Empty)"/>
+                                      SelectedValue="@((c) => _model.CurrencyId = c?.Id ?? Guid.Empty)" />
 
                 <RecordStatusAutocomplete Label="Periodic status"
                                           Required
                                           StatusType="RecordStatusAutocomplete.RecordStatusType.PeriodicRecord"
                                           SelectStartValue="@(x =>
-                                                                DefinitionToUpdate is null
-                                                                    ? x.SystemCode == StatusSystemCode.Active
-                                                                    : x.Id == DefinitionToUpdate.PeriodicRecordStatusId)"
-                                          SelectedValue="@((s) => _model.PeriodicRecordStatusId = s?.Id ?? Guid.Empty)"/>
+                                                                                                                                                                                                                                        DefinitionToUpdate is null
+                                                                                                                                                                                                                                            ? x.SystemCode == StatusSystemCode.Active
+                                                                                                                                                                                                                                            : x.Id == DefinitionToUpdate.PeriodicRecordStatusId)"
+                                          SelectedValue="@((s) => _model.PeriodicRecordStatusId = s?.Id ?? Guid.Empty)" />
 
                 <RecordStatusAutocomplete Label="Created record status"
                                           Required
                                           StatusType="RecordStatusAutocomplete.RecordStatusType.Record"
                                           SelectStartValue="@(x =>
-                                                                DefinitionToUpdate is null
-                                                                    ? x.SystemCode == StatusSystemCode.Planned
-                                                                    : x.Id == DefinitionToUpdate.SetRecordStatusId)"
-                                          SelectedValue="@((s) => _model.SetRecordStatusId = s?.Id ?? Guid.Empty)"/>
+                                                                                                                                                                                                                                        DefinitionToUpdate is null
+                                                                                                                                                                                                                                            ? x.SystemCode == StatusSystemCode.Planned
+                                                                                                                                                                                                                                            : x.Id == DefinitionToUpdate.SetRecordStatusId)"
+                                          SelectedValue="@((s) => _model.SetRecordStatusId = s?.Id ?? Guid.Empty)" />
+
+                <MudDatePicker @bind-Date="_date"
+                               Label="Date of (planned) operation"
+                               Required />
+
+                <MudTimePicker Label="Time of (planned) operation"
+                               @bind-Time="_time"
+                               Clearable />
+
+                <MudAutocomplete T="Periodicity ?"
+                                 Label="Periodicity"
+                                 @bind-Value="_model.Periodicity"
+                                 SearchFunc="Search"
+                                 ToStringFunc="@(x => x?.GetDisplayName())"
+                                 Required="true"
+                                 RequiredError="Please select periodicity"
+                                 Clearable="true"
+                                 Placeholder="Select frequency..."
+                                 Variant="Variant.Text"
+                                 MaxItems="999"
+                                 Strict="false"/>
             </MudCardContent>
         </MudForm>
     </BodyContent>
@@ -86,6 +108,8 @@
     private RecordTemplateAutocomplete _recordTemplateAutocomplete;
     private AccountAutocomplete _accountAutocomplete;
     private CurrencyAutocomplete _currencyAutocomplete;
+    private DateTime? _date;
+    private TimeSpan? _time;
 
     private void Cancel() => MudDialog.Cancel();
 
@@ -93,6 +117,11 @@
     {
         if (_form is null)
             return;
+
+        if (_date is { } date && _time is { } time)
+            _date = date.Date.Add(time);
+
+        _model.StartDate = _date?.ToUniversalTime() ?? DateTime.UtcNow;
 
         await _form.Validate();
 
@@ -136,8 +165,22 @@
                 SetRecordAccountId = DefinitionToUpdate.SetRecordAccountId,
                 CurrencyId = DefinitionToUpdate.CurrencyId,
                 PeriodicRecordStatusId = DefinitionToUpdate.PeriodicRecordStatusId,
-                SetRecordStatusId = DefinitionToUpdate.SetRecordStatusId
+                SetRecordStatusId = DefinitionToUpdate.SetRecordStatusId,
+                Periodicity = DefinitionToUpdate.Periodicity,
+                StartDate = DefinitionToUpdate.StartDate,
             };
         }
+    }
+
+    private async Task<IEnumerable<Periodicity?>> Search(string value, CancellationToken token)
+    {
+        var allValues = Enum.GetValues<Periodicity>().Select(e => (Periodicity?)e);
+
+        if (string.IsNullOrEmpty(value))
+        {
+            return allValues;
+        }
+
+        return allValues.Where(x => x.HasValue && x.Value.GetDisplayName().Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 }

@@ -1,3 +1,5 @@
+using BM2.Shared.SystemCodes;
+
 namespace BM2.Shared.DTOs;
 
 public class PeriodicRecordDefinitionDTO
@@ -9,6 +11,8 @@ public class PeriodicRecordDefinitionDTO
     public Guid SetRecordStatusId { get; set; }
     public Guid WalletId { get; set; }
     public Guid SetRecordAccountId { get; set; }
+    public Periodicity Periodicity { get; set; }
+    public DateTime StartDate { get; set; }
 
     public RecordTemplateDTO? RecordTemplate { get; set; }
     public CurrencyDTO? Currency { get; set; }
