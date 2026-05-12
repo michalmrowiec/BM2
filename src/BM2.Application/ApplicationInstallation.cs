@@ -1,5 +1,6 @@
-﻿using System.Reflection;
+﻿using BM2.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace BM2.Application;
 
@@ -10,5 +11,8 @@ public static class ApplicationInstallation
         services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(ApplicationInstallation).Assembly); });
 
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
+
+        services.AddScoped<IPeriodicRecordScheduler, PeriodicRecordScheduler>();
+        services.AddScoped<IPeriodicJobManager, PeriodicJobManager>();
     }
 }

@@ -21,7 +21,7 @@
                                     Required
                                     SelectStartValue="@(x => DefinitionToUpdate is not null && x.Id == DefinitionToUpdate.WalletId)"
                                     SelectedValue="@(async (w) =>
-                                                                                                                                                                                                   {
+                                                                                                                                                                                                                                                                           {
                                         if (w is null)
                                         {
                                             _model.WalletId = Guid.Empty;
@@ -52,24 +52,25 @@
                 <CurrencyAutocomplete Label="Currency"
                                       Required
                                       @ref="_currencyAutocomplete"
+                                      SelectStartValue="@(x => _model is not null && x.Id == _model.CurrencyId)"
                                       SelectedValue="@((c) => _model.CurrencyId = c?.Id ?? Guid.Empty)" />
 
                 <RecordStatusAutocomplete Label="Periodic status"
                                           Required
                                           StatusType="RecordStatusAutocomplete.RecordStatusType.PeriodicRecord"
                                           SelectStartValue="@(x =>
-                                                                                                                                                                                                                                        DefinitionToUpdate is null
-                                                                                                                                                                                                                                            ? x.SystemCode == StatusSystemCode.Active
-                                                                                                                                                                                                                                            : x.Id == DefinitionToUpdate.PeriodicRecordStatusId)"
+                                                                                                                                                                                                                                                                                                                            DefinitionToUpdate is null
+                                                                                                                                                                                                                                                                                                                                ? x.SystemCode == StatusSystemCode.Active
+                                                                                                                                                                                                                                                                                                                                : x.Id == DefinitionToUpdate.PeriodicRecordStatusId)"
                                           SelectedValue="@((s) => _model.PeriodicRecordStatusId = s?.Id ?? Guid.Empty)" />
 
                 <RecordStatusAutocomplete Label="Created record status"
                                           Required
                                           StatusType="RecordStatusAutocomplete.RecordStatusType.Record"
                                           SelectStartValue="@(x =>
-                                                                                                                                                                                                                                        DefinitionToUpdate is null
-                                                                                                                                                                                                                                            ? x.SystemCode == StatusSystemCode.Planned
-                                                                                                                                                                                                                                            : x.Id == DefinitionToUpdate.SetRecordStatusId)"
+                                                                                                                                                                                                                                                                                                                            DefinitionToUpdate is null
+                                                                                                                                                                                                                                                                                                                                ? x.SystemCode == StatusSystemCode.Planned
+                                                                                                                                                                                                                                                                                                                                : x.Id == DefinitionToUpdate.SetRecordStatusId)"
                                           SelectedValue="@((s) => _model.SetRecordStatusId = s?.Id ?? Guid.Empty)" />
 
                 <MudDatePicker @bind-Date="_date"
@@ -91,7 +92,7 @@
                                  Placeholder="Select frequency..."
                                  Variant="Variant.Text"
                                  MaxItems="999"
-                                 Strict="false"/>
+                                 Strict="false" />
             </MudCardContent>
         </MudForm>
     </BodyContent>
@@ -118,10 +119,13 @@
         if (_form is null)
             return;
 
-        if (_date is { } date && _time is { } time)
-            _date = date.Date.Add(time);
-
-        _model.StartDate = _date?.ToUniversalTime() ?? DateTime.UtcNow;
+        DateTime finalDateTime = DateTime.UtcNow;
+        if (_date.HasValue && _time.HasValue)
+        {
+            var localDateTime = _date.Value.Date.Add(_time.Value);
+            finalDateTime = localDateTime.ToUniversalTime();
+        }
+        _model.StartDate = finalDateTime;
 
         await _form.Validate();
 
@@ -169,6 +173,12 @@
                 Periodicity = DefinitionToUpdate.Periodicity,
                 StartDate = DefinitionToUpdate.StartDate,
             };
+
+            var localDateTime = _model.StartDate.ToLocalTime();
+            _date = localDateTime.Date;
+            _time = localDateTime.TimeOfDay;
+
+            await InvokeAsync(StateHasChanged);
         }
     }
 

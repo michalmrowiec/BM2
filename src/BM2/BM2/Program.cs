@@ -10,6 +10,7 @@ using BM2.Infrastructure;
 using BM2.Infrastructure.Services;
 using BM2.Middleware;
 using BM2.Services;
+using Hangfire;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.OpenApi.Models;
@@ -116,21 +117,22 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
+app.UseHttpsRedirection();
+app.MapStaticAssets();
 app.UseAntiforgery();
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
-app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseHangfireDashboard();
 
 app.MapControllers();
-
-app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(typeof(BM2.Client._Imports).Assembly);
 
-app.UseCors("AllowAll");
 
 app.Run();

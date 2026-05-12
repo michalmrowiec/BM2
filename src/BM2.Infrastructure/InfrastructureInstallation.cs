@@ -7,6 +7,7 @@ using BM2.Domain.Entities.UserProfile;
 using BM2.Infrastructure.Repositories;
 using BM2.Infrastructure.Repositories.Base;
 using BM2.Infrastructure.Services;
+using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -44,8 +45,18 @@ public static class InfrastructureInstallation
             };
         });
 
+        var connectionString = configuration.GetConnectionString("BM2DB");
+
         services.AddDbContext<BM2DbContext>(
-            opt => opt.UseSqlServer(configuration.GetConnectionString("BM2DB")));
+            opt => opt.UseSqlServer(connectionString));
+
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(connectionString));
+
+        services.AddHangfireServer();
 
         services.AddSingleton(authenticationSettings);
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
