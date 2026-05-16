@@ -1,7 +1,6 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BM2.Application.Contracts.Services;
 using BM2.Domain.Entities;
 using BM2.Domain.Entities.UserProfile;
 using Microsoft.IdentityModel.Tokens;
@@ -9,7 +8,6 @@ using Microsoft.IdentityModel.Tokens;
 namespace BM2.Infrastructure.Services;
 
 public class JwtTokenService(AuthenticationSettings authenticationSettings)
-    : IJwtTokenService
 {
     private readonly AuthenticationSettings _authenticationSettings = authenticationSettings;
 

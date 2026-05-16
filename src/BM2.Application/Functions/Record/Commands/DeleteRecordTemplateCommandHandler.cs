@@ -1,11 +1,11 @@
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.Requests.Commands.Record;
 using MediatR;
 
 namespace BM2.Application.Functions.Record.Commands;
 
-public class DeleteRecordTemplateCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteRecordTemplateCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<DeleteRecordTemplateCommand, BaseResponse>
 {
     public async Task<BaseResponse> Handle(DeleteRecordTemplateCommand request, CancellationToken cancellationToken)

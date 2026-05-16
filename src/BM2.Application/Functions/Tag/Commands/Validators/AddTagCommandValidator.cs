@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Tag;
@@ -9,7 +9,7 @@ namespace BM2.Application.Functions.Tag.Commands.Validators;
 
 public class AddTagCommandValidator : AbstractValidator<AddTagCommand>
 {
-    public AddTagCommandValidator(IUnitOfWork unitOfWork)
+    public AddTagCommandValidator(UnitOfWork unitOfWork)
     {
         RuleFor(x => x.TagName)
             .NotEmpty()

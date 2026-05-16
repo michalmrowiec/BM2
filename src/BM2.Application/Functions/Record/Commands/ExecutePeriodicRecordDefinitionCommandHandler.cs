@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Application.Services;
 using BM2.Shared.Requests.Commands.Record;
@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BM2.Application.Functions.Record.Commands;
 
 public class ExecutePeriodicRecordDefinitionCommandHandler(
-    IUnitOfWork uow,
+    UnitOfWork uow,
     IMediator mediator,
     IPeriodicJobManager _periodicJobManager)
     : IRequestHandler<ExecutePeriodicRecordDefinitionCommand, BaseResponse>

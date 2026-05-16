@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Wallet;
@@ -9,7 +9,7 @@ namespace BM2.Application.Functions.Wallet.Commands.Validators;
 
 public class AddWalletCommandValidator : AbstractValidator<AddWalletCommand>
 {
-    public AddWalletCommandValidator(IUnitOfWork unitOfWork, bool validateWalletLimit = true)
+    public AddWalletCommandValidator(UnitOfWork unitOfWork, bool validateWalletLimit = true)
     {
         RuleFor(x => x.WalletName)
             .NotEmpty()

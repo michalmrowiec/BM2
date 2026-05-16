@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Record.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserRecords;
@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Record.Commands;
 
-public class AddRecordTemplateCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class AddRecordTemplateCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<AddRecordTemplateCommand, BaseResponse<RecordTemplateDTO>>
 {
     public async Task<BaseResponse<RecordTemplateDTO>> Handle(AddRecordTemplateCommand request, CancellationToken cancellationToken)
@@ -20,7 +20,7 @@ public class AddRecordTemplateCommandHandler(IMapper mapper, IUnitOfWork unitOfW
 
         if (!validationResult.IsValid) return new BaseResponse<RecordTemplateDTO>(validationResult);
 
-        var recordTemplate = mapper.Map<AddRecordTemplateCommand, Domain.Entities.UserRecords.RecordTemplate>(request);
+        var recordTemplate = request.ToEntity();
         recordTemplate.Id = Guid.NewGuid();
         recordTemplate.CreatedAt = DateTime.UtcNow;
         recordTemplate.CreatedBy = request.OwnedByUserId;
@@ -47,7 +47,7 @@ public class AddRecordTemplateCommandHandler(IMapper mapper, IUnitOfWork unitOfW
 
             createdRecordTemplate.ThrowExceptionIfNull();
 
-            return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserRecords.RecordTemplate, RecordTemplateDTO>(createdRecordTemplate));
+            return request.ReturnSuccessWithObject(createdRecordTemplate.ToDto());
         }
         catch (Exception)
         {

@@ -1,4 +1,4 @@
-﻿using BM2.Domain.Entities.Interfaces;
+using BM2.Domain.Entities.Interfaces;
 using BM2.Domain.Entities.UserProfile;
 using BM2.Domain.Entities.UserRecords;
 

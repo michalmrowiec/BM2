@@ -1,11 +1,11 @@
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.Requests.Commands.Record;
 using MediatR;
 
 namespace BM2.Application.Functions.Record.Commands;
 
-public class DeletePeriodicRecordDefinitionCommandHandler(IUnitOfWork unitOfWork)
+public class DeletePeriodicRecordDefinitionCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<DeletePeriodicRecordDefinitionCommand, BaseResponse>
 {
     public async Task<BaseResponse> Handle(DeletePeriodicRecordDefinitionCommand request, CancellationToken cancellationToken)

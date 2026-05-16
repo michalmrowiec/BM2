@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Wallet.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
@@ -8,7 +8,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.Wallet.Commands;
 
-public class UpdateWalletCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class UpdateWalletCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<UpdateWalletCommand, BaseResponse<WalletDTO>>
 {
     public async Task<BaseResponse<WalletDTO>> Handle(UpdateWalletCommand request, CancellationToken cancellationToken)
@@ -23,7 +23,7 @@ public class UpdateWalletCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
         wallet.ThrowExceptionIfNull();
         wallet!.CheckPermission(request.OwnedByUserId);
         
-        mapper.Map(request, wallet);
+        wallet.Apply(request);
         wallet!.UpdatedAt = DateTime.UtcNow;
         wallet.UpdatedBy = request.OwnedByUserId;
 
@@ -32,7 +32,7 @@ public class UpdateWalletCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
             wallet = await unitOfWork.WalletRepository.Update(wallet);
             await unitOfWork.SaveAsync();
 
-            return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserProfile.Wallet, WalletDTO>(wallet));
+            return request.ReturnSuccessWithObject(wallet.ToDto());
         }
         catch (Exception e)
         {

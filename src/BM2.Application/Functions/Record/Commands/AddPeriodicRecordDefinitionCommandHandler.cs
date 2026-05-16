@@ -1,5 +1,5 @@
-using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Record.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Application.Services;
@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Record.Commands;
 
-public class AddPeriodicRecordDefinitionCommandHandler(IMapper mapper, IUnitOfWork unitOfWork, IPeriodicJobManager _periodicJobManager)
+public class AddPeriodicRecordDefinitionCommandHandler(UnitOfWork unitOfWork, IPeriodicJobManager _periodicJobManager)
     : IRequestHandler<AddPeriodicRecordDefinitionCommand, BaseResponse<PeriodicRecordDefinitionDTO>>
 {
     public async Task<BaseResponse<PeriodicRecordDefinitionDTO>> Handle(
@@ -22,7 +22,7 @@ public class AddPeriodicRecordDefinitionCommandHandler(IMapper mapper, IUnitOfWo
 
         if (!validationResult.IsValid) return new BaseResponse<PeriodicRecordDefinitionDTO>(validationResult);
 
-        var entity = mapper.Map<Domain.Entities.UserRecords.PeriodicRecordDefinition>(request);
+        var entity = request.ToEntity();
         entity.Id = Guid.NewGuid();
         entity.CreatedAt = DateTime.UtcNow;
         entity.CreatedBy = request.OwnedByUserId;
@@ -49,7 +49,7 @@ public class AddPeriodicRecordDefinitionCommandHandler(IMapper mapper, IUnitOfWo
 
             created.ThrowExceptionIfNull();
 
-            return request.ReturnSuccessWithObject(mapper.Map<PeriodicRecordDefinitionDTO>(created));
+            return request.ReturnSuccessWithObject(created.ToDto());
         }
         catch (Exception)
         {

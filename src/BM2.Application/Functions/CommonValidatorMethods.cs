@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +16,7 @@ public static class CommonValidatorMethods
     /// <param name="unitOfWork">Unit of Work instance for database operations.</param>
     /// <param name="cancellationToken">Cancellation token for async operations.</param>
     /// <exception cref="DomainExceptions.UnauthenticatedException">Thrown when the user does not own all the wallets.</exception>
-    public static async Task ValidateAllWalletsBelongToUser(this IEnumerable<Guid> walletIds, Guid userId, IUnitOfWork unitOfWork,
+    public static async Task ValidateAllWalletsBelongToUser(this IEnumerable<Guid> walletIds, Guid userId, UnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var user = await unitOfWork.UserRepository.GetByIdAsync(userId,

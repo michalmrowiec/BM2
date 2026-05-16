@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
 using BM2.Shared.Models;
@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Category.Queries;
 
-public class GetAllCategoriesForUserWithWalletRelationsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+public class GetAllCategoriesForUserWithWalletRelationsQueryHandler(UnitOfWork unitOfWork)
     : IRequestHandler<GetAllCategoriesForUserWithWalletRelationsQuery,
         BaseResponse<IEnumerable<CategoryWalletRelationDTO>>>
 {

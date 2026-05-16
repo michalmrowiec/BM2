@@ -1,5 +1,5 @@
-using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Record.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Application.Services;
@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BM2.Application.Functions.Record.Commands;
 
 public class UpdatePeriodicRecordDefinitionCommandHandler(
-    IMapper _mapper, IUnitOfWork _unitOfWork, IBackgroundJobClient _backgroundJobClient, IPeriodicJobManager _periodicJobManager)
+    UnitOfWork _unitOfWork, IBackgroundJobClient _backgroundJobClient, IPeriodicJobManager _periodicJobManager)
     : IRequestHandler<UpdatePeriodicRecordDefinitionCommand, BaseResponse<PeriodicRecordDefinitionDTO>>
 {
     public async Task<BaseResponse<PeriodicRecordDefinitionDTO>> Handle(UpdatePeriodicRecordDefinitionCommand request,
@@ -27,7 +27,7 @@ public class UpdatePeriodicRecordDefinitionCommandHandler(
         entity.ThrowExceptionIfNull();
         entity!.CheckPermission(request.OwnedByUserId);
 
-        _mapper.Map(request, entity);
+        entity.Apply(request);
         entity.UpdatedAt = DateTime.UtcNow;
         entity.UpdatedBy = request.OwnedByUserId;
 
@@ -47,7 +47,7 @@ public class UpdatePeriodicRecordDefinitionCommandHandler(
 
             updated.ThrowExceptionIfNull();
 
-            return request.ReturnSuccessWithObject(_mapper.Map<PeriodicRecordDefinitionDTO>(updated));
+            return request.ReturnSuccessWithObject(updated.ToDto());
         }
         catch (Exception)
         {

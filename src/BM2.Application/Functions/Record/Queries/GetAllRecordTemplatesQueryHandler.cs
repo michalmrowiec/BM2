@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Queries.Record;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Record.Queries;
 
-public class GetAllRecordTemplatesQueryHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class GetAllRecordTemplatesQueryHandler(UnitOfWork unitOfWork)
     : IRequestHandler<GetAllRecordTemplatesQuery, BaseResponse<IEnumerable<RecordTemplateDTO>>>
 {
     public async Task<BaseResponse<IEnumerable<RecordTemplateDTO>>> Handle(
@@ -25,6 +25,6 @@ public class GetAllRecordTemplatesQueryHandler(IMapper mapper, IUnitOfWork unitO
 
         data.CheckPermission(request.UserId);
 
-        return request.ReturnSuccessWithObject(mapper.Map<IEnumerable<RecordTemplateDTO>>(data));
+        return request.ReturnSuccessWithObject(data.Select(x => x.ToDto()));
     }
 }

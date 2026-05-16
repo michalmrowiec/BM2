@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Record.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserRecords;
@@ -9,7 +9,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.Record.Commands;
 
-public class UpdateRecordCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class UpdateRecordCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<UpdateRecordCommand, BaseResponse<RecordDTO>>
 {
     public async Task<BaseResponse<RecordDTO>> Handle(UpdateRecordCommand request, CancellationToken cancellationToken)
@@ -40,7 +40,7 @@ public class UpdateRecordCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
             .Where(x => !request.TagIds.Contains(x.TagId))
             .ToList();
 
-        mapper.Map(request, record);
+        record.Apply(request);
 
         record!.UpdatedAt = DateTime.UtcNow;
         record.UpdatedBy = request.OwnedByUserId;
@@ -52,7 +52,7 @@ public class UpdateRecordCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
             await unitOfWork.RecordTagRelationRepository.Delete(toDelete);
             await unitOfWork.SaveAsync();
 
-            return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserRecords.Record, RecordDTO>(record));
+            return request.ReturnSuccessWithObject(record.ToDto());
         }
         catch (Exception e)
         {

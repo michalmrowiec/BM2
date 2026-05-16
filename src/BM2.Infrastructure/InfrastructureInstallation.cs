@@ -1,7 +1,4 @@
-﻿using System.Text;
-using BM2.Application.Contracts.Persistence;
-using BM2.Application.Contracts.Persistence.Base;
-using BM2.Application.Contracts.Services;
+using System.Text;
 using BM2.Domain.Entities;
 using BM2.Domain.Entities.UserProfile;
 using BM2.Infrastructure.Repositories;
@@ -60,22 +57,10 @@ public static class InfrastructureInstallation
 
         services.AddSingleton(authenticationSettings);
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<JwtTokenService>();
         services.AddScoped<ISieveProcessor, BM2SieveProcessor>();
 
-        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<ICurrencyRepository, CurrencyRepository>();
-        services.AddScoped<IRecordStatusRepository, RecordStatusRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IAuditLoginRepository, AuditLoginRepository>();
-        services.AddScoped<IWalletRepository, WalletRepository>();
-        services.AddScoped<IAccountRepository, AccountRepository>();
-        services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<IWalletCategoryRelationRepository, WalletCategoryRelationRepository>();
-        services.AddScoped<ITagRepository, TagRepository>();
-        services.AddScoped<IWalletTagRelationRepository, WalletTagRelationRepository>();
-        services.AddScoped<IRecordTagRelationRepository, RecordTagRelationRepository>();
-        services.AddScoped<IPeriodicRecordDefinitionRepository, PeriodicRecordDefinitionRepository>();
+        services.AddScoped(typeof(GenericRepository<>));
+        services.AddScoped<UnitOfWork>();
     }
 }

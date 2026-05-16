@@ -1,5 +1,5 @@
-using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Record.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserRecords;
@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Record.Commands;
 
-public class UpdateRecordTemplateCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class UpdateRecordTemplateCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<UpdateRecordTemplateCommand, BaseResponse<RecordTemplateDTO>>
 {
     public async Task<BaseResponse<RecordTemplateDTO>> Handle(UpdateRecordTemplateCommand request, CancellationToken cancellationToken)
@@ -40,7 +40,7 @@ public class UpdateRecordTemplateCommandHandler(IMapper mapper, IUnitOfWork unit
             .Where(x => !request.TagIds.Contains(x.TagId))
             .ToList();
 
-        mapper.Map(request, recordTemplate);
+        recordTemplate.Apply(request);
 
         recordTemplate.UpdatedAt = DateTime.UtcNow;
         recordTemplate.UpdatedBy = request.OwnedByUserId;
@@ -61,7 +61,7 @@ public class UpdateRecordTemplateCommandHandler(IMapper mapper, IUnitOfWork unit
 
             updatedRecordTemplate.ThrowExceptionIfNull();
 
-            return request.ReturnSuccessWithObject(mapper.Map<RecordTemplateDTO>(updatedRecordTemplate));
+            return request.ReturnSuccessWithObject(updatedRecordTemplate.ToDto());
         }
         catch (Exception)
         {
