@@ -1,4 +1,4 @@
-ï»¿using BM2.Domain.Entities.UserRecords;
+using BM2.Domain.Entities.UserRecords;
 using BM2.Shared.Requests.Commands.Record;
 using BM2.Shared.SystemCodes;
 using Hangfire;
@@ -16,13 +16,13 @@ public class PeriodicJobManager(IBackgroundJobClient _backgroundJobClient, IPeri
 {
     public void ScheduleNextExecution(PeriodicRecordDefinition definition)
     {
-        // 1. UsuÅ„ stary job jeÅ›li istnieje
+        // 1. Usuñ stary job jeœli istnieje
         RemoveScheduledJob(definition);
 
         if (definition.PeriodicRecordStatus?.SystemCode != StatusSystemCode.Active)
             return;
 
-        // 2. Oblicz nowÄ… datÄ™ (wykorzystaj logikÄ™ z Twojego obecnego handlera)
+        // 2. Oblicz now¹ datê (wykorzystaj logikê z Twojego obecnego handlera)
         var nextDate = _scheduler.CalculateNextDate(definition.StartDate, DateTime.UtcNow, definition.Periodicity);
 
         // 3. Zaplanuj
@@ -30,7 +30,7 @@ public class PeriodicJobManager(IBackgroundJobClient _backgroundJobClient, IPeri
             m => m.Send(new ExecutePeriodicRecordDefinitionCommand(definition.Id), CancellationToken.None),
             nextDate - DateTime.UtcNow);
 
-        // 4. Zaktualizuj encjÄ™
+        // 4. Zaktualizuj encjê
         definition.NextExecutionAt = nextDate;
         definition.HangfireJobId = jobId;
     }

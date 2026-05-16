@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Record.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserRecords;
@@ -9,7 +9,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.Record.Commands;
 
-public class AddRecordCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class AddRecordCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<AddRecordCommand, BaseResponse<RecordDTO>>
 {
     public async Task<BaseResponse<RecordDTO>> Handle(AddRecordCommand request, CancellationToken cancellationToken)
@@ -19,7 +19,7 @@ public class AddRecordCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
 
         if (!validationResult.IsValid) return new BaseResponse<RecordDTO>(validationResult);
 
-        var record = mapper.Map<AddRecordCommand, Domain.Entities.UserRecords.Record>(request);
+        var record = request.ToEntity();
         record.Id = Guid.NewGuid();
         record.CreatedAt = DateTime.UtcNow;
         record.CreatedBy = request.OwnedByUserId;
@@ -37,7 +37,7 @@ public class AddRecordCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
             await unitOfWork.RecordTagRelationRepository.AddRange(recordTagRelations);
             await unitOfWork.SaveAsync();
 
-            return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserRecords.Record, RecordDTO>(record));
+            return request.ReturnSuccessWithObject(record.ToDto());
         }
         catch (Exception e)
         {

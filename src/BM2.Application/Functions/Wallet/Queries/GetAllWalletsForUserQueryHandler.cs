@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Wallet;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Wallet.Queries;
 
-public class GetAllWalletsForUserQueryHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class GetAllWalletsForUserQueryHandler(UnitOfWork unitOfWork)
     : IRequestHandler<GetAllWalletsForUserQuery, BaseResponse<IEnumerable<WalletDTO>>>
 {
     public async Task<BaseResponse<IEnumerable<WalletDTO>>> Handle(GetAllWalletsForUserQuery request,
@@ -22,6 +22,6 @@ public class GetAllWalletsForUserQueryHandler(IMapper mapper, IUnitOfWork unitOf
         wallets.ThrowExceptionIfNull();
         wallets!.CheckPermission(request.UserId);
 
-        return request.ReturnSuccessWithObject(mapper.Map<IEnumerable<WalletDTO>>(wallets));
+        return request.ReturnSuccessWithObject(wallets.Select(x => x.ToDto()));
     }
 }

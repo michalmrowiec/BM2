@@ -1,12 +1,11 @@
-﻿using System.Linq.Expressions;
-using BM2.Application.Contracts.Persistence.Base;
+using System.Linq.Expressions;
 using BM2.Domain.Entities.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Infrastructure.Repositories.Base;
 
 public class GenericRepository<T>(
-    BM2DbContext context) : IGenericRepository<T> where T : class, IEntity
+    BM2DbContext context) where T : class, IEntity
 {
     private readonly DbSet<T> _dbSet = context.Set<T>();
 
@@ -82,7 +81,7 @@ public class GenericRepository<T>(
 
     public async Task<IReadOnlyList<T>> GetByIdsAsync(IList<Guid> ids)
     {
-        if (ids.Any())
+        if (!ids.Any())
             return new List<T>();
 
         return await _dbSet.Where(x => ids.Contains(x.Id)).ToListAsync();

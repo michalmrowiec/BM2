@@ -1,4 +1,4 @@
-ï»¿using BM2.Shared.SystemCodes;
+using BM2.Shared.SystemCodes;
 
 namespace BM2.Application.Services;
 
@@ -11,8 +11,8 @@ public class PeriodicRecordScheduler : IPeriodicRecordScheduler
 {
     public DateTime CalculateNextDate(DateTime startDate, DateTime lastPlannedDate, Periodicity periodicity)
     {
-        // Obliczamy, ile interwaÅ‚Ã³w minÄ™Å‚o od daty startowej do ostatniego zaplanowanego wykonania
-        // NastÄ™pnie dodajemy kolejny interwaÅ‚ do daty startowej.
+        // Obliczamy, ile interwa³ów minê³o od daty startowej do ostatniego zaplanowanego wykonania
+        // Nastêpnie dodajemy kolejny interwa³ do daty startowej.
 
         return periodicity switch
         {
@@ -24,10 +24,10 @@ public class PeriodicRecordScheduler : IPeriodicRecordScheduler
 
     private DateTime GetNextMonthlyOccurrence(DateTime start, DateTime last)
     {
-        // Obliczamy ile peÅ‚nych miesiÄ™cy upÅ‚ynÄ™Å‚o
+        // Obliczamy ile pe³nych miesiêcy up³ynê³o
         int monthsSinceStart = ((last.Year - start.Year) * 12) + last.Month - start.Month;
 
-        // Planujemy na kolejny miesiÄ…c (stÄ…d + 1)
+        // Planujemy na kolejny miesi¹c (st¹d + 1)
         return start.AddMonths(monthsSinceStart + 1);
     }
 

@@ -1,5 +1,5 @@
-using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Queries.Record;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Record.Queries;
 
-public class GetAllPeriodicRecordDefinitionsQueryHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class GetAllPeriodicRecordDefinitionsQueryHandler(UnitOfWork unitOfWork)
     : IRequestHandler<GetAllPeriodicRecordDefinitionsQuery, BaseResponse<IEnumerable<PeriodicRecordDefinitionDTO>>>
 {
     public async Task<BaseResponse<IEnumerable<PeriodicRecordDefinitionDTO>>> Handle(
@@ -25,6 +25,6 @@ public class GetAllPeriodicRecordDefinitionsQueryHandler(IMapper mapper, IUnitOf
 
         items.CheckPermission(request.UserId);
 
-        return request.ReturnSuccessWithObject(mapper.Map<IEnumerable<PeriodicRecordDefinitionDTO>>(items));
+        return request.ReturnSuccessWithObject(items.Select(x => x.ToDto()));
     }
 }

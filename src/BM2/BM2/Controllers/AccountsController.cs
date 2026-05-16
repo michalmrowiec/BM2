@@ -17,7 +17,7 @@ public class AccountsController(
     : ControllerBase
 {
     [HttpPost]
-    public async Task<ActionResult<AccountDTO>> AddAccount([FromBody] AddUpdateAccountCommand command)
+    public async Task<ActionResult<AccountDTO>> AddAccount([FromBody] AddAccountCommand command)
     {
         command.OwnedByUserId = userContextService.UserId;
 
@@ -27,7 +27,7 @@ public class AccountsController(
     }
 
     [HttpPut]
-    public async Task<ActionResult<AccountDTO>> UpdateAccount([FromBody] AddUpdateAccountCommand command)
+    public async Task<ActionResult<AccountDTO>> UpdateAccount([FromBody] UpdateAccountCommand command)
     {
         command.OwnedByUserId = userContextService.UserId;
 

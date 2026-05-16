@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Queries.User;
@@ -7,7 +7,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.User.Queries;
 
-public class GetUserByEmailAddressQueryHandler(IUserRepository userRepository, IMapper mapper)
+public class GetUserByEmailAddressQueryHandler(UnitOfWork unitOfWork)
     : IRequestHandler<GetUserByEmailAddressQuery, BaseResponse<UserDTO>>
 {
     public async Task<BaseResponse<UserDTO>> Handle(GetUserByEmailAddressQuery request,
@@ -28,7 +28,7 @@ public class GetUserByEmailAddressQueryHandler(IUserRepository userRepository, I
         //     return request.ReturnServerError();
         // }
 
-        var user = await userRepository.GetByEmailAddressAsync(request.EmailAddress);
+        var user = await unitOfWork.UserRepository.GetByEmailAddressAsync(request.EmailAddress);
 
         if (user == null)
             return new BaseResponse<UserDTO>
@@ -38,7 +38,7 @@ public class GetUserByEmailAddressQueryHandler(IUserRepository userRepository, I
         UserDTO userDto;
         try
         {
-            userDto = mapper.Map<UserDTO>(user);
+            userDto = user.ToDto();
         }
         catch (Exception ex)
         {
