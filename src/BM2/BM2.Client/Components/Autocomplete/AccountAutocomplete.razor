@@ -6,13 +6,17 @@
 }
 
 @code {
+    [Parameter] public bool OnlyActive { get; set; }
 
     protected override void OnInitialized()
     {
-        Uri = "api/v1/accounts";
-        SearchFunc = (entity, value) => entity.AccountName.Contains(value, StringComparison.InvariantCultureIgnoreCase);
+        if(OnlyActive)
+            Uri = "api/v1/accounts/active";
+        else
+            Uri = "api/v1/accounts/all";
+
+         SearchFunc = (entity, value) => entity.AccountName.Contains(value, StringComparison.InvariantCultureIgnoreCase);
         OrderFunc = x => x.AccountName;
         base.OnInitialized();
     }
-
 }

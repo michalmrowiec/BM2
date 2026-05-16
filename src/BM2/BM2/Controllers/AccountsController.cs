@@ -2,7 +2,6 @@
 using BM2.Shared.DTOs;
 using BM2.Shared.Requests.Commands.Account;
 using BM2.Shared.Requests.Queries.Account;
-using BM2.Shared.Requests.Wallet;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -36,8 +35,10 @@ public class AccountsController(
 
         return result.HandleOkResult(this);
     }
-    
+
     [HttpGet]
+    [Route("")]
+    [Route("all")]
     public async Task<ActionResult<IList<AccountDTO>>> GetAllAccounts()
     {
         var result = await mediator.Send(new GetAllAccountsForUserQuery(userContextService.UserId));
@@ -45,4 +46,12 @@ public class AccountsController(
         return result.HandleOkResult(this);
     }
 
+    [HttpGet]
+    [Route("active")]
+    public async Task<ActionResult<IList<AccountDTO>>> GetActiveAccounts()
+    {
+        var result = await mediator.Send(new GetAllAccountsForUserQuery(userContextService.UserId, ActiveOnly: true));
+
+        return result.HandleOkResult(this);
+    }
 }

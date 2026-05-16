@@ -14,9 +14,16 @@ public class GetAllAccountsForUserQueryHandler(IMapper mapper, IUnitOfWork unitO
     public async Task<BaseResponse<IEnumerable<AccountDTO>>> Handle(GetAllAccountsForUserQuery request,
         CancellationToken cancellationToken)
     {
-        var accounts = await unitOfWork.AccountRepository.GetAllForUserAsync(request.UserId,
-            q => q.Include(a => a.DefaultCurrency),
-            q => q.Include(a => a.Wallet));
+        IEnumerable<Domain.Entities.UserProfile.Account> accounts;
+
+        if (request.ActiveOnly)
+            accounts = await unitOfWork.AccountRepository.GetAllForUserAsync(request.UserId,
+                q => q.Where(a => a.IsActive).Include(a => a.DefaultCurrency),
+                q => q.Include(a => a.Wallet));
+        else
+            accounts = await unitOfWork.AccountRepository.GetAllForUserAsync(request.UserId,
+                q => q.Include(a => a.DefaultCurrency),
+                q => q.Include(a => a.Wallet));
 
         accounts.ThrowExceptionIfNull();
         accounts!.CheckPermission(request.UserId);
