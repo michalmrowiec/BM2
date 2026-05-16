@@ -10,7 +10,7 @@
                  Label="@Label"
                  Required="@Required"
                  ToStringFunc="@((c) => CurrencyDisplay(c))"
-                 Clearable
+                 Clearable="@Clearable"
                  MaxItems="999"
                  Strict="@Stricted" />
 
@@ -19,6 +19,7 @@
     [Parameter] public string Label { get; set; } = "Autocomplete";
     [Parameter] public bool Required { get; set; }
     [Parameter] public bool Stricted { get; set; }
+    [Parameter] public bool Clearable { get; set; }
     [Parameter] public EventCallback<TEntityDTO?> SelectedValue { get; set; }
     protected Func<TEntityDTO, object>? OrderFunc { get; set; }
     protected Func<TEntityDTO, string, bool> SearchFunc { get; set; }
@@ -26,6 +27,7 @@
     private IEnumerable<TEntityDTO> _values = [];
     private MudAutocomplete<TEntityDTO>? _mudAutocomplete;
     private TEntityDTO? _selectedValue;
+    [Parameter] public bool AutoSelectFirstValue { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,6 +102,9 @@
             _values = values.OrderBy(OrderFunc);
         else
             _values = values;
+
+        if (AutoSelectFirstValue && _values.Any())
+            await SelectValueById(_values.First().Id);
 
         StateHasChanged();
     }
