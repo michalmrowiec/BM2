@@ -8,12 +8,33 @@ namespace BM2.Application.Services;
 
 public interface IPeriodicJobManager
 {
+    Task ScheduleOrExecuteOfFirstCycle(PeriodicRecordDefinition definition, IMediator mediator);
     void ScheduleNextExecution(PeriodicRecordDefinition definition);
     void RemoveScheduledJob(PeriodicRecordDefinition definition);
 }
 
 public class PeriodicJobManager(IBackgroundJobClient _backgroundJobClient, IPeriodicRecordScheduler _scheduler) : IPeriodicJobManager
 {
+    public async Task ScheduleOrExecuteOfFirstCycle(PeriodicRecordDefinition definition, IMediator mediator)
+    {
+        RemoveScheduledJob(definition);
+
+        if (definition.PeriodicRecordStatus?.SystemCode != StatusSystemCode.Active
+            || !definition.NextExecutionAt.HasValue)
+            return;
+
+        if (definition.StartDate <= DateTime.UtcNow)
+        {
+            await mediator.Send(new ExecutePeriodicRecordDefinitionCommand(definition.Id), CancellationToken.None);
+        }
+        else
+        {
+            var jobId = _backgroundJobClient.Schedule<IMediator>(
+                m => m.Send(new ExecutePeriodicRecordDefinitionCommand(definition.Id), CancellationToken.None),
+                definition.NextExecutionAt.Value - DateTime.UtcNow);
+        }
+    }
+
     public void ScheduleNextExecution(PeriodicRecordDefinition definition)
     {
         // 1. Usuñ stary job jeœli istnieje

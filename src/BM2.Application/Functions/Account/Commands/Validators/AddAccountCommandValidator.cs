@@ -26,7 +26,8 @@ public class BaseAccountCommandValidator : AbstractValidator<BaseAccountCommand>
 
                 var maxAccountsPerWallet = user.MaxAccountsPerWallet;
                 
-                if (walletForAccount!.Accounts.Count >= maxAccountsPerWallet)
+                if ((request is AddAccountCommand && walletForAccount!.Accounts.Count >= maxAccountsPerWallet)
+                    || (request is UpdateAccountCommand && walletForAccount!.Accounts.Count > maxAccountsPerWallet))
                 {
                     context.AddFailure(
                         $"The user has reached the maximum number of accounts ({maxAccountsPerWallet}) for this wallet ({walletForAccount.WalletName}).");

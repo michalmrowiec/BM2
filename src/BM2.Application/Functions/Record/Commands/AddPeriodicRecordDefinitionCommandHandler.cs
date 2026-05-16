@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Record.Commands;
 
-public class AddPeriodicRecordDefinitionCommandHandler(UnitOfWork unitOfWork, IPeriodicJobManager _periodicJobManager)
+public class AddPeriodicRecordDefinitionCommandHandler(UnitOfWork unitOfWork, IPeriodicJobManager _periodicJobManager, IMediator mediator)
     : IRequestHandler<AddPeriodicRecordDefinitionCommand, BaseResponse<PeriodicRecordDefinitionDTO>>
 {
     public async Task<BaseResponse<PeriodicRecordDefinitionDTO>> Handle(
@@ -23,6 +23,7 @@ public class AddPeriodicRecordDefinitionCommandHandler(UnitOfWork unitOfWork, IP
         if (!validationResult.IsValid) return new BaseResponse<PeriodicRecordDefinitionDTO>(validationResult);
 
         var entity = request.ToEntity();
+        entity.NextExecutionAt = request.StartDate;
         entity.Id = Guid.NewGuid();
         entity.CreatedAt = DateTime.UtcNow;
         entity.CreatedBy = request.OwnedByUserId;
@@ -30,8 +31,9 @@ public class AddPeriodicRecordDefinitionCommandHandler(UnitOfWork unitOfWork, IP
         try
         {
             await unitOfWork.PeriodicRecordDefinitionRepository.Add(entity);
-            _periodicJobManager.ScheduleNextExecution(entity);
             await unitOfWork.SaveAsync();
+
+            await _periodicJobManager.ScheduleOrExecuteOfFirstCycle(entity, mediator);
 
             // zaplanuj kolejny rekord, czyli wywołaj serwis który wyznaczy next date oraz zarejestruje zadanie w hangfire
             // hangfire wykona zodanie które -
