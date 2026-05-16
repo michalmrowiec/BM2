@@ -2,4 +2,4 @@
 
 namespace BM2.Shared.Requests.Commands.Record;
 
-public record ExecutePeriodicRecordDefinitionCommand(Guid PeriodicRecordDefinitionId) : IBaseRequest<BaseResponse>;
+public record ExecutePeriodicRecordDefinitionCommand(Guid PeriodicRecordDefinitionId) : IBaseRequest;

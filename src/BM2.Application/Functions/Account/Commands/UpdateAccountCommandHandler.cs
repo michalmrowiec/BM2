@@ -19,7 +19,7 @@ public class UpdateAccountCommandHandler(UnitOfWork unitOfWork)
 
         if (!validationResult.IsValid) return new BaseResponse<AccountDTO>(validationResult);
 
-        var entity = (await unitOfWork.AccountRepository.GetByIdAsync(request.WalletId)).EnsureFound();
+        var entity = (await unitOfWork.AccountRepository.GetByIdAsync(request.Id)).EnsureFound();
 
         entity.CheckPermission(request.OwnedByUserId);
 

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BM2.Application.Functions.Record.Commands;
 
 public class UpdatePeriodicRecordDefinitionCommandHandler(
-    UnitOfWork _unitOfWork, IBackgroundJobClient _backgroundJobClient, IPeriodicJobManager _periodicJobManager)
+    UnitOfWork _unitOfWork, IBackgroundJobClient _backgroundJobClient, IPeriodicJobManager _periodicJobManager, IMediator mediator)
     : IRequestHandler<UpdatePeriodicRecordDefinitionCommand, BaseResponse<PeriodicRecordDefinitionDTO>>
 {
     public async Task<BaseResponse<PeriodicRecordDefinitionDTO>> Handle(UpdatePeriodicRecordDefinitionCommand request,
@@ -33,9 +33,13 @@ public class UpdatePeriodicRecordDefinitionCommandHandler(
 
         try
         {
-            _periodicJobManager.ScheduleNextExecution(entity);
+            _periodicJobManager.RemoveScheduledJob(entity);
+            entity.NextExecutionAt = entity.StartDate;
+
             await _unitOfWork.PeriodicRecordDefinitionRepository.Update(entity);
             await _unitOfWork.SaveAsync();
+
+            await _periodicJobManager.ScheduleOrExecuteOfFirstCycle(entity, mediator);
 
             var updated = await _unitOfWork.PeriodicRecordDefinitionRepository.GetByIdAsync(entity.Id,
                 q => q.Include(x => x.RecordTemplate).ThenInclude(x => x.Wallet),
