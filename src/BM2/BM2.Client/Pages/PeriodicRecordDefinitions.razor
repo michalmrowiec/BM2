@@ -95,12 +95,17 @@
 
     private async Task DeleteAsync(PeriodicRecordDefinitionDTO item)
     {
+        var confirmed = await UiService.ConfirmDeleteAsync(
+            title: "Delete Periodic definition",
+            message: $"Do you want to delete the '{item.RecordTemplate?.Name ?? ""}' periodic definition?");
+
+        if (!confirmed) return;
+
         var response = await ApiClient.Delete($"api/v1/periodicRecordDefinitions/{item.Id}");
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Snackbar.Add(new MarkupString($"Deleted <b>{item.RecordTemplate?.Name ?? "periodic definition"}</b>"),
-                Severity.Success);
+            UiService.ShowDeleteSuccess(item.RecordTemplate?.Name ?? "periodic definition");
             await LoadAsync();
             return;
         }

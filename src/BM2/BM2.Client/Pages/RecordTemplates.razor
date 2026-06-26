@@ -1,8 +1,8 @@
 ﻿@page "/record-templates"
-@using BM2.Shared.DTOs
+@using System.Net
 @using BM2.Client.Components
 @using BM2.Client.Services.Auth
-@using System.Net
+@using BM2.Shared.DTOs
 @using Newtonsoft.Json
 
 @inject IApiClient ApiClient
@@ -99,11 +99,17 @@
 
     private async Task DeleteRecordTemplateAsync(RecordTemplateDTO recordTemplate)
     {
+        var confirmed = await UiService.ConfirmDeleteAsync(
+                    title: "Delete Template",
+                    message: $"Do you want to delete the template '{recordTemplate.Name}'?");
+
+        if (!confirmed) return;
+
         var response = await ApiClient.Delete($"api/v1/recordTemplates/{recordTemplate.Id}");
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Snackbar.Add(new MarkupString($"Deleted <b>{recordTemplate.Name}</b>"), Severity.Success);
+            UiService.ShowDeleteSuccess(recordTemplate.Name);
             await GetRecordTemplates();
             return;
         }
