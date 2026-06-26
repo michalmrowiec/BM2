@@ -36,6 +36,18 @@ public class AccountsController(
         return result.HandleOkResult(this);
     }
 
+    [HttpDelete("{id:guid}")]
+    public async Task<ActionResult> DeleteAccount(Guid id)
+    {
+        var result = await mediator.Send(new DeleteAccountCommand
+        {
+            Id = id,
+            OwnedByUserId = userContextService.UserId
+        });
+
+        return result.HandleOkResult(this);
+    }
+
     [HttpGet]
     [Route("")]
     [Route("all")]

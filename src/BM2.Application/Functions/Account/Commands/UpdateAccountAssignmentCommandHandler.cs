@@ -32,7 +32,7 @@ public class UpdateAccountAssignmentCommandHandler(UnitOfWork unitOfWork)
         try
         {
             await unitOfWork.RecordRepository.UpdateRange(records.ToList());
-            await unitOfWork.AccountRepository.Delete(oldAccount);
+            //await unitOfWork.AccountRepository.Delete(oldAccount);
             await unitOfWork.SaveAsync();
 
             return request.ReturnSuccess();

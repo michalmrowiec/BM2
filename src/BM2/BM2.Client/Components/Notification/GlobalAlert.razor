@@ -1,4 +1,8 @@
-﻿<style>
+@using BM2.Client.Services.Notification
+
+@inject IAlertService AlertService
+
+<style>
     .global-alert-container {
         position: fixed;
         top: 2%;
@@ -19,9 +23,37 @@
             <MudAlert Severity="@alert.Severity"
                       Variant="Variant.Filled"
                       ShowCloseIcon="true"
+                      OnClick="@(() => HideAlert(alert.Id))"
                       CloseIconClicked="@(() => HideAlert(alert.Id))">
                 @((MarkupString)alert.Message)
             </MudAlert>
         }
     </div>
+}
+
+@code {
+    private readonly List<Alert> _alerts = [];
+
+    private const int AlertMaxVisible = 5;
+
+    private void ShowAlert(MarkupString message, Severity severity)
+    {
+        _alerts.Add(new Alert(Guid.NewGuid(), message, severity));
+
+        StateHasChanged();
+    }
+
+    private void HideAlert(Guid id)
+    {
+        _alerts.RemoveAll(a => a.Id == id);
+
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        AlertService.Subscribe(ShowAlert);
+    }
+
+    protected record Alert(Guid Id, MarkupString Message, Severity Severity);
 }
