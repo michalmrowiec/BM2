@@ -1,0 +1,167 @@
+﻿@page "/records2"
+@using BM2.Client.Services.API
+@using BM2.Client.Services.Notification
+@using BM2.Shared
+@using BM2.Shared.DTOs
+@using Newtonsoft.Json
+@inject IRecordService RecordService
+@inject IApiClient ApiClient
+
+<div class="d-flex align-center gap-4 pa-4">
+    <MudTextField @bind-Value="_filter.SearchText" Placeholder="Szukaj..."
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  OnDebounceChanged="RefreshTable" DebounceInterval="400" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.FilterList" OnClick="ToggleFilterDrawer">
+        Filtruj
+    </MudButton>
+</div>
+
+<div class="d-flex flex-wrap gap-2 px-4 pb-2">
+    @if (_filter.DateFrom.HasValue || _filter.DateTo.HasValue)
+    {
+        <MudChip T="string" OnClose="ClearDateFilter" Color="Color.Secondary" Variant="Variant.Text">
+            Okres: @_filter.DateFrom?.ToString("dd.MM") - @_filter.DateTo?.ToString("dd.MM")
+        </MudChip>
+    }
+    @foreach (var catId in _filter.CategoryIds)
+    {
+        var categoryName = _availableCategories.FirstOrDefault(c => c.Id == catId)?.CategoryName ?? "Kat";
+        <MudChip T="Guid" Value="catId" OnClose="(c) => RemoveCategoryFilter(c.Value)" Color="Color.Info">
+            @categoryName
+        </MudChip>
+    }
+</div>
+
+<MudTable ServerData="LoadTableData" T="RecordDTO" @ref="_table" Dense="true" Hover="true">
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO">Data</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Name" T="RecordDTO">Nazwa</MudTableSortLabel></MudTh>
+        <MudTh>Kategoria</MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Amount" T="RecordDTO">Kwota</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Data">@context.RecordDateTime.ToString("dd.MM.yyyy")</MudTd>
+        <MudTd DataLabel="Nazwa">@context.Name</MudTd>
+        <MudTd DataLabel="Kategoria">@context.Category?.CategoryName</MudTd>
+        <MudTd DataLabel="Kwota">@context.Amount</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager RowsPerPageString="Wierszy:" />
+    </PagerContent>
+</MudTable>
+
+<MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.Right" Elevation="1" Variant="DrawerVariant.Temporary" Width="320px">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6">Filtry zaawansowane</MudText>
+    </MudDrawerHeader>
+    <div class="pa-4 d-flex flex-column gap-4">
+        <MudDatePicker Label="Od" @bind-Date="_filter.DateFrom" />
+        <MudDatePicker Label="Do" @bind-Date="_filter.DateTo" />
+
+        <MudSelect T="Guid" Label="Kategorie" MultiSelection="true"
+                   @bind-SelectedValues="_selectedCategories"
+                   ToStringFunc="@GetCategoryName">
+            @foreach (var cat in _availableCategories)
+            {
+                <MudSelectItem T="Guid" Value="@cat.Id">@cat.CategoryName</MudSelectItem>
+            }
+        </MudSelect>
+
+        <div class="d-flex gap-2 mt-4">
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ResetAllFilters">Reset</MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilters">Zastosuj</MudButton>
+        </div>
+    </div>
+</MudDrawer>
+
+@code {
+    private MudTable<RecordDTO> _table;
+    private bool _drawerOpen;
+    private TransactionFilter _filter = new();
+
+    // Zmienne pomocnicze dla UI
+    private IEnumerable<Guid> _selectedCategories = new HashSet<Guid>();
+    private List<CategoryWalletRelationDTO> _availableCategories = new(); // Załaduj w OnInitializedAsync
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            await GetCategories();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        // Ustawienie domyślnego filtra na aktualny miesiąc przy starcie
+        var dzis = DateTime.Today;
+        _filter.DateFrom = new DateTime(dzis.Year, dzis.Month, 1);
+        _filter.DateTo = _filter.DateFrom.Value.AddMonths(1).AddDays(-1);
+    }
+
+    private async Task GetCategories()
+    {
+        var response2 = await ApiClient.Get("api/v1/categories/wallet-relations");
+        var responseString2 = await response2.Content.ReadAsStringAsync();
+        _availableCategories = JsonConvert.DeserializeObject<List<CategoryWalletRelationDTO>>(responseString2) ?? [];
+
+        var response = await ApiClient.Get("api/v1/wallets");
+        var r = await response.Content.ReadAsStringAsync();
+        // WalletList = JsonConvert.DeserializeObject<IList<WalletDTO>>(r) ?? [];
+
+        StateHasChanged();
+    }
+
+    private async Task<TableData<RecordDTO>> LoadTableData(TableState state, CancellationToken cancellationToken = default)
+    {
+        // Przekazujemy stan tabeli oraz naszą klasę filtrów do backendu
+        var result = await RecordService.GetPagedRecordsAsync(
+            state.Page, state.PageSize, state.SortLabel, state.SortDirection == SortDirection.Descending, _filter);
+
+        return new TableData<RecordDTO> { TotalItems = result.TotalCount, Items = result.Items };
+    }
+
+    private void ToggleFilterDrawer() => _drawerOpen = !_drawerOpen;
+
+    private Task RefreshTable() => _table.ReloadServerData();
+
+    private Task ApplyFilters()
+    {
+        _filter.CategoryIds = _selectedCategories.ToList();
+        _drawerOpen = false;
+        return RefreshTable();
+    }
+
+    private Task RemoveCategoryFilter(Guid id)
+    {
+        _filter.CategoryIds.Remove(id);
+        _selectedCategories = _selectedCategories.Where(x => x != id).ToList();
+        return RefreshTable();
+    }
+
+    private Task ClearDateFilter()
+    {
+        _filter.DateFrom = null;
+        _filter.DateTo = null;
+        return RefreshTable();
+    }
+
+    private Task ResetAllFilters()
+    {
+        _filter = new TransactionFilter();
+        _selectedCategories = new HashSet<Guid>();
+        _drawerOpen = false;
+        return RefreshTable();
+    }
+
+    private string GetCategoryName(Guid id)
+    {
+        var category = _availableCategories.FirstOrDefault(c => c.Id == id);
+        return category?.CategoryName ?? string.Empty;
+    }
+}
