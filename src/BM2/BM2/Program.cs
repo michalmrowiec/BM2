@@ -10,6 +10,7 @@ using BM2.Infrastructure;
 using BM2.Infrastructure.Services;
 using BM2.Middleware;
 using BM2.Services;
+using BM2.Shared;
 using Hangfire;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -34,6 +35,7 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>
 //builder.Services.AddAuthorizationCore();
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<IRecordService, RecordService>();
 builder.Services.AddScoped<IUiService, UiService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<IWalletSelectionState, WalletSelectionState>();
