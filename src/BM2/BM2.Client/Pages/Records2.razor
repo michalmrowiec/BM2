@@ -1,16 +1,22 @@
 ﻿@page "/records2"
+
+@using System.Net
+@using BM2.Client.Components
 @using BM2.Client.Services.API
 @using BM2.Client.Services.Notification
 @using BM2.Shared
 @using BM2.Shared.DTOs
 @using Newtonsoft.Json
+
 @inject IRecordService RecordService
 @inject IApiClient ApiClient
+@inject IDialogService DialogService
+@inject IAlertService AlertService
 
 <div class="d-flex align-center gap-4 pa-4">
-    <MudTextField @bind-Value="_filter.SearchText" Placeholder="Search..."
+    <MudTextField @bind-Value="_filter.SearchText" Placeholder="Search by name..." Clearable
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                  OnDebounceChanged="RefreshTable" DebounceInterval="400" />
+                  OnDebounceIntervalElapsed="RefreshTable" DebounceInterval="400" />
 
     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.FilterList" OnClick="ToggleFilterDrawer">
@@ -49,8 +55,9 @@
         <MudTh><MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO" InitialDirection="SortDirection.Descending">Date</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortLabel="Name" T="RecordDTO">Name</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortLabel="Account" T="RecordDTO">Account</MudTableSortLabel></MudTh>
-        <MudTh>Category</MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Category" T="RecordDTO">Category</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortLabel="Amount" T="RecordDTO">Amount</MudTableSortLabel></MudTh>
+        <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Date">@context.RecordDateTime.ToString("dd.MM.yyyy")</MudTd>
@@ -58,6 +65,15 @@
         <MudTd DataLabel="Account">@GetAccountName(context.AccountId)</MudTd>
         <MudTd DataLabel="Categories">@context.Category?.CategoryName</MudTd>
         <MudTd DataLabel="Amount">@context.Amount</MudTd>
+        <MudTd DataLabel="">
+            <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context))"
+                           Icon="@Icons.Material.Outlined.Edit"
+                           Size="@Size.Small" />
+            <MudIconButton @onclick="@(async () => await DeleteRecordAsync(context))"
+                           Icon="@Icons.Material.Outlined.Delete"
+                           Color="@Color.Error"
+                           Size="@Size.Small" />
+        </MudTd>
     </RowTemplate>
     <PagerContent>
         <MudTablePager RowsPerPageString="Records:" />
@@ -217,5 +233,49 @@
     {
         var category = _availableCategories.FirstOrDefault(c => c.Id == id);
         return category?.CategoryName ?? string.Empty;
+    }
+
+    private Task OpenUpdateRecordDialogAsync(RecordDTO record)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<AddRecordDialogForm>
+        {
+            {
+                x => x.FuncsOnCreated, [EventCallback.Factory.Create(this, RefreshTable)]
+            },
+            {
+                x => x.FormType, DialogFormType.Edit
+            },
+            {
+                x => x.RecordToUpdate, record
+            }
+        };
+        return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
+    }
+
+    private async Task DeleteRecordAsync(RecordDTO record)
+    {
+        var confirmed = await UiService.ConfirmDeleteAsync(
+            title: "Delete Record",
+            message: $"Do you want to delete the record '{record.Name}'?");
+
+        if (!confirmed) return;
+
+        var response = await ApiClient.Delete($"api/v1/records/{record.Id}");
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            UiService.ShowDeleteSuccess(record.Name);
+            await RefreshTable();
+            return;
+        }
+
+        await response.HandleFailure(AlertService);
     }
 }
