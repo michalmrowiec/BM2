@@ -1,7 +1,16 @@
 ﻿@page "/accounts"
 @using BM2.Shared.DTOs
 @using BM2.Client.Components
-@rendermode InteractiveAuto
+@using System.Net
+@using BM2.Client.Services.API
+@using BM2.Client.Services.Auth
+@using BM2.Client.Services.Notification
+@using Newtonsoft.Json
+
+@inject IApiClient ApiClient
+@inject IDialogService DialogService
+@inject IAuthService AuthService
+@inject IAlertService AlertService
 
 <h3>Accounts</h3>
 
@@ -34,10 +43,105 @@
                 <MudIconButton @onclick="@(async () => await OpenAddUpdateAccountDialogAsync(context.Item))"
                                Icon="@Icons.Material.Outlined.Edit"
                                Size="@Size.Small"/>
-                <MudIconButton @onclick="@(async () => await OpenUpdateAccountAssignmentDialogAsync(context.Item))"
-                               Icon="@Icons.Material.Outlined.CompareArrows"
+                <MudTooltip Text="Move all records to another account and delete this account" Placement="Placement.Top">
+                    <MudIconButton @onclick="@(async () => await OpenUpdateAccountAssignmentDialogAsync(context.Item))"
+                                   Icon="@Icons.Material.Outlined.CompareArrows"
+                                   Size="@Size.Small"/>
+                </MudTooltip>
+                <MudIconButton @onclick="@(async () => await DeleteAccountAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.Delete"
+                               Color="@Color.Error"
                                Size="@Size.Small"/>
             </CellTemplate>
         </TemplateColumn>
     </Columns>
 </MudDataGrid>
+
+@code {
+    private IList<AccountDTO> AccountList { get; set; } = new List<AccountDTO>();
+
+    private async Task GetAccounts()
+    {
+        var response = await ApiClient.Get("api/v1/accounts");
+        var r = await response.Content.ReadAsStringAsync();
+        AccountList = JsonConvert.DeserializeObject<IList<AccountDTO>>(r) ?? [];
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        if (await AuthService.EnsureInitializedAsync())
+        {
+            await GetAccounts();
+        }
+    }
+
+    private Task OpenAddUpdateAccountDialogAsync(AccountDTO? account = null)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<AddAccountDialogForm>
+        {
+            {
+                x => x.FuncsOnSuccess,
+                [EventCallback.Factory.Create(this, GetAccounts)]
+            },
+            {
+                x => x.AccountToUpdate, account
+            },
+            {
+                x => x.FormType, account is null ? DialogFormType.Add : DialogFormType.Edit
+            }
+        };
+        return DialogService.ShowAsync<AddAccountDialogForm>(null, parameters, options);
+    }
+
+    private Task OpenUpdateAccountAssignmentDialogAsync(AccountDTO account)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<UpdateAccountAssignment>
+        {
+            {
+                x => x.FuncsOnUpdated, [EventCallback.Factory.Create(this, GetAccounts)]
+            },
+            {
+                x => x.OldAccount, account
+            }
+        };
+        return DialogService.ShowAsync<UpdateAccountAssignment>(null, parameters, options);
+    }
+
+    private async Task DeleteAccountAsync(AccountDTO account)
+    {
+        var confirmed = await UiService.ConfirmDeleteAsync(
+            title: "Delete Account",
+            message: $"Do you want to delete the account '{account.AccountName}'?");
+
+        if (!confirmed) return;
+
+        var response = await ApiClient.Delete($"api/v1/accounts/{account.Id}");
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            UiService.ShowDeleteSuccess(account.AccountName);
+            await GetAccounts();
+            return;
+        }
+
+        await response.HandleFailure(AlertService);
+    }
+}

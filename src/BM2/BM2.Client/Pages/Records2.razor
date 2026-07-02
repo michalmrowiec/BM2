@@ -1,0 +1,281 @@
+﻿@page "/records2"
+
+@using System.Net
+@using BM2.Client.Components
+@using BM2.Client.Services.API
+@using BM2.Client.Services.Notification
+@using BM2.Shared
+@using BM2.Shared.DTOs
+@using Newtonsoft.Json
+
+@inject IRecordService RecordService
+@inject IApiClient ApiClient
+@inject IDialogService DialogService
+@inject IAlertService AlertService
+
+<div class="d-flex align-center gap-4 pa-4">
+    <MudTextField @bind-Value="_filter.SearchText" Placeholder="Search by name..." Clearable
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  OnDebounceIntervalElapsed="RefreshTable" DebounceInterval="400" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.FilterList" OnClick="ToggleFilterDrawer">
+        Filters
+    </MudButton>
+</div>
+
+<div class="d-flex flex-wrap gap-2 px-4 pb-2">
+    @if (_filter.DateFrom.HasValue || _filter.DateTo.HasValue)
+    {
+        <MudChip T="string" OnClose="ClearDateFilter" Color="Color.Secondary" Variant="Variant.Text"
+                 Icon="@Icons.Material.Outlined.CalendarMonth">
+            @_filter.DateFrom?.ToString("dd.MM.yyyy") - @_filter.DateTo?.ToString("dd.MM.yyyy")
+        </MudChip>
+    }
+    @foreach (var accId in _filter.AccountIds)
+    {
+        var accountName = _availableAccounts.FirstOrDefault(c => c.Id == accId)?.AccountName ?? "Acc";
+        <MudChip T="Guid" Value="accId" OnClose="(c) => RemoveAccountFilter(c.Value)" Color="Color.Tertiary" Variant="Variant.Text"
+                 Icon="@Icons.Material.Outlined.AccountBalance">
+            @accountName
+        </MudChip>
+    }
+    @foreach (var catId in _filter.CategoryIds)
+    {
+        var categoryName = _availableCategories.FirstOrDefault(c => c.Id == catId)?.CategoryName ?? "Cat";
+        <MudChip T="Guid" Value="catId" OnClose="(c) => RemoveCategoryFilter(c.Value)" Color="Color.Info" Variant="Variant.Text"
+                 Icon="@Icons.Material.Outlined.Category">
+            @categoryName
+        </MudChip>
+    }
+</div>
+
+<MudTable ServerData="LoadTableData" T="RecordDTO" @ref="_table" Dense="true" Hover="true">
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO" InitialDirection="SortDirection.Descending">Date</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Name" T="RecordDTO">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Account" T="RecordDTO">Account</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Category" T="RecordDTO">Category</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Amount" T="RecordDTO">Amount</MudTableSortLabel></MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Date">@context.RecordDateTime.ToString("dd.MM.yyyy")</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Account">@GetAccountName(context.AccountId)</MudTd>
+        <MudTd DataLabel="Categories">@context.Category?.CategoryName</MudTd>
+        <MudTd DataLabel="Amount">@context.Amount</MudTd>
+        <MudTd DataLabel="">
+            <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context))"
+                           Icon="@Icons.Material.Outlined.Edit"
+                           Size="@Size.Small" />
+            <MudIconButton @onclick="@(async () => await DeleteRecordAsync(context))"
+                           Icon="@Icons.Material.Outlined.Delete"
+                           Color="@Color.Error"
+                           Size="@Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager RowsPerPageString="Records:" />
+    </PagerContent>
+</MudTable>
+
+<MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.Right" Elevation="1" Variant="DrawerVariant.Temporary" Width="320px">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6">Advanced filters</MudText>
+    </MudDrawerHeader>
+    <div class="pa-4 d-flex flex-column gap-4">
+        <MudDatePicker Label="Od" @bind-Date="_filter.DateFrom" Clearable />
+        <MudDatePicker Label="Do" @bind-Date="_filter.DateTo" Clearable />
+
+        <MudSelect T="Guid" Label="Accounts" MultiSelection="true"
+                   @bind-SelectedValues="_selectedAccounts"
+                   ToStringFunc="@GetAccountName">
+            @foreach (var acc in _availableAccounts)
+            {
+                <MudSelectItem T="Guid" Value="@acc.Id">@acc.AccountName</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="Guid" Label="Categories" MultiSelection="true"
+                   @bind-SelectedValues="_selectedCategories"
+                   ToStringFunc="@GetCategoryName">
+            @foreach (var cat in _availableCategories)
+            {
+                <MudSelectItem T="Guid" Value="@cat.Id">@cat.CategoryName</MudSelectItem>
+            }
+        </MudSelect>
+
+        <div class="d-flex gap-2 mt-4">
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ResetAllFilters">Reset</MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilters">Apply</MudButton>
+        </div>
+    </div>
+</MudDrawer>
+
+@code {
+    private MudTable<RecordDTO> _table;
+    private bool _drawerOpen;
+    private TransactionFilter _filter = new();
+
+    // Zmienne pomocnicze dla UI
+    private IEnumerable<Guid> _selectedCategories = new HashSet<Guid>();
+    private List<CategoryWalletRelationDTO> _availableCategories = new(); // Załaduj w OnInitializedAsync
+
+    private IEnumerable<Guid> _selectedAccounts = new HashSet<Guid>();
+    private List<AccountBasicDTO> _availableAccounts = new(); // Załaduj w OnInitializedAsync
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            await GetCategories();
+            await GetAccounts();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        // Ustawienie domyślnego filtra na aktualny miesiąc przy starcie
+        var dzis = DateTime.Today;
+        _filter.DateFrom = new DateTime(dzis.Year, dzis.Month, 1);
+        _filter.DateTo = _filter.DateFrom.Value.AddMonths(1).AddDays(-1);
+    }
+
+    private async Task GetCategories()
+    {
+        var response2 = await ApiClient.Get("api/v1/categories/wallet-relations");
+        var responseString2 = await response2.Content.ReadAsStringAsync();
+        _availableCategories = JsonConvert.DeserializeObject<List<CategoryWalletRelationDTO>>(responseString2) ?? [];
+
+        var response = await ApiClient.Get("api/v1/wallets");
+        var r = await response.Content.ReadAsStringAsync();
+        // WalletList = JsonConvert.DeserializeObject<IList<WalletDTO>>(r) ?? [];
+
+        StateHasChanged();
+    }
+
+    private async Task GetAccounts()
+    {
+        var response = await ApiClient.Get("api/v1/accounts");
+        var r = await response.Content.ReadAsStringAsync();
+        _availableAccounts = JsonConvert.DeserializeObject<List<AccountBasicDTO>>(r) ?? [];
+        StateHasChanged();
+    }
+
+    private async Task<TableData<RecordDTO>> LoadTableData(TableState state, CancellationToken cancellationToken = default)
+    {
+        string sortLabel = string.IsNullOrEmpty(state.SortLabel) ? "RecordDateTime" : state.SortLabel;
+        bool isDescending = string.IsNullOrEmpty(state.SortLabel) ? true : (state.SortDirection == SortDirection.Descending);
+
+        var result = await RecordService.GetPagedRecordsAsync(
+            state.Page,
+            state.PageSize,
+            sortLabel,
+            isDescending,
+            _filter);
+
+        return new TableData<RecordDTO> { TotalItems = result.TotalCount, Items = result.Items };
+    }
+
+    private void ToggleFilterDrawer() => _drawerOpen = !_drawerOpen;
+
+    private Task RefreshTable() => _table.ReloadServerData();
+
+    private Task ApplyFilters()
+    {
+        _filter.AccountIds = _selectedAccounts.ToList();
+        _filter.CategoryIds = _selectedCategories.ToList();
+        _drawerOpen = false;
+        return RefreshTable();
+    }
+
+    private Task RemoveAccountFilter(Guid id)
+    {
+        _filter.AccountIds.Remove(id);
+        _selectedAccounts = _selectedAccounts.Where(x => x != id).ToList();
+        return RefreshTable();
+    }
+
+    private Task RemoveCategoryFilter(Guid id)
+    {
+        _filter.CategoryIds.Remove(id);
+        _selectedCategories = _selectedCategories.Where(x => x != id).ToList();
+        return RefreshTable();
+    }
+
+    private Task ClearDateFilter()
+    {
+        _filter.DateFrom = null;
+        _filter.DateTo = null;
+        return RefreshTable();
+    }
+
+    private Task ResetAllFilters()
+    {
+        _filter = new TransactionFilter();
+        _selectedAccounts = new HashSet<Guid>();
+        _selectedCategories = new HashSet<Guid>();
+        _drawerOpen = false;
+        return RefreshTable();
+    }
+
+    private string GetAccountName(Guid id)
+    {
+        var account = _availableAccounts.FirstOrDefault(c => c.Id == id);
+        return account?.AccountName ?? string.Empty;
+    }
+
+    private string GetCategoryName(Guid id)
+    {
+        var category = _availableCategories.FirstOrDefault(c => c.Id == id);
+        return category?.CategoryName ?? string.Empty;
+    }
+
+    private Task OpenUpdateRecordDialogAsync(RecordDTO record)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<AddRecordDialogForm>
+        {
+            {
+                x => x.FuncsOnCreated, [EventCallback.Factory.Create(this, RefreshTable)]
+            },
+            {
+                x => x.FormType, DialogFormType.Edit
+            },
+            {
+                x => x.RecordToUpdate, record
+            }
+        };
+        return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
+    }
+
+    private async Task DeleteRecordAsync(RecordDTO record)
+    {
+        var confirmed = await UiService.ConfirmDeleteAsync(
+            title: "Delete Record",
+            message: $"Do you want to delete the record '{record.Name}'?");
+
+        if (!confirmed) return;
+
+        var response = await ApiClient.Delete($"api/v1/records/{record.Id}");
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            UiService.ShowDeleteSuccess(record.Name);
+            await RefreshTable();
+            return;
+        }
+
+        await response.HandleFailure(AlertService);
+    }
+}

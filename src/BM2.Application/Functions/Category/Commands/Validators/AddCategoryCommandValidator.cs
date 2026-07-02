@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Category;
@@ -9,7 +9,7 @@ namespace BM2.Application.Functions.Category.Commands.Validators;
 
 public class AddCategoryCommandValidator : AbstractValidator<AddCategoryCommand>
 {
-    public AddCategoryCommandValidator(IUnitOfWork unitOfWork)
+    public AddCategoryCommandValidator(UnitOfWork unitOfWork)
     {
         RuleFor(x => x.CategoryName)
             .NotEmpty()

@@ -22,4 +22,12 @@ public class RecordStatusesController(
 
         return result.HandleOkResult(this);
     }
+
+    [HttpGet("for-periodic-records")]
+    public async Task<ActionResult<IEnumerable<RecordStatusDTO>>> GetStatusesForPeriodicRecords()
+    {
+        var result = await mediator.Send(new GetStatusesForPeriodicRecordsQuery());
+
+        return result.HandleOkResult(this);
+    }
 }

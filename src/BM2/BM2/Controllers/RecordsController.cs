@@ -47,6 +47,18 @@ public class RecordsController(
         return result.HandleOkResult(this);
     }
 
+    [HttpDelete("{id:guid}")]
+    public async Task<ActionResult> DeleteRecord(Guid id)
+    {
+        var result = await mediator.Send(new DeleteRecordCommand
+        {
+            Id = id,
+            OwnedByUserId = userContextService.UserId
+        });
+
+        return result.HandleOkResult(this);
+    }
+
     [HttpGet]
     public async Task<ActionResult<IList<RecordDTO>>> GetRecord([FromQuery] Guid? wallet, [FromQuery] int year, [FromQuery] int month)
     {

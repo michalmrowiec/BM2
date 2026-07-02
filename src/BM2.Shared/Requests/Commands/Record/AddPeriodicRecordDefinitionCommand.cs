@@ -1,4 +1,6 @@
 ﻿using BM2.Shared.DTOs;
+using BM2.Shared.SystemCodes;
+using System.ComponentModel.DataAnnotations;
 
 namespace BM2.Shared.Requests.Commands.Record;
 
@@ -12,6 +14,9 @@ public class AddPeriodicRecordDefinitionCommand : IBaseRequest<PeriodicRecordDef
     public Guid WalletId { get; set; }
     public Guid SetRecordAccountId { get; set; } // Set account for created record
     public Guid OwnedByUserId { get; set; }
+    [Required]
+    public Periodicity? Periodicity { get; set; }
+    public DateTime StartDate { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }

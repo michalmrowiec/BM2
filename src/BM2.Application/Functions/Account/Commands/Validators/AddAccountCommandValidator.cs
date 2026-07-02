@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Account;
@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Application.Functions.Account.Commands.Validators;
 
-public class AddUpdateAccountCommandValidator : AbstractValidator<AddUpdateAccountCommand>
+public class BaseAccountCommandValidator : AbstractValidator<BaseAccountCommand>
 {
-    public AddUpdateAccountCommandValidator(IUnitOfWork unitOfWork)
+    public BaseAccountCommandValidator(UnitOfWork unitOfWork)
     {
         RuleFor(x => x.AccountName)
             .NotEmpty()
@@ -26,7 +26,8 @@ public class AddUpdateAccountCommandValidator : AbstractValidator<AddUpdateAccou
 
                 var maxAccountsPerWallet = user.MaxAccountsPerWallet;
                 
-                if (walletForAccount!.Accounts.Count >= maxAccountsPerWallet)
+                if ((request is AddAccountCommand && walletForAccount!.Accounts.Count >= maxAccountsPerWallet)
+                    || (request is UpdateAccountCommand && walletForAccount!.Accounts.Count > maxAccountsPerWallet))
                 {
                     context.AddFailure(
                         $"The user has reached the maximum number of accounts ({maxAccountsPerWallet}) for this wallet ({walletForAccount.WalletName}).");

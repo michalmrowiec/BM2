@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserProfile;
 using BM2.Shared.DTOs;
@@ -9,7 +9,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.Category.Commands;
 
-public class SetWalletCategoryRelationsCommandHandler(IMediator mediator, IUnitOfWork unitOfWork)
+public class SetWalletCategoryRelationsCommandHandler(IMediator mediator, UnitOfWork unitOfWork)
     : IRequestHandler<SetWalletCategoryRelationsCommand, BaseResponse<IEnumerable<CategoryWalletRelationDTO>>>
 {
     public async Task<BaseResponse<IEnumerable<CategoryWalletRelationDTO>>> Handle(

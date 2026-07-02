@@ -1,0 +1,16 @@
+@using BM2.Shared.DTOs
+@inherits AutocompleteBase<RecordTemplateDTO>
+
+@{
+    base.BuildRenderTree(__builder);
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        Uri = "api/v1/recordTemplates";
+        SearchFunc = (entity, value) => entity.Name.Contains(value, StringComparison.InvariantCultureIgnoreCase);
+        OrderFunc = x => x.Name;
+        base.OnInitialized();
+    }
+}

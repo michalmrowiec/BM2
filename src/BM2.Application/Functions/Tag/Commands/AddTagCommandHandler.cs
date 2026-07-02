@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Tag.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserProfile;
@@ -9,7 +9,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.Tag.Commands;
 
-public class AddTagCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class AddTagCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<AddTagCommand, BaseResponse<TagDTO>>
 {
     public async Task<BaseResponse<TagDTO>> Handle(AddTagCommand request, CancellationToken cancellationToken)
@@ -19,7 +19,7 @@ public class AddTagCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
 
         if (!validationResult.IsValid) return new BaseResponse<TagDTO>(validationResult);
 
-        var tag = mapper.Map<AddTagCommand, Domain.Entities.UserProfile.Tag>(request);
+        var tag = request.ToEntity();
         tag.Id = Guid.NewGuid();
         tag.CreatedAt = DateTime.UtcNow;
         tag.CreatedBy = request.OwnedByUserId;
@@ -37,7 +37,7 @@ public class AddTagCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
             await unitOfWork.WalletTagRelationRepository.AddRange(walletTagRelations);
             await unitOfWork.SaveAsync();
 
-            return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserProfile.Tag, TagDTO>(tag));
+            return request.ReturnSuccessWithObject(tag.ToDto());
         }
         catch (Exception e)
         {

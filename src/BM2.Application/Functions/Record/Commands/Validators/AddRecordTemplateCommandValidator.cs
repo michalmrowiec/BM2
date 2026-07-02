@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.Requests.Commands.Record;
 using FluentValidation;
@@ -7,9 +7,9 @@ namespace BM2.Application.Functions.Record.Commands.Validators;
 
 public class AddRecordTemplateCommandValidator : AddBaseRecordCommandValidator<AddRecordTemplateCommand>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly UnitOfWork _unitOfWork;
 
-    public AddRecordTemplateCommandValidator(IUnitOfWork unitOfWork, bool validateRecordPerMonthLimit = true) : base(unitOfWork)
+    public AddRecordTemplateCommandValidator(UnitOfWork unitOfWork, bool validateRecordPerMonthLimit = true) : base(unitOfWork)
     {
         _unitOfWork = unitOfWork;
         

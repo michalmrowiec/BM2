@@ -5,14 +5,18 @@
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
 
-<BaseDialog DialogTitle="Change" MudDialog="@MudDialog"
+<BaseDialog DialogTitle="Move records and delete account" MudDialog="@MudDialog"
             ConfirmButtonText="BaseDialog.ConfirmText.Update"
             FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
             FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
     <BodyContent>
-        <MudTextField Value="@OldAccount.ToString()"/>
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+            This will move all records from the source account to the selected account.
+        </MudAlert>
 
-        <AccountAutocomplete Label="Account"
+        <MudTextField Label="Source account" Value="@OldAccount.ToString()" ReadOnly/>
+
+        <AccountAutocomplete Label="Target account"
                              Required
                              SelectedValue="@((a) => _newAccount = a)"/>
     </BodyContent>
@@ -27,6 +31,18 @@
     
     private async Task Submit()
     {
+        if (_newAccount is null)
+        {
+            Snackbar.Add("Select target account.", Severity.Error);
+            return;
+        }
+
+        if (_newAccount.Id == OldAccount.Id)
+        {
+            Snackbar.Add("Select a different target account.", Severity.Error);
+            return;
+        }
+
         UpdateAccountAssignmentCommand command = new UpdateAccountAssignmentCommand()
         {
             OldAccountId = OldAccount.Id,

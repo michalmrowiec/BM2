@@ -1,4 +1,4 @@
-﻿using BM2.Shared.Requests.Commands.User;
+using BM2.Shared.Requests.Commands.User;
 using BM2.Shared.Requests.Queries.User;
 using FluentValidation;
 using MediatR;

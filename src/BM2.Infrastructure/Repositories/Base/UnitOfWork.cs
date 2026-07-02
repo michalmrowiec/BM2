@@ -1,31 +1,30 @@
-﻿using BM2.Application.Contracts.Persistence;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Domain.Entities.System;
+using BM2.Domain.Entities.UserProfile;
+using BM2.Domain.Entities.UserRecords;
 
 namespace BM2.Infrastructure.Repositories.Base;
 
-public sealed class UnitOfWork(BM2DbContext context) : IUnitOfWork
+public sealed class UnitOfWork(BM2DbContext context) : IDisposable
 {
     public async Task SaveAsync()
     {
         await context.SaveChangesAsync();
     }
 
-    public ICurrencyRepository CurrencyRepository { get; } = new CurrencyRepository(context);
-    public IRecordStatusRepository RecordStatusRepository { get; } = new RecordStatusRepository(context);
-    public IUserRepository UserRepository { get; } = new UserRepository(context);
-    public IAuditLoginRepository AuditLoginRepository { get; } = new AuditLoginRepository(context);
-    public IWalletRepository WalletRepository { get; } = new WalletRepository(context);
-    public IAccountRepository AccountRepository { get; } = new AccountRepository(context);
-    public ICategoryRepository CategoryRepository { get; } = new CategoryRepository(context);
-
-    public IWalletCategoryRelationRepository WalletCategoryRelationRepository { get; } =
-        new WalletCategoryRelationRepository(context);
-
-    public ITagRepository TagRepository { get; } = new TagRepository(context);
-    public IWalletTagRelationRepository WalletTagRelationRepository { get; } = new WalletTagRelationRepository(context);
-    public IRecordRepository RecordRepository { get; } = new RecordRepository(context);
-    public IRecordTemplateRepository RecordTemplateRepository { get; } = new RecordTemplateRepository(context);
-    public IRecordTagRelationRepository RecordTagRelationRepository { get; } = new RecordTagRelationRepository(context);
+    public GenericRepository<Currency> CurrencyRepository { get; } = new(context);
+    public RecordStatusRepository RecordStatusRepository { get; } = new(context);
+    public UserRepository UserRepository { get; } = new(context);
+    public GenericRepository<AuditLogin> AuditLoginRepository { get; } = new(context);
+    public GenericRepository<Wallet> WalletRepository { get; } = new(context);
+    public AccountRepository AccountRepository { get; } = new(context);
+    public CategoryRepository CategoryRepository { get; } = new(context);
+    public WalletCategoryRelationRepository WalletCategoryRelationRepository { get; } = new(context);
+    public TagRepository TagRepository { get; } = new(context);
+    public WalletTagRelationRepository WalletTagRelationRepository { get; } = new(context);
+    public RecordRepository RecordRepository { get; } = new(context);
+    public GenericRepository<RecordTemplate> RecordTemplateRepository { get; } = new(context);
+    public GenericRepository<PeriodicRecordDefinition> PeriodicRecordDefinitionRepository { get; } = new(context);
+    public GenericRepository<RecordTagRelation> RecordTagRelationRepository { get; } = new(context);
 
     private bool _disposed = false;
 

@@ -1,4 +1,4 @@
-﻿using BM2.Domain.Entities;
+using BM2.Domain.Entities;
 using BM2.Domain.Entities.Interfaces;
 using BM2.Domain.Exceptions;
 using MediatR;
@@ -33,10 +33,16 @@ internal static class ResponseHelper
         return new BaseResponse<T>(BaseResponse.ResponseStatus.NotFound, "Not found.");
     }
 
+    [Obsolete($"Use {nameof(EnsureFound)} or EnsureFound instead.")]
     internal static void ThrowExceptionIfNull<T>(this T? obj) where T : class
     {
         if (obj is null)
             throw new DomainExceptions.NotFoundException($"{nameof(T)} not found.");
+    }
+
+    internal static T EnsureFound<T>(this T? obj) where T : class
+    {
+        return obj ?? throw new DomainExceptions.NotFoundException($"{typeof(T).Name} not found.");
     }
 
     internal static void CheckPermission<T>(this T obj, Guid userId) where T : IOwnedByUser
