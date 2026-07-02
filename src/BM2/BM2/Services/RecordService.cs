@@ -15,7 +15,8 @@ public class RecordService(BM2DbContext _context) : IRecordService
             .Include(r => r.Category)
             .Include(r => r.Currency)
             .Include(r => r.Status)
-            .Include(r => r.Tags) // Wymagane dla tagów
+            .Include(r => r.Tags)
+            .Include(r => r.Account)
             .AsNoTracking()
             .AsQueryable();
 
@@ -57,6 +58,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
         {
             "Name" => sortDescending ? query.OrderByDescending(r => r.Name) : query.OrderBy(r => r.Name),
             "Amount" => sortDescending ? query.OrderByDescending(r => r.Amount) : query.OrderBy(r => r.Amount),
+            "Account" => sortDescending ? query.OrderByDescending(r => r.Account!.AccountName) : query.OrderBy(r => r.Account!.AccountName),
             _ => sortDescending ? query.OrderByDescending(r => r.RecordDateTime) : query.OrderBy(r => r.RecordDateTime)
         };
 
