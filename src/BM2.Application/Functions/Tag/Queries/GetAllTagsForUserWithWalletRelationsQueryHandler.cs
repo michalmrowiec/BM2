@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
 using BM2.Shared.Models;
@@ -8,7 +8,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.Tag.Queries;
 
-public class GetAllTagsForUserWithWalletRelationsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+public class GetAllTagsForUserWithWalletRelationsQueryHandler(UnitOfWork unitOfWork)
     : IRequestHandler<GetAllTagsForUserWithWalletRelationsQuery,
         BaseResponse<IEnumerable<TagWalletRelationDTO>>>
 {

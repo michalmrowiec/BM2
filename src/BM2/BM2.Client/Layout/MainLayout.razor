@@ -15,18 +15,21 @@
         <MudHidden Breakpoint="Breakpoint.MdAndDown">
             <MudText Typo="Typo.h5" Class="ml-3 me-3">BM2</MudText>
         </MudHidden>
-        <AuthorizeView>
-            <Authorized>
-                <div class="w-50">
-                    <WalletSelector/>
-                </div>
-            </Authorized>
-        </AuthorizeView>
+        @if (_authInitialized)
+        {
+            <AuthorizeView>
+                <Authorized>
+                    <div class="w-50">
+                        <WalletSelector/>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        }
         <MudSpacer/>
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
             <AuthorizeView>
                 <Authorized>
-                    <MudText>@context.User.Identity?.Name <a href="#" onclick="@(async () =>
+                    <MudText>@context.User.Identity?.Name <a href="#" @onclick="@(async () =>
                                                                                {
                                                                                    await AuthService.Logout();
                                                                                    Navigation.NavigateTo("/", true);
@@ -48,7 +51,7 @@
                     <Authorized>
                         <MudMenuItem>
                             <MudText>@context.User.Identity?.Name
-                                <a href="#" onclick="@(async () =>
+                                <a href="#" @onclick="@(async () =>
                                                      {
                                                          await AuthService.Logout();
                                                          Navigation.NavigateTo("/", true);
@@ -74,7 +77,14 @@
         <NavMenu/>
     </MudDrawer>
     <MudMainContent Class="mt-16 pa-4">
-        @Body
+        @if (_authInitialized)
+        {
+            @Body
+        }
+        else
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary"/>
+        }
     </MudMainContent>
 </MudLayout>
 
@@ -87,6 +97,7 @@
 @code {
     private bool _drawerOpen = true;
     private bool _isDarkMode = true;
+    private bool _authInitialized;
     private MudTheme? _theme = null;
 
     protected override void OnInitialized()
@@ -99,8 +110,18 @@
             PaletteDark = _darkPalette,
             LayoutProperties = new LayoutProperties()
         };
+    }
 
-        AuthService.CheckLogin();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if(firstRender)
+        {
+            await AuthService.EnsureInitializedAsync();
+            _authInitialized = true;
+            StateHasChanged();
+        }
     }
 
     private void DrawerToggle()

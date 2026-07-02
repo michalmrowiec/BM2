@@ -1,25 +1,25 @@
-﻿@inject IApiClient ApiClient
+@inject IApiClient ApiClient
+@inject IAlertService AlertService
 @using Newtonsoft.Json
 @typeparam TEntityDTO where TEntityDTO : class, BM2.Shared.DTOs.Interfaces.IEntityDTO
 
 <MudAutocomplete T="TEntityDTO"
                  @ref="_mudAutocomplete"
-                 ValueChanged="@(async (value) =>
-                               {
-                                   await SelectedValue.InvokeAsync(value);
-                                   _selectedValue = value;
-                               })"
+                 ValueChanged="@(async (value) => { await SelectedValue.InvokeAsync(value); _selectedValue = value; })"
                  SearchFunc="Search"
                  Label="@Label"
                  Required="@Required"
                  ToStringFunc="@((c) => CurrencyDisplay(c))"
-                 Clearable
-                 MaxItems="1000"/>
+                 Clearable="@Clearable"
+                 MaxItems="999"
+                 Strict="@Stricted" />
 
 @code {
     protected string Uri { get; set; } = string.Empty;
     [Parameter] public string Label { get; set; } = "Autocomplete";
     [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Stricted { get; set; }
+    [Parameter] public bool Clearable { get; set; }
     [Parameter] public EventCallback<TEntityDTO?> SelectedValue { get; set; }
     protected Func<TEntityDTO, object>? OrderFunc { get; set; }
     protected Func<TEntityDTO, string, bool> SearchFunc { get; set; }
@@ -27,6 +27,7 @@
     private IEnumerable<TEntityDTO> _values = [];
     private MudAutocomplete<TEntityDTO>? _mudAutocomplete;
     private TEntityDTO? _selectedValue;
+    [Parameter] public bool AutoSelectFirstValue { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,13 +82,29 @@
     private async Task GetValues()
     {
         if (string.IsNullOrWhiteSpace(Uri))
+        {
+            _values = [];
             return;
+        }
 
         var response = await ApiClient.Get(Uri);
+        if (!response.IsSuccessStatusCode)
+        {
+            _values = [];
+            await response.HandleFailure(AlertService);
+            StateHasChanged();
+            return;
+        }
+
         var responseString = await response.Content.ReadAsStringAsync();
         var values = JsonConvert.DeserializeObject<List<TEntityDTO>>(responseString) ?? [];
         if (OrderFunc is not null)
             _values = values.OrderBy(OrderFunc);
+        else
+            _values = values;
+
+        if (AutoSelectFirstValue && _values.Any())
+            await SelectValueById(_values.First().Id);
 
         StateHasChanged();
     }
@@ -107,5 +124,4 @@
 
         return value.ToString()!;
     }
-
 }

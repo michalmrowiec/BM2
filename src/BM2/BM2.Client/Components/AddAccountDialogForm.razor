@@ -52,7 +52,7 @@
     [Parameter] public List<EventCallback>? FuncsOnSuccess { get; set; } = new();
 
     private MudForm _form;
-    private AddUpdateAccountCommand _model = new() { IsActive = true };
+    private BaseAccountCommand _model = new AddAccountCommand() { IsActive = true };
 
     private WalletAutocomplete? _walletAutocompleteRef;
     private CurrencyAutocomplete? _currencyAutocompleteRef;
@@ -63,7 +63,7 @@
         {
             if (_model.Id != AccountToUpdate.Id)
             {
-                _model = new AddUpdateAccountCommand
+                _model = new UpdateAccountCommand
                 {
                     Id = AccountToUpdate.Id,
                     WalletId = AccountToUpdate.WalletId,
@@ -72,10 +72,6 @@
                     IsActive = AccountToUpdate.IsActive
                 };
             }
-        }
-        else if (FormType == DialogFormType.Add && _model.Id != Guid.Empty)
-        {
-            _model = new AddUpdateAccountCommand { IsActive = true };
         }
 
         await base.OnParametersSetAsync();
@@ -93,14 +89,14 @@
 
             if (FormType == DialogFormType.Add)
             {
-                var createModel = new AddUpdateAccountCommand
-                {
-                    WalletId = _model.WalletId,
-                    DefaultCurrencyId = _model.DefaultCurrencyId,
-                    AccountName = _model.AccountName,
-                    IsActive = _model.IsActive
-                };
-                response = await ApiClient.Create(@"api/v1/accounts", createModel);
+                // var createModel = new AddAccountCommand
+                // {
+                //     WalletId = _model.WalletId,
+                //     DefaultCurrencyId = _model.DefaultCurrencyId,
+                //     AccountName = _model.AccountName,
+                //     IsActive = _model.IsActive
+                // };
+                response = await ApiClient.Create(@"api/v1/accounts", _model);
             }
             else
             {

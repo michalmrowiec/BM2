@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.User.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
@@ -10,8 +10,7 @@ using Microsoft.AspNetCore.Identity;
 namespace BM2.Application.Functions.User.Commands;
 
 internal class AddUserCommandHandler(
-    IUnitOfWork unitOfWork,
-    IMapper mapper,
+    UnitOfWork unitOfWork,
     IMediator mediator,
     IPasswordHasher<Domain.Entities.UserProfile.User> passwordHasher)
     : IRequestHandler<AddUserCommand, BaseResponse<UserDTO>>
@@ -24,7 +23,7 @@ internal class AddUserCommandHandler(
 
         if (!validationResult.IsValid) return new BaseResponse<UserDTO>(validationResult);
 
-        var newUser = mapper.Map<Domain.Entities.UserProfile.User>(request);
+        var newUser = request.ToEntity();
         newUser.PasswordHash = passwordHasher.HashPassword(newUser, request.Password);
         newUser.IsActive = true;
         newUser.Id = Guid.NewGuid();
@@ -37,7 +36,7 @@ internal class AddUserCommandHandler(
             var createdUser = await unitOfWork.UserRepository.Add(newUser);
             await unitOfWork.SaveAsync();
 
-            userDto = mapper.Map<UserDTO>(createdUser);
+            userDto = createdUser.ToDto();
         }
         catch (Exception ex)
         {

@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using BM2.Application.Contracts.Persistence.Base;
+using BM2.Application.Mappings;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Functions.Wallet.Commands.Validators;
 using BM2.Application.Responses;
 using BM2.Shared.DTOs;
@@ -8,7 +8,7 @@ using MediatR;
 
 namespace BM2.Application.Functions.Wallet.Commands;
 
-public class AddWalletCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
+public class AddWalletCommandHandler(UnitOfWork unitOfWork)
     : IRequestHandler<AddWalletCommand, BaseResponse<WalletDTO>>
 {
     public async Task<BaseResponse<WalletDTO>> Handle(AddWalletCommand request, CancellationToken cancellationToken)
@@ -18,7 +18,7 @@ public class AddWalletCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
 
         if (!validationResult.IsValid) return new BaseResponse<WalletDTO>(validationResult);
 
-        var wallet = mapper.Map<AddWalletCommand, Domain.Entities.UserProfile.Wallet>(request);
+        var wallet = request.ToEntity();
         wallet.Id = Guid.NewGuid();
         wallet.CreatedAt = DateTime.UtcNow;
         wallet.CreatedBy = request.OwnedByUserId;
@@ -28,7 +28,7 @@ public class AddWalletCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
             wallet = await unitOfWork.WalletRepository.Add(wallet);
             await unitOfWork.SaveAsync();
 
-            return request.ReturnSuccessWithObject(mapper.Map<Domain.Entities.UserProfile.Wallet, WalletDTO>(wallet));
+            return request.ReturnSuccessWithObject(wallet.ToDto());
         }
         catch (Exception e)
         {

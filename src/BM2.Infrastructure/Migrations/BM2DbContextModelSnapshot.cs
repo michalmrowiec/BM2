@@ -517,11 +517,20 @@ namespace BM2.Infrastructure.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("HangfireJobId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("NextExecutionAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("OwnedByUserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("PeriodicRecordStatusId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Periodicity")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("RecordTemplateId")
                         .HasColumnType("uniqueidentifier");
@@ -531,6 +540,9 @@ namespace BM2.Infrastructure.Migrations
 
                     b.Property<Guid>("SetRecordStatusId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

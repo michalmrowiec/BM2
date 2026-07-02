@@ -1,4 +1,14 @@
-﻿<MudSelect @bind-Value="SelectedWallet"
+@using BM2.Client.Services
+@using BM2.Client.Services.API
+@using BM2.Client.Services.Auth
+@using BM2.Shared.DTOs
+@using Newtonsoft.Json
+
+@inject IWalletSelectionState WalletSelectionState
+@inject IApiClient ApiClient
+@inject IAuthService AuthService
+
+<MudSelect @bind-Value="SelectedWallet"
            Placeholder="Your wallet"
            Variant="Variant.Outlined"
            AdornmentIcon="@Icons.Material.Filled.Wallet"
@@ -11,3 +21,26 @@
         <MudSelectItem Value="wallet">@wallet.ToString()</MudSelectItem>
     }
 </MudSelect>
+
+@code {
+    private WalletDTO SelectedWallet
+    {
+        get => WalletSelectionState.SelectedWallet;
+        set => WalletSelectionState.SetWallet(value);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        if (await AuthService.EnsureInitializedAsync())
+        {
+            var response = await ApiClient.Get($"api/v1/wallets");
+            var responseString = await response.Content.ReadAsStringAsync();
+            var wallets = JsonConvert.DeserializeObject<IList<WalletDTO>>(responseString) ?? [];
+            WalletSelectionState.SetWallets(wallets.OrderBy(x => x.WalletName).ToList());
+            StateHasChanged();
+        }
+    }
+}

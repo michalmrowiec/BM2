@@ -6,4 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BM2.Shared\BM2.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

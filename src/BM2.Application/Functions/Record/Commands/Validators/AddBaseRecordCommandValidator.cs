@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserRecords;
 using BM2.Shared.Models;
@@ -10,7 +10,7 @@ namespace BM2.Application.Functions.Record.Commands.Validators;
 public abstract class AddBaseRecordCommandValidator<TCommand> : AbstractValidator<TCommand>
     where TCommand : AddBaseRecordCommand
 {
-    protected AddBaseRecordCommandValidator(IUnitOfWork unitOfWork)
+    protected AddBaseRecordCommandValidator(UnitOfWork unitOfWork)
     {
         RuleFor(x => x.Name)
             .NotEmpty()

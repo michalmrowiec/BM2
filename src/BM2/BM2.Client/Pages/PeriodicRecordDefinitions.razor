@@ -1,0 +1,115 @@
+@page "/periodic-record-definitions"
+@using System.Net
+@using BM2.Client.Components
+@using BM2.Client.Services.Auth
+@using BM2.Shared.DTOs
+@using Newtonsoft.Json
+
+@inject IApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IAuthService AuthService
+
+<h3>Periodic record definitions</h3>
+
+<MudButton @onclick="@(() => OpenAddUpdateDialogAsync())"
+           Variant="Variant.Filled"
+           Color="Color.Primary">
+    Add periodic record definition
+</MudButton>
+
+<MudDataGrid T="PeriodicRecordDefinitionDTO" Items="@_items">
+    <Columns>
+        <PropertyColumn Title="Wallet" Property="x => x.Wallet!.WalletName">
+            <CellTemplate>@context.Item.Wallet?.ToString()</CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Template" Property="x => x.RecordTemplate!.Name" />
+        <PropertyColumn Title="Target account" Property="x => x.SetRecordAccount!.AccountName">
+            <CellTemplate>@context.Item.SetRecordAccount?.ToString()</CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Periodic status" Property="x => x.PeriodicRecordStatus!.RecordStatusName">
+            <CellTemplate>@context.Item.PeriodicRecordStatus?.ToString()</CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Created record status" Property="x => x.SetRecordStatus!.RecordStatusName">
+            <CellTemplate>@context.Item.SetRecordStatus?.ToString()</CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Title="Currency" Property="x => x.Currency!.Name">
+            <CellTemplate>@context.Item.Currency?.ToString()</CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn StickyRight="true">
+            <CellTemplate>
+                <MudIconButton @onclick="@(async () => await OpenAddUpdateDialogAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.Edit"
+                               Size="@Size.Small" />
+                <MudIconButton @onclick="@(async () => await DeleteAsync(context.Item))"
+                               Icon="@Icons.Material.Outlined.Delete"
+                               Color="@Color.Error"
+                               Size="@Size.Small" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private IList<PeriodicRecordDefinitionDTO> _items = [];
+
+    private async Task LoadAsync()
+    {
+        var response = await ApiClient.Get("api/v1/periodicRecordDefinitions");
+        var content = await response.Content.ReadAsStringAsync();
+        _items = JsonConvert.DeserializeObject<IList<PeriodicRecordDefinitionDTO>>(content) ?? [];
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        if (await AuthService.EnsureInitializedAsync())
+        {
+            await LoadAsync();
+        }
+    }
+
+    private Task OpenAddUpdateDialogAsync(PeriodicRecordDefinitionDTO? item = null)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var parameters = new DialogParameters<AddPeriodicRecordDefinitionDialogForm>
+        {
+            { x => x.FuncsOnCreated, [EventCallback.Factory.Create(this, LoadAsync)] },
+            { x => x.DefinitionToUpdate, item },
+            { x => x.FormType, item is null ? DialogFormType.Add : DialogFormType.Edit }
+        };
+
+        return DialogService.ShowAsync<AddPeriodicRecordDefinitionDialogForm>(null, parameters, options);
+    }
+
+    private async Task DeleteAsync(PeriodicRecordDefinitionDTO item)
+    {
+        var confirmed = await UiService.ConfirmDeleteAsync(
+            title: "Delete Periodic definition",
+            message: $"Do you want to delete the '{item.RecordTemplate?.Name ?? ""}' periodic definition?");
+
+        if (!confirmed) return;
+
+        var response = await ApiClient.Delete($"api/v1/periodicRecordDefinitions/{item.Id}");
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            UiService.ShowDeleteSuccess(item.RecordTemplate?.Name ?? "periodic definition");
+            await LoadAsync();
+            return;
+        }
+
+        await response.HandleFailure(AlertService);
+    }
+}

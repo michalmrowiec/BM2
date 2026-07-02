@@ -10,8 +10,12 @@ using BM2.Infrastructure;
 using BM2.Infrastructure.Services;
 using BM2.Middleware;
 using BM2.Services;
+using BM2.Shared;
+using Hangfire;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.OpenApi.Models;
+using MudBlazor;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,17 +35,39 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>
 //builder.Services.AddAuthorizationCore();
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddSingleton<IAlertService, AlertService>();
-builder.Services.AddSingleton<IWalletSelectionState, WalletSelectionState>();
+builder.Services.AddScoped<IRecordService, RecordService>();
+builder.Services.AddScoped<IUiService, UiService>();
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IWalletSelectionState, WalletSelectionState>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddTransient<IApiClient, ApiClient>();
-builder.Services.AddHttpClient();
+builder.Services.AddScoped(sp =>
+{
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    return new HttpClient
+    {
+        BaseAddress = new Uri(navigationManager.BaseUri)
+    };
+});
 
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopRight;
+    config.SnackbarConfiguration.RequireInteraction = false;
+    config.SnackbarConfiguration.PreventDuplicates = false;
+    config.SnackbarConfiguration.NewestOnTop = false;
+    config.SnackbarConfiguration.ShowCloseIcon = true;
+    config.SnackbarConfiguration.VisibleStateDuration = 10000;
+    config.SnackbarConfiguration.HideTransitionDuration = 500;
+    config.SnackbarConfiguration.ShowTransitionDuration = 500;
+    config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
+});
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+    });
 
 builder.Services.AddControllers();
 
@@ -97,7 +123,6 @@ await dbContext.SeedDatabaseAsync();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MB2"));
 }
@@ -107,26 +132,22 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
+app.UseHttpsRedirection();
+app.MapStaticAssets();
 app.UseAntiforgery();
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
-app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseHangfireDashboard();
 
 app.MapControllers();
-
-app.MapBlazorHub();
-
-app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BM2.Client._Imports).Assembly);
 
-app.MapFallbackToFile("index.html");
-
-app.UseCors("AllowAll");
 
 app.Run();

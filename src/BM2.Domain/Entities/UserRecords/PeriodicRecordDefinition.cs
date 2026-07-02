@@ -1,6 +1,7 @@
 ﻿using BM2.Domain.Entities.Interfaces;
 using BM2.Domain.Entities.System;
 using BM2.Domain.Entities.UserProfile;
+using BM2.Shared.SystemCodes;
 
 namespace BM2.Domain.Entities.UserRecords;
 
@@ -14,6 +15,14 @@ public class PeriodicRecordDefinition : IEntity, IEntityAudit, IOwnedByUser
     public Guid WalletId { get; set; }
     public Guid SetRecordAccountId { get; set; } // Set account for created record
     public Guid OwnedByUserId { get; set; }
+
+    public Periodicity Periodicity { get; set; } // Monthly, Yearly
+    public DateTime StartDate { get; set; } // Data pierwszej płatności (Anchor Date)
+
+    // To pole jest kluczowe dla jasności w UI
+    public DateTime? NextExecutionAt { get; set; }
+
+    public string? HangfireJobId { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }

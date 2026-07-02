@@ -1,4 +1,4 @@
-﻿using BM2.Application.Contracts.Persistence.Base;
+using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Domain.Exceptions;
 using BM2.Shared.Requests.Commands.Record;
@@ -9,9 +9,9 @@ namespace BM2.Application.Functions.Record.Commands.Validators;
 
 public class AddRecordCommandValidator : AddBaseRecordCommandValidator<AddRecordCommand>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly UnitOfWork _unitOfWork;
 
-    public AddRecordCommandValidator(IUnitOfWork unitOfWork, bool validateRecordPerMonthLimit = true) : base(unitOfWork)
+    public AddRecordCommandValidator(UnitOfWork unitOfWork, bool validateRecordPerMonthLimit = true) : base(unitOfWork)
     {
         _unitOfWork = unitOfWork;
 
