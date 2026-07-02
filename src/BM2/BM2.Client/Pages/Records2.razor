@@ -8,27 +8,37 @@
 @inject IApiClient ApiClient
 
 <div class="d-flex align-center gap-4 pa-4">
-    <MudTextField @bind-Value="_filter.SearchText" Placeholder="Szukaj..."
+    <MudTextField @bind-Value="_filter.SearchText" Placeholder="Search..."
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                   OnDebounceChanged="RefreshTable" DebounceInterval="400" />
 
     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.FilterList" OnClick="ToggleFilterDrawer">
-        Filtruj
+        Filters
     </MudButton>
 </div>
 
 <div class="d-flex flex-wrap gap-2 px-4 pb-2">
     @if (_filter.DateFrom.HasValue || _filter.DateTo.HasValue)
     {
-        <MudChip T="string" OnClose="ClearDateFilter" Color="Color.Secondary" Variant="Variant.Text">
-            Okres: @_filter.DateFrom?.ToString("dd.MM") - @_filter.DateTo?.ToString("dd.MM")
+        <MudChip T="string" OnClose="ClearDateFilter" Color="Color.Secondary" Variant="Variant.Text"
+                 Icon="@Icons.Material.Outlined.CalendarMonth">
+            @_filter.DateFrom?.ToString("dd.MM.yyyy") - @_filter.DateTo?.ToString("dd.MM.yyyy")
+        </MudChip>
+    }
+    @foreach (var accId in _filter.AccountIds)
+    {
+        var accountName = _availableAccounts.FirstOrDefault(c => c.Id == accId)?.AccountName ?? "Acc";
+        <MudChip T="Guid" Value="accId" OnClose="(c) => RemoveAccountFilter(c.Value)" Color="Color.Tertiary" Variant="Variant.Text"
+                 Icon="@Icons.Material.Outlined.AccountBalance">
+            @accountName
         </MudChip>
     }
     @foreach (var catId in _filter.CategoryIds)
     {
-        var categoryName = _availableCategories.FirstOrDefault(c => c.Id == catId)?.CategoryName ?? "Kat";
-        <MudChip T="Guid" Value="catId" OnClose="(c) => RemoveCategoryFilter(c.Value)" Color="Color.Info">
+        var categoryName = _availableCategories.FirstOrDefault(c => c.Id == catId)?.CategoryName ?? "Cat";
+        <MudChip T="Guid" Value="catId" OnClose="(c) => RemoveCategoryFilter(c.Value)" Color="Color.Info" Variant="Variant.Text"
+                 Icon="@Icons.Material.Outlined.Category">
             @categoryName
         </MudChip>
     }
@@ -36,31 +46,42 @@
 
 <MudTable ServerData="LoadTableData" T="RecordDTO" @ref="_table" Dense="true" Hover="true">
     <HeaderContent>
-        <MudTh><MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO">Data</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortLabel="Name" T="RecordDTO">Nazwa</MudTableSortLabel></MudTh>
-        <MudTh>Kategoria</MudTh>
-        <MudTh><MudTableSortLabel SortLabel="Amount" T="RecordDTO">Kwota</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO" InitialDirection="SortDirection.Descending">Date</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Name" T="RecordDTO">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Account" T="RecordDTO">Account</MudTableSortLabel></MudTh>
+        <MudTh>Category</MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Amount" T="RecordDTO">Amount</MudTableSortLabel></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Data">@context.RecordDateTime.ToString("dd.MM.yyyy")</MudTd>
-        <MudTd DataLabel="Nazwa">@context.Name</MudTd>
-        <MudTd DataLabel="Kategoria">@context.Category?.CategoryName</MudTd>
-        <MudTd DataLabel="Kwota">@context.Amount</MudTd>
+        <MudTd DataLabel="Date">@context.RecordDateTime.ToString("dd.MM.yyyy")</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Account">@GetAccountName(context.AccountId)</MudTd>
+        <MudTd DataLabel="Categories">@context.Category?.CategoryName</MudTd>
+        <MudTd DataLabel="Amount">@context.Amount</MudTd>
     </RowTemplate>
     <PagerContent>
-        <MudTablePager RowsPerPageString="Wierszy:" />
+        <MudTablePager RowsPerPageString="Records:" />
     </PagerContent>
 </MudTable>
 
 <MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.Right" Elevation="1" Variant="DrawerVariant.Temporary" Width="320px">
     <MudDrawerHeader>
-        <MudText Typo="Typo.h6">Filtry zaawansowane</MudText>
+        <MudText Typo="Typo.h6">Advanced filters</MudText>
     </MudDrawerHeader>
     <div class="pa-4 d-flex flex-column gap-4">
-        <MudDatePicker Label="Od" @bind-Date="_filter.DateFrom" />
-        <MudDatePicker Label="Do" @bind-Date="_filter.DateTo" />
+        <MudDatePicker Label="Od" @bind-Date="_filter.DateFrom" Clearable />
+        <MudDatePicker Label="Do" @bind-Date="_filter.DateTo" Clearable />
 
-        <MudSelect T="Guid" Label="Kategorie" MultiSelection="true"
+        <MudSelect T="Guid" Label="Accounts" MultiSelection="true"
+                   @bind-SelectedValues="_selectedAccounts"
+                   ToStringFunc="@GetAccountName">
+            @foreach (var acc in _availableAccounts)
+            {
+                <MudSelectItem T="Guid" Value="@acc.Id">@acc.AccountName</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="Guid" Label="Categories" MultiSelection="true"
                    @bind-SelectedValues="_selectedCategories"
                    ToStringFunc="@GetCategoryName">
             @foreach (var cat in _availableCategories)
@@ -72,7 +93,7 @@
         <div class="d-flex gap-2 mt-4">
             <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ResetAllFilters">Reset</MudButton>
             <MudSpacer />
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilters">Zastosuj</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilters">Apply</MudButton>
         </div>
     </div>
 </MudDrawer>
@@ -86,6 +107,9 @@
     private IEnumerable<Guid> _selectedCategories = new HashSet<Guid>();
     private List<CategoryWalletRelationDTO> _availableCategories = new(); // Załaduj w OnInitializedAsync
 
+    private IEnumerable<Guid> _selectedAccounts = new HashSet<Guid>();
+    private List<AccountBasicDTO> _availableAccounts = new(); // Załaduj w OnInitializedAsync
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
@@ -93,6 +117,7 @@
         if (firstRender)
         {
             await GetCategories();
+            await GetAccounts();
         }
     }
 
@@ -117,11 +142,25 @@
         StateHasChanged();
     }
 
+    private async Task GetAccounts()
+    {
+        var response = await ApiClient.Get("api/v1/accounts");
+        var r = await response.Content.ReadAsStringAsync();
+        _availableAccounts = JsonConvert.DeserializeObject<List<AccountBasicDTO>>(r) ?? [];
+        StateHasChanged();
+    }
+
     private async Task<TableData<RecordDTO>> LoadTableData(TableState state, CancellationToken cancellationToken = default)
     {
-        // Przekazujemy stan tabeli oraz naszą klasę filtrów do backendu
+        string sortLabel = string.IsNullOrEmpty(state.SortLabel) ? "RecordDateTime" : state.SortLabel;
+        bool isDescending = string.IsNullOrEmpty(state.SortLabel) ? true : (state.SortDirection == SortDirection.Descending);
+
         var result = await RecordService.GetPagedRecordsAsync(
-            state.Page, state.PageSize, state.SortLabel, state.SortDirection == SortDirection.Descending, _filter);
+            state.Page,
+            state.PageSize,
+            sortLabel,
+            isDescending,
+            _filter);
 
         return new TableData<RecordDTO> { TotalItems = result.TotalCount, Items = result.Items };
     }
@@ -132,8 +171,16 @@
 
     private Task ApplyFilters()
     {
+        _filter.AccountIds = _selectedAccounts.ToList();
         _filter.CategoryIds = _selectedCategories.ToList();
         _drawerOpen = false;
+        return RefreshTable();
+    }
+
+    private Task RemoveAccountFilter(Guid id)
+    {
+        _filter.AccountIds.Remove(id);
+        _selectedAccounts = _selectedAccounts.Where(x => x != id).ToList();
         return RefreshTable();
     }
 
@@ -154,9 +201,16 @@
     private Task ResetAllFilters()
     {
         _filter = new TransactionFilter();
+        _selectedAccounts = new HashSet<Guid>();
         _selectedCategories = new HashSet<Guid>();
         _drawerOpen = false;
         return RefreshTable();
+    }
+
+    private string GetAccountName(Guid id)
+    {
+        var account = _availableAccounts.FirstOrDefault(c => c.Id == id);
+        return account?.AccountName ?? string.Empty;
     }
 
     private string GetCategoryName(Guid id)
