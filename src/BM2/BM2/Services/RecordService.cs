@@ -37,6 +37,11 @@ public class RecordService(BM2DbContext _context) : IRecordService
         {
             query = query.Where(r => filter.AccountIds.Contains(r.AccountId));
         }
+        
+        if (filter.StatusIds.Any())
+        {
+            query = query.Where(r => filter.StatusIds.Contains(r.StatusId));
+        }
 
         // 4. Multi-select Kategorie
         if (filter.CategoryIds.Any())
@@ -47,7 +52,10 @@ public class RecordService(BM2DbContext _context) : IRecordService
         // 5. Multi-select Tagi (Rekord posiada chociaż jeden z wybranych tagów)
         if (filter.TagIds.Any())
         {
-            query = query.Where(r => r.Tags.Any(t => filter.TagIds.Contains(t.Id)));
+            if (filter.TagOperator == TransactionFilter.LogicalOperator.Or)
+                query = query.Where(r => r.Tags.Any(t => filter.TagIds.Contains(t.Id)));
+            else
+                query = query.Where(r => filter.TagIds.All(id => r.Tags.Any(t => t.Id == id)));
         }
 
         // 6. Pobranie sumy i dynamiczne sortowanie (standardowe podejście MudBlazor)
@@ -59,6 +67,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
             "Name" => sortDescending ? query.OrderByDescending(r => r.Name) : query.OrderBy(r => r.Name),
             "Amount" => sortDescending ? query.OrderByDescending(r => r.Amount) : query.OrderBy(r => r.Amount),
             "Account" => sortDescending ? query.OrderByDescending(r => r.Account!.AccountName) : query.OrderBy(r => r.Account!.AccountName),
+            "Status" => sortDescending ? query.OrderByDescending(r => r.Status!.RecordStatusName) : query.OrderBy(r => r.Status!.RecordStatusName),
             _ => sortDescending ? query.OrderByDescending(r => r.RecordDateTime) : query.OrderBy(r => r.RecordDateTime)
         };
 
