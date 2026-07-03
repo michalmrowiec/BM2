@@ -2,6 +2,8 @@
 
 public enum DialogFormType
 {
-    Add,
-    Edit
+    Add = 0,
+    Edit = 1,
+    Clone = 2,
+    FromTemplate = 3,
 }
