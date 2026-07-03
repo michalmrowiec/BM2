@@ -11,86 +11,130 @@
 @inject IDialogService DialogService
 @inject IAlertService AlertService
 
-<div class="d-flex align-center gap-4 pa-4">
+<MudStack Row AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="mb-2">
     <MudTextField @bind-Value="_filter.SearchText" Placeholder="Search by name..." Clearable
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                   OnDebounceIntervalElapsed="RefreshTable" DebounceInterval="400"/>
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.FilterList" OnClick="ToggleFilterDrawer">
-        Filters
-    </MudButton>
-</div>
+    @* <MudButton Variant="Variant.Filled" Color="Color.Primary" *@
+    @*            StartIcon="@Icons.Material.Filled.FilterList" OnClick="ToggleFilterDrawer"> *@
+    @*     Filters *@
+    @* </MudButton> *@
 
-<div class="d-flex flex-wrap gap-2 px-4 pb-2">
-    @if (!_filter.IsEmpty())
-    {
-        <MudIconButton Icon="@Icons.Material.Filled.FilterListOff"
-                       Color="Color.Default"
-                       Size="Size.Small"
-                       Variant="Variant.Text"
-                       OnClick="ResetAllFilters"/>
-    }
+    <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+        <MudButton StartIcon="@Icons.Material.Filled.FilterList" OnClick="ToggleFilterDrawer">
+            Filters
+        </MudButton>
+        <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;">
+            <MudMenuItem OnClick="@(async _ =>
+                                  {
+                                      SetDateRange("CurrentMonth");
+                                      await ApplyFilters();
+                                  })">This Month
+            </MudMenuItem>
+            <MudMenuItem OnClick="@(async _ =>
+                                  {
+                                      SetDateRange("LastMonth");
+                                      await ApplyFilters();
+                                  })">Last Month
+            </MudMenuItem>
+            <MudMenuItem OnClick="@(async _ =>
+                                  {
+                                      SetDateRange("CurrentYear");
+                                      await ApplyFilters();
+                                  })">This Year
+            </MudMenuItem>
+            <MudMenuItem OnClick="@(async _ =>
+                                  {
+                                      SetDateRange("LastYear");
+                                      await ApplyFilters();
+                                  })">Last Year
+            </MudMenuItem>
+        </MudMenu>
+    </MudButtonGroup>
+</MudStack>
 
-    @if (_filter.DateFrom.HasValue || _filter.DateTo.HasValue)
-    {
-        <MudChip T="string" OnClose="ClearDateFilter" Color="Color.Secondary" Variant="Variant.Text"
-                 Icon="@Icons.Material.Outlined.CalendarMonth">
-            @_filter.DateFrom?.ToString("dd.MM.yyyy") - @_filter.DateTo?.ToString("dd.MM.yyyy")
-        </MudChip>
-    }
-    @foreach (var accId in _filter.AccountIds)
-    {
-        var accountName = _availableAccounts.FirstOrDefault(c => c.Id == accId)?.AccountName ?? "Acc";
-        <MudChip T="Guid" Value="accId" OnClose="(c) => RemoveAccountFilter(c.Value)" Color="Color.Tertiary"
-                 Variant="Variant.Text"
-                 Icon="@Icons.Material.Outlined.AccountBalance">
-            @accountName
-        </MudChip>
-    }
-    @foreach (var staId in _filter.StatusIds)
-    {
-        var statusName = _availableStatuses.FirstOrDefault(c => c.Id == staId)?.RecordStatusName ?? "Sta";
-        <MudChip T="Guid" Value="staId" OnClose="(c) => RemoveStatusFilter(c.Value)" Color="Color.Warning"
-                 Variant="Variant.Text"
-                 Icon="@Icons.Material.Outlined.FlagCircle">
-            @statusName
-        </MudChip>
-    }
-    @foreach (var catId in _filter.CategoryIds)
-    {
-        var categoryName = _availableCategories.FirstOrDefault(c => c.Id == catId)?.CategoryName ?? "Cat";
-        <MudChip T="Guid" Value="catId" OnClose="(c) => RemoveCategoryFilter(c.Value)" Color="Color.Info"
-                 Variant="Variant.Text"
-                 Icon="@Icons.Material.Outlined.Category">
-            @categoryName
-        </MudChip>
-    }
-
-    @if (_filter.TagIds.Any())
-    {
-        <MudChip T="string"
-                 Color="Color.Surface"
-                 Variant="Variant.Outlined"
-                 Icon="@(_filter.TagOperator == TransactionFilter.LogicalOperator.And ? Icons.Material.Outlined.Link : Icons.Material.Outlined.LinkOff)"
-                 OnClick="ToggleTagOperatorAsync"
-                 Style="cursor: pointer;">
-            @(_filter.TagOperator == TransactionFilter.LogicalOperator.And ? "All tags" : "Any tag")
-        </MudChip>
-
-        @foreach (var tagId in _filter.TagIds)
+<MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+    <MudStack Row AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+        @if (!_filter.IsEmpty())
         {
-            var tagName = _availableTags.FirstOrDefault(c => c.Id == tagId)?.TagName ?? "Tag";
-            <MudChip T="Guid" Value="tagId" OnClose="(c) => RemoveTagFilter(c.Value)" Color="Color.Surface"
-                     Variant="Variant.Text"
-                     Icon="@Icons.Material.Outlined.Discount">
-                @tagName
+            <MudIconButton Icon="@Icons.Material.Filled.FilterListOff"
+                           Color="Color.Default"
+                           Size="Size.Small"
+                           Variant="Variant.Text"
+                           OnClick="ResetAllFilters"/>
+        }
+        @if (_filter.DateFrom.HasValue || _filter.DateTo.HasValue)
+        {
+            <MudChip T="string" OnClose="ClearDateFilter" Color="Color.Secondary" Variant="Variant.Text"
+                     Icon="@Icons.Material.Outlined.CalendarMonth">
+                @_filter.DateFrom?.ToString("dd.MM.yyyy") - @_filter.DateTo?.ToString("dd.MM.yyyy")
             </MudChip>
         }
-    }
-</div>
+        @foreach (var accId in _filter.AccountIds)
+        {
+            var accountName = _availableAccounts.FirstOrDefault(c => c.Id == accId)?.AccountName ?? "Acc";
+            <MudChip T="Guid" Value="accId" OnClose="(c) => RemoveAccountFilter(c.Value)" Color="Color.Tertiary"
+                     Variant="Variant.Text"
+                     Icon="@Icons.Material.Outlined.AccountBalance">
+                @accountName
+            </MudChip>
+        }
+        @foreach (var staId in _filter.StatusIds)
+        {
+            var statusName = _availableStatuses.FirstOrDefault(c => c.Id == staId)?.RecordStatusName ?? "Sta";
+            <MudChip T="Guid" Value="staId" OnClose="(c) => RemoveStatusFilter(c.Value)" Color="Color.Warning"
+                     Variant="Variant.Text"
+                     Icon="@Icons.Material.Outlined.FlagCircle">
+                @statusName
+            </MudChip>
+        }
+        @foreach (var catId in _filter.CategoryIds)
+        {
+            var categoryName = _availableCategories.FirstOrDefault(c => c.Id == catId)?.CategoryName ?? "Cat";
+            <MudChip T="Guid" Value="catId" OnClose="(c) => RemoveCategoryFilter(c.Value)" Color="Color.Info"
+                     Variant="Variant.Text"
+                     Icon="@Icons.Material.Outlined.Category">
+                @categoryName
+            </MudChip>
+        }
 
-<MudTable ServerData="LoadTableData" T="RecordDTO" @ref="_table" Dense="false" Hover="true">
+        @if (_filter.TagIds.Any())
+        {
+            <MudChip T="string"
+                     Color="Color.Surface"
+                     Variant="Variant.Outlined"
+                     Icon="@(_filter.TagOperator == TransactionFilter.LogicalOperator.And ? Icons.Material.Outlined.Link : Icons.Material.Outlined.LinkOff)"
+                     OnClick="ToggleTagOperatorAsync"
+                     Style="cursor: pointer;">
+                @(_filter.TagOperator == TransactionFilter.LogicalOperator.And ? "All tags" : "Any tag")
+            </MudChip>
+
+            @foreach (var tagId in _filter.TagIds)
+            {
+                var tagName = _availableTags.FirstOrDefault(c => c.Id == tagId)?.TagName ?? "Tag";
+                <MudChip T="Guid" Value="tagId" OnClose="(c) => RemoveTagFilter(c.Value)" Color="Color.Surface"
+                         Variant="Variant.Text"
+                         Icon="@Icons.Material.Outlined.Discount">
+                    @tagName
+                </MudChip>
+            }
+        }
+    </MudStack>
+    @* @if (!_filter.IsEmpty()) *@
+    @* { *@
+    @*     <div> *@
+    @*     <MudButton StartIcon="@Icons.Material.Filled.FilterListOff" *@
+    @*                Color="Color.Default" *@
+    @*                Size="Size.Medium" *@
+    @*                Variant="Variant.Outlined" *@
+    @*                OnClick="ResetAllFilters" Class="text-nowrap"> *@
+    @*         Clear filters *@
+    @*     </MudButton></div> *@
+    @* } *@
+</MudStack>
+
+<MudTable ServerData="LoadTableData" T="RecordDTO" @ref="_table" Dense="false" Hover FixedHeader Height="70vh">
     <HeaderContent>
         <MudTh>
             <MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO" InitialDirection="SortDirection.Descending">
@@ -101,16 +145,16 @@
             <MudTableSortLabel SortLabel="Name" T="RecordDTO">Name</MudTableSortLabel>
         </MudTh>
         <MudTh>
+            <MudTableSortLabel SortLabel="Amount" T="RecordDTO">Amount / Planned</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortLabel="Status" T="RecordDTO">Status</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
             <MudTableSortLabel SortLabel="Account" T="RecordDTO">Account</MudTableSortLabel>
         </MudTh>
         <MudTh>
             <MudTableSortLabel SortLabel="Category" T="RecordDTO">Category</MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortLabel="Amount" T="RecordDTO">Amount</MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortLabel="Status" T="RecordDTO">Status</MudTableSortLabel>
         </MudTh>
         <MudTh>Tags</MudTh>
         <MudTh></MudTh>
@@ -118,9 +162,9 @@
     <RowTemplate>
         <MudTd DataLabel="Date">@context.RecordDateTime.ToString("dd.MM.yyyy")</MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="Account">@GetAccountName(context.AccountId)</MudTd>
-        <MudTd DataLabel="Categories">@context.Category?.CategoryName</MudTd>
-        <MudTd DataLabel="Amount">@context.Amount</MudTd>
+        <MudTd DataLabel="Amount">
+            <strong>@context.Amount</strong> @(context.PlannedAmount.HasValue ? "/ " + context.PlannedAmount : "") @context.Currency?.Symbol
+        </MudTd>
         <MudTd DataLabel="Status">
             <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
                      Icon="@context.Status!.GetIconForRecordStatus()"
@@ -128,6 +172,8 @@
                 @context.Status!.ToString()
             </MudChip>
         </MudTd>
+        <MudTd DataLabel="Account">@GetAccountName(context.AccountId)</MudTd>
+        <MudTd DataLabel="Categories">@context.Category?.CategoryName</MudTd>
         <MudTd DataLabel="Tags">
             @foreach (var tag in context.Tags)
             {
@@ -140,7 +186,10 @@
             }
         </MudTd>
         <MudTd DataLabel="">
-            <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context))"
+            <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context, DialogFormType.Clone))"
+                           Icon="@Icons.Material.Outlined.CopyAll"
+                           Size="@Size.Small"/>
+            <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context, DialogFormType.Edit))"
                            Icon="@Icons.Material.Outlined.Edit"
                            Size="@Size.Small"/>
             <MudIconButton @onclick="@(async () => await DeleteRecordAsync(context))"
@@ -159,6 +208,43 @@
         <MudText Typo="Typo.h6">Advanced filters</MudText>
     </MudDrawerHeader>
     <div class="pa-4 d-flex flex-column gap-5">
+        @* <div class="d-flex align-center justify-space-between mt-2"> *@
+        @*     <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Quick ranges:</MudText> *@
+        @*     <MudMenu StartIcon="@Icons.Material.Filled.DateRange" *@
+        @*              EndIcon="@Icons.Material.Filled.ArrowDropDown" *@
+        @*              Label="Select Range" *@
+        @*              Color="Color.Primary" *@
+        @*              Variant="Variant.Outlined" *@
+        @*              Size="Size.Small"> *@
+        @*         <MudMenuItem OnClick="@(async _ => await SetDateRange("CurrentMonth"))">This Month</MudMenuItem> *@
+        @*         <MudMenuItem OnClick="@(async _ => await SetDateRange("LastMonth"))">Last Month</MudMenuItem> *@
+        @*         <MudMenuItem OnClick="@(async _ => await SetDateRange("CurrentYear"))">This Year</MudMenuItem> *@
+        @*         <MudMenuItem OnClick="@(async _ => await SetDateRange("LastYear"))">Last Year</MudMenuItem> *@
+        @*     </MudMenu> *@
+        @* </div> *@
+
+        <div class="d-flex flex-column gap-1">
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Quick ranges:</MudText>
+            <div class="d-flex flex-wrap gap-1">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                           OnClick="@(_ => SetDateRange("CurrentMonth"))">
+                    This Month
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                           OnClick="@(_ => SetDateRange("LastMonth"))">
+                    Last Month
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                           OnClick="@(_ => SetDateRange("CurrentYear"))">
+                    This Year
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                           OnClick="@(_ => SetDateRange("LastYear"))">Last
+                    Year
+                </MudButton>
+            </div>
+        </div>
+
         <MudDatePicker Label="From" @bind-Date="_filter.DateFrom" Clearable/>
         <MudDatePicker Label="To" @bind-Date="_filter.DateTo" Clearable/>
 
@@ -209,7 +295,9 @@
         }
 
         <div class="d-flex gap-2 mt-4">
-            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ResetAllFilters">Reset</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ResetAllFilters"
+                       Disabled="_filter.IsEmpty()">Reset
+            </MudButton>
             <MudSpacer/>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilters">Apply</MudButton>
         </div>
@@ -357,6 +445,7 @@
     {
         _filter = new TransactionFilter() { SearchText = _filter.SearchText };
         _selectedAccounts = new HashSet<Guid>();
+        _selectedStatuses = new HashSet<Guid>();
         _selectedCategories = new HashSet<Guid>();
         _selectedTags = new HashSet<Guid>();
         _drawerOpen = false;
@@ -387,7 +476,7 @@
         return tag?.TagName ?? string.Empty;
     }
 
-    private Task OpenUpdateRecordDialogAsync(RecordDTO record)
+    private Task OpenUpdateRecordDialogAsync(RecordDTO record, DialogFormType formType = DialogFormType.Edit)
     {
         var options = new DialogOptions
         {
@@ -402,7 +491,7 @@
                 x => x.FuncsOnCreated, [EventCallback.Factory.Create(this, RefreshTable)]
             },
             {
-                x => x.FormType, DialogFormType.Edit
+                x => x.FormType, formType
             },
             {
                 x => x.RecordToUpdate, record
@@ -442,4 +531,32 @@
         return RefreshTable();
     }
 
+    private void SetDateRange(string rangeType)
+    {
+        var today = DateTime.Today;
+
+        switch (rangeType)
+        {
+            case "CurrentMonth":
+                _filter.DateFrom = new DateTime(today.Year, today.Month, 1);
+                _filter.DateTo = _filter.DateFrom.Value.AddMonths(1).AddDays(-1);
+                break;
+
+            case "LastMonth":
+                var lastMonth = today.AddMonths(-1);
+                _filter.DateFrom = new DateTime(lastMonth.Year, lastMonth.Month, 1);
+                _filter.DateTo = _filter.DateFrom.Value.AddMonths(1).AddDays(-1);
+                break;
+
+            case "CurrentYear":
+                _filter.DateFrom = new DateTime(today.Year, 1, 1);
+                _filter.DateTo = new DateTime(today.Year, 12, 31);
+                break;
+
+            case "LastYear":
+                _filter.DateFrom = new DateTime(today.Year - 1, 1, 1);
+                _filter.DateTo = new DateTime(today.Year - 1, 12, 31);
+                break;
+        }
+    }
 }
