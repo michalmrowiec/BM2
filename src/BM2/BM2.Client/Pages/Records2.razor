@@ -1,9 +1,7 @@
 ﻿@page "/records2"
-
 @using System.Net
 @using BM2.Client.Components
-@using BM2.Client.Services.API
-@using BM2.Client.Services.Notification
+@using BM2.Client.Services.DisplayServices
 @using BM2.Shared
 @using BM2.Shared.DTOs
 @using Newtonsoft.Json
@@ -16,7 +14,7 @@
 <div class="d-flex align-center gap-4 pa-4">
     <MudTextField @bind-Value="_filter.SearchText" Placeholder="Search by name..." Clearable
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                  OnDebounceIntervalElapsed="RefreshTable" DebounceInterval="400" />
+                  OnDebounceIntervalElapsed="RefreshTable" DebounceInterval="400"/>
 
     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.FilterList" OnClick="ToggleFilterDrawer">
@@ -25,6 +23,15 @@
 </div>
 
 <div class="d-flex flex-wrap gap-2 px-4 pb-2">
+    @if (!_filter.IsEmpty())
+    {
+        <MudIconButton Icon="@Icons.Material.Filled.FilterListOff"
+                       Color="Color.Default"
+                       Size="Size.Small"
+                       Variant="Variant.Text"
+                       OnClick="ResetAllFilters"/>
+    }
+
     @if (_filter.DateFrom.HasValue || _filter.DateTo.HasValue)
     {
         <MudChip T="string" OnClose="ClearDateFilter" Color="Color.Secondary" Variant="Variant.Text"
@@ -35,28 +42,77 @@
     @foreach (var accId in _filter.AccountIds)
     {
         var accountName = _availableAccounts.FirstOrDefault(c => c.Id == accId)?.AccountName ?? "Acc";
-        <MudChip T="Guid" Value="accId" OnClose="(c) => RemoveAccountFilter(c.Value)" Color="Color.Tertiary" Variant="Variant.Text"
+        <MudChip T="Guid" Value="accId" OnClose="(c) => RemoveAccountFilter(c.Value)" Color="Color.Tertiary"
+                 Variant="Variant.Text"
                  Icon="@Icons.Material.Outlined.AccountBalance">
             @accountName
+        </MudChip>
+    }
+    @foreach (var staId in _filter.StatusIds)
+    {
+        var statusName = _availableStatuses.FirstOrDefault(c => c.Id == staId)?.RecordStatusName ?? "Sta";
+        <MudChip T="Guid" Value="staId" OnClose="(c) => RemoveStatusFilter(c.Value)" Color="Color.Warning"
+                 Variant="Variant.Text"
+                 Icon="@Icons.Material.Outlined.FlagCircle">
+            @statusName
         </MudChip>
     }
     @foreach (var catId in _filter.CategoryIds)
     {
         var categoryName = _availableCategories.FirstOrDefault(c => c.Id == catId)?.CategoryName ?? "Cat";
-        <MudChip T="Guid" Value="catId" OnClose="(c) => RemoveCategoryFilter(c.Value)" Color="Color.Info" Variant="Variant.Text"
+        <MudChip T="Guid" Value="catId" OnClose="(c) => RemoveCategoryFilter(c.Value)" Color="Color.Info"
+                 Variant="Variant.Text"
                  Icon="@Icons.Material.Outlined.Category">
             @categoryName
         </MudChip>
     }
+
+    @if (_filter.TagIds.Any())
+    {
+        <MudChip T="string"
+                 Color="Color.Surface"
+                 Variant="Variant.Outlined"
+                 Icon="@(_filter.TagOperator == TransactionFilter.LogicalOperator.And ? Icons.Material.Outlined.Link : Icons.Material.Outlined.LinkOff)"
+                 OnClick="ToggleTagOperatorAsync"
+                 Style="cursor: pointer;">
+            @(_filter.TagOperator == TransactionFilter.LogicalOperator.And ? "All tags" : "Any tag")
+        </MudChip>
+
+        @foreach (var tagId in _filter.TagIds)
+        {
+            var tagName = _availableTags.FirstOrDefault(c => c.Id == tagId)?.TagName ?? "Tag";
+            <MudChip T="Guid" Value="tagId" OnClose="(c) => RemoveTagFilter(c.Value)" Color="Color.Surface"
+                     Variant="Variant.Text"
+                     Icon="@Icons.Material.Outlined.Discount">
+                @tagName
+            </MudChip>
+        }
+    }
 </div>
 
-<MudTable ServerData="LoadTableData" T="RecordDTO" @ref="_table" Dense="true" Hover="true">
+<MudTable ServerData="LoadTableData" T="RecordDTO" @ref="_table" Dense="false" Hover="true">
     <HeaderContent>
-        <MudTh><MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO" InitialDirection="SortDirection.Descending">Date</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortLabel="Name" T="RecordDTO">Name</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortLabel="Account" T="RecordDTO">Account</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortLabel="Category" T="RecordDTO">Category</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortLabel="Amount" T="RecordDTO">Amount</MudTableSortLabel></MudTh>
+        <MudTh>
+            <MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO" InitialDirection="SortDirection.Descending">
+                Date
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortLabel="Name" T="RecordDTO">Name</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortLabel="Account" T="RecordDTO">Account</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortLabel="Category" T="RecordDTO">Category</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortLabel="Amount" T="RecordDTO">Amount</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortLabel="Status" T="RecordDTO">Status</MudTableSortLabel>
+        </MudTh>
+        <MudTh>Tags</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
@@ -65,18 +121,36 @@
         <MudTd DataLabel="Account">@GetAccountName(context.AccountId)</MudTd>
         <MudTd DataLabel="Categories">@context.Category?.CategoryName</MudTd>
         <MudTd DataLabel="Amount">@context.Amount</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                     Icon="@context.Status!.GetIconForRecordStatus()"
+                     Color="@context.Status!.GetColorForRecordStatus()">
+                @context.Status!.ToString()
+            </MudChip>
+        </MudTd>
+        <MudTd DataLabel="Tags">
+            @foreach (var tag in context.Tags)
+            {
+                <MudChip T="string"
+                         Color="Color.Surface"
+                         Variant="Variant.Outlined"
+                         Size="Size.Small">
+                    @tag.TagName
+                </MudChip>
+            }
+        </MudTd>
         <MudTd DataLabel="">
             <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context))"
                            Icon="@Icons.Material.Outlined.Edit"
-                           Size="@Size.Small" />
+                           Size="@Size.Small"/>
             <MudIconButton @onclick="@(async () => await DeleteRecordAsync(context))"
                            Icon="@Icons.Material.Outlined.Delete"
                            Color="@Color.Error"
-                           Size="@Size.Small" />
+                           Size="@Size.Small"/>
         </MudTd>
     </RowTemplate>
     <PagerContent>
-        <MudTablePager RowsPerPageString="Records:" />
+        <MudTablePager RowsPerPageString="Records:"/>
     </PagerContent>
 </MudTable>
 
@@ -84,9 +158,9 @@
     <MudDrawerHeader>
         <MudText Typo="Typo.h6">Advanced filters</MudText>
     </MudDrawerHeader>
-    <div class="pa-4 d-flex flex-column gap-4">
-        <MudDatePicker Label="Od" @bind-Date="_filter.DateFrom" Clearable />
-        <MudDatePicker Label="Do" @bind-Date="_filter.DateTo" Clearable />
+    <div class="pa-4 d-flex flex-column gap-5">
+        <MudDatePicker Label="From" @bind-Date="_filter.DateFrom" Clearable/>
+        <MudDatePicker Label="To" @bind-Date="_filter.DateTo" Clearable/>
 
         <MudSelect T="Guid" Label="Accounts" MultiSelection="true"
                    @bind-SelectedValues="_selectedAccounts"
@@ -94,6 +168,15 @@
             @foreach (var acc in _availableAccounts)
             {
                 <MudSelectItem T="Guid" Value="@acc.Id">@acc.AccountName</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="Guid" Label="Statuses" MultiSelection="true"
+                   @bind-SelectedValues="_selectedStatuses"
+                   ToStringFunc="@GetStatusName">
+            @foreach (var sta in _availableStatuses)
+            {
+                <MudSelectItem T="Guid" Value="@sta.Id">@sta.RecordStatusName</MudSelectItem>
             }
         </MudSelect>
 
@@ -106,9 +189,28 @@
             }
         </MudSelect>
 
+        <MudSelect T="Guid" Label="Tags" MultiSelection="true"
+                   @bind-SelectedValues="_selectedTags"
+                   ToStringFunc="@GetTagName">
+            @foreach (var tag in _availableTags)
+            {
+                <MudSelectItem T="Guid" Value="@tag.Id">@tag.TagName</MudSelectItem>
+            }
+        </MudSelect>
+
+        @if (_selectedTags.Any())
+        {
+            <MudSwitch T="bool"
+                       Value="@(_logicalTagOperator == TransactionFilter.LogicalOperator.And)"
+                       ValueChanged="@((bool isAnd) => _logicalTagOperator = isAnd ? TransactionFilter.LogicalOperator.And : TransactionFilter.LogicalOperator.Or)"
+                       Color="Color.Primary"
+                       Size="Size.Medium"
+                       Label="@(_logicalTagOperator == TransactionFilter.LogicalOperator.And ? "Match: Require all tags (AND)" : "Match: Any tag (OR)")"/>
+        }
+
         <div class="d-flex gap-2 mt-4">
             <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ResetAllFilters">Reset</MudButton>
-            <MudSpacer />
+            <MudSpacer/>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilters">Apply</MudButton>
         </div>
     </div>
@@ -120,11 +222,18 @@
     private TransactionFilter _filter = new();
 
     // Zmienne pomocnicze dla UI
+    private IEnumerable<Guid> _selectedStatuses = new HashSet<Guid>();
+    private List<RecordStatusDTO> _availableStatuses = [];
+
     private IEnumerable<Guid> _selectedCategories = new HashSet<Guid>();
-    private List<CategoryWalletRelationDTO> _availableCategories = new(); // Załaduj w OnInitializedAsync
+    private List<CategoryWalletRelationDTO> _availableCategories = [];
 
     private IEnumerable<Guid> _selectedAccounts = new HashSet<Guid>();
-    private List<AccountBasicDTO> _availableAccounts = new(); // Załaduj w OnInitializedAsync
+    private List<AccountBasicDTO> _availableAccounts = [];
+
+    private IEnumerable<Guid> _selectedTags = new HashSet<Guid>();
+    private List<TagDTO> _availableTags = [];
+    private TransactionFilter.LogicalOperator _logicalTagOperator = TransactionFilter.LogicalOperator.Or;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -132,8 +241,10 @@
 
         if (firstRender)
         {
-            await GetCategories();
             await GetAccounts();
+            await GetStatuses();
+            await GetCategories();
+            await GetTags();
         }
     }
 
@@ -145,16 +256,11 @@
         _filter.DateTo = _filter.DateFrom.Value.AddMonths(1).AddDays(-1);
     }
 
-    private async Task GetCategories()
+    private async Task GetStatuses()
     {
-        var response2 = await ApiClient.Get("api/v1/categories/wallet-relations");
-        var responseString2 = await response2.Content.ReadAsStringAsync();
-        _availableCategories = JsonConvert.DeserializeObject<List<CategoryWalletRelationDTO>>(responseString2) ?? [];
-
-        var response = await ApiClient.Get("api/v1/wallets");
+        var response = await ApiClient.Get("api/v1/recordStatuses/for-records");
         var r = await response.Content.ReadAsStringAsync();
-        // WalletList = JsonConvert.DeserializeObject<IList<WalletDTO>>(r) ?? [];
-
+        _availableStatuses = JsonConvert.DeserializeObject<List<RecordStatusDTO>>(r) ?? [];
         StateHasChanged();
     }
 
@@ -163,6 +269,22 @@
         var response = await ApiClient.Get("api/v1/accounts");
         var r = await response.Content.ReadAsStringAsync();
         _availableAccounts = JsonConvert.DeserializeObject<List<AccountBasicDTO>>(r) ?? [];
+        StateHasChanged();
+    }
+
+    private async Task GetCategories()
+    {
+        var response2 = await ApiClient.Get("api/v1/categories/wallet-relations");
+        var responseString2 = await response2.Content.ReadAsStringAsync();
+        _availableCategories = JsonConvert.DeserializeObject<List<CategoryWalletRelationDTO>>(responseString2) ?? [];
+        StateHasChanged();
+    }
+
+    private async Task GetTags()
+    {
+        var response2 = await ApiClient.Get("api/v1/tags/wallet-relations");
+        var responseString2 = await response2.Content.ReadAsStringAsync();
+        _availableTags = JsonConvert.DeserializeObject<List<TagDTO>>(responseString2) ?? [];
         StateHasChanged();
     }
 
@@ -188,8 +310,18 @@
     private Task ApplyFilters()
     {
         _filter.AccountIds = _selectedAccounts.ToList();
+        _filter.StatusIds = _selectedStatuses.ToList();
         _filter.CategoryIds = _selectedCategories.ToList();
+        _filter.TagIds = _selectedTags.ToList();
+        _filter.TagOperator = _logicalTagOperator;
         _drawerOpen = false;
+        return RefreshTable();
+    }
+
+    private Task RemoveStatusFilter(Guid id)
+    {
+        _filter.StatusIds.Remove(id);
+        _selectedStatuses = _selectedStatuses.Where(x => x != id).ToList();
         return RefreshTable();
     }
 
@@ -207,6 +339,13 @@
         return RefreshTable();
     }
 
+    private Task RemoveTagFilter(Guid id)
+    {
+        _filter.TagIds.Remove(id);
+        _selectedTags = _selectedTags.Where(x => x != id).ToList();
+        return RefreshTable();
+    }
+
     private Task ClearDateFilter()
     {
         _filter.DateFrom = null;
@@ -216,11 +355,18 @@
 
     private Task ResetAllFilters()
     {
-        _filter = new TransactionFilter();
+        _filter = new TransactionFilter() { SearchText = _filter.SearchText };
         _selectedAccounts = new HashSet<Guid>();
         _selectedCategories = new HashSet<Guid>();
+        _selectedTags = new HashSet<Guid>();
         _drawerOpen = false;
         return RefreshTable();
+    }
+
+    private string GetStatusName(Guid id)
+    {
+        var status = _availableStatuses.FirstOrDefault(c => c.Id == id);
+        return status?.RecordStatusName ?? string.Empty;
     }
 
     private string GetAccountName(Guid id)
@@ -233,6 +379,12 @@
     {
         var category = _availableCategories.FirstOrDefault(c => c.Id == id);
         return category?.CategoryName ?? string.Empty;
+    }
+
+    private string GetTagName(Guid id)
+    {
+        var tag = _availableTags.FirstOrDefault(c => c.Id == id);
+        return tag?.TagName ?? string.Empty;
     }
 
     private Task OpenUpdateRecordDialogAsync(RecordDTO record)
@@ -278,4 +430,16 @@
 
         await response.HandleFailure(AlertService);
     }
+
+    private Task ToggleTagOperatorAsync()
+    {
+        _filter.TagOperator = _filter.TagOperator == TransactionFilter.LogicalOperator.And
+            ? TransactionFilter.LogicalOperator.Or
+            : TransactionFilter.LogicalOperator.And;
+
+        _logicalTagOperator = _filter.TagOperator;
+
+        return RefreshTable();
+    }
+
 }
