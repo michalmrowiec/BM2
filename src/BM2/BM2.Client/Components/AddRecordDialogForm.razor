@@ -7,10 +7,11 @@
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
 
-<BaseDialog DialogTitle="@(FormType == DialogFormType.Add ? "New operation" : "Edit operation")" MudDialog="@MudDialog"
-            ConfirmButtonText="@(FormType == DialogFormType.Add ? BaseDialog.ConfirmText.Add : BaseDialog.ConfirmText.Update)"
-            FuncsOnCreated="@( [EventCallback.Factory.Create(this, Submit)])"
-            FuncsOnCancel="@( [EventCallback.Factory.Create(this, Cancel)])">
+<BaseDialog MudDialog="@MudDialog"
+            DialogTitle="@(FormType == DialogFormType.Edit ? "Edit operation" : "New operation")"
+            ConfirmButtonText="@(FormType is DialogFormType.Edit ? BaseDialog.ConfirmText.Update : BaseDialog.ConfirmText.Add)"
+            FuncsOnCreated="@([EventCallback.Factory.Create(this, Submit)])"
+            FuncsOnCancel="@([EventCallback.Factory.Create(this, Cancel)])">
     <BodyContent>
         <MudForm Model="@_model"
                  @ref="@_form"
@@ -23,80 +24,80 @@
                                      @ref="_accountAutocomplete"
                                      SelectStartValue="@(x => RecordToUpdate is not null && x.Id == RecordToUpdate.AccountId)"
                                      SelectedValue="@(async (a) =>
-                                                                                         {
-                                         _model.AccountId = a.Id;
+                                                    {
+                                                        _model.AccountId = a.Id;
 
-                                         if (RecordToUpdate is not null && FormType == DialogFormType.Edit)
-                                         {
-                                             await _categoryAutocomplete.SetUri(
-                                                 $"api/v1/wallets/{a.WalletId}/categories",
-                                                 RecordToUpdate.CategoryId);
-                                             await _currencyAutocomplete.SelectValueById(RecordToUpdate.CurrencyId);
-                                         }
-                                         else
-                                         {
-                                             await _categoryAutocomplete.SetUri($"api/v1/wallets/{a.WalletId}/categories");
-                                             await _currencyAutocomplete.SelectValueById(a.DefaultCurrencyId);
-                                         }
+                                                        if (RecordToUpdate is not null && FormType is DialogFormType.Edit or DialogFormType.Clone)
+                                                        {
+                                                            await _categoryAutocomplete.SetUri(
+                                                                $"api/v1/wallets/{a.WalletId}/categories",
+                                                                RecordToUpdate.CategoryId);
+                                                            await _currencyAutocomplete.SelectValueById(RecordToUpdate.CurrencyId);
+                                                        }
+                                                        else
+                                                        {
+                                                            await _categoryAutocomplete.SetUri($"api/v1/wallets/{a.WalletId}/categories");
+                                                            await _currencyAutocomplete.SelectValueById(a.DefaultCurrencyId);
+                                                        }
 
-                                         await GetTags(a.WalletId);
-                                     })" />
+                                                        await GetTags(a.WalletId);
+                                                    })"/>
 
                 <CurrencyAutocomplete Label="Currency"
                                       Required
                                       @ref="_currencyAutocomplete"
                                       SelectedValue="@((c) =>
-                                                                                           {
-                                                                                               _model.CurrencyId = c.Id;
-                                                                                               _selectedCurrency = c;
-                                                                                               StateHasChanged();
-                                                                                           })" />
+                                                     {
+                                                         _model.CurrencyId = c.Id;
+                                                         _selectedCurrency = c;
+                                                         StateHasChanged();
+                                                     })"/>
 
                 <CategoryAutocomplete Label="Category"
                                       Required
                                       @ref="_categoryAutocomplete"
-                                      SelectedValue="@((c) => _model.CategoryId = c?.Id ?? Guid.Empty)" />
+                                      SelectedValue="@((c) => _model.CategoryId = c?.Id ?? Guid.Empty)"/>
 
-                                                                     <MudTextField @bind-Value="_model.Name"
-                                                                                   For="@(() => _model.Name)"
-                                                                                   Immediate
-                                                                                   Label="Name"
-                                                                                   MaxLength="@ModelsRequirements.RecordNameMaxLength"
-                                                                                   Required />
+                <MudTextField @bind-Value="_model.Name"
+                              For="@(() => _model.Name)"
+                              Immediate
+                              Label="Name"
+                              MaxLength="@ModelsRequirements.RecordNameMaxLength"
+                              Required/>
 
-                                                                     <MudTextField @bind-Value="_model.Amount"
-                                                                                   Label="Amount"
-                                                                                   Adornment="Adornment.End"
-                                                                                   AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)" />
+                <MudTextField @bind-Value="_model.Amount"
+                              Label="Amount"
+                              Adornment="Adornment.End"
+                              AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)"/>
 
-                                                                     <MudTextField @bind-Value="_model.PlannedAmount"
-                                                                                   Label="Planned amount"
-                                                                                   Adornment="Adornment.End"
-                                                                                   AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)" />
+                <MudTextField @bind-Value="_model.PlannedAmount"
+                              Label="Planned amount"
+                              Adornment="Adornment.End"
+                              AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)"/>
 
-                                                                     <RecordStatusAutocomplete Label="Status"
-                                                                                               Required
-                                                                                               StatusType="RecordStatusAutocomplete.RecordStatusType.Record"
-                                                                                               SelectStartValue="@(x =>
-                                                                                                          RecordToUpdate is null
-                                                                                                              ? x.SystemCode == StatusSystemCode.Realized
-                                                                                                              : x.Id == RecordToUpdate.StatusId)"
-                                          SelectedValue="@((s) => _model.StatusId = s?.Id ?? Guid.Empty)" />
+                <RecordStatusAutocomplete Label="Status"
+                                          Required
+                                          StatusType="RecordStatusAutocomplete.RecordStatusType.Record"
+                                          SelectStartValue="@(x =>
+                                                                RecordToUpdate is null
+                                                                    ? x.SystemCode == StatusSystemCode.Realized
+                                                                    : x.Id == RecordToUpdate.StatusId)"
+                                          SelectedValue="@((s) => _model.StatusId = s?.Id ?? Guid.Empty)"/>
 
                 <MudDatePicker @bind-Date="_date"
                                Label="Date of (planned) operation"
-                               Required />
+                               Required/>
 
                 <MudTimePicker Label="Time of (planned) operation"
                                @bind-Time="_time"
-                               Clearable />
+                               Clearable/>
 
 
                 <MudTextField @bind-Value="_model.Description"
                               For="@(() => _model.Description)"
                               Immediate
                               Label="Note"
-                              MaxLength="@ModelsRequirements.RecordDescriptionMaxLength" />
+                              MaxLength="@ModelsRequirements.RecordDescriptionMaxLength"/>
 
                 <MudSelect T="TagDTO"
                            @bind-SelectedValues="_selectedTags"
@@ -130,6 +131,37 @@
     private IEnumerable<TagDTO> _tags = [];
     private IEnumerable<TagDTO> _selectedTags = new HashSet<TagDTO>();
 
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ApiClient.Get(@"api/v1/wallets");
+        var responseString = await response.Content.ReadAsStringAsync();
+        var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
+        _wallets = walletDtos.OrderBy(x => x.WalletName);
+
+        if (FormType is DialogFormType.Edit)
+        {
+            _date = RecordToUpdate?.RecordDateTime.ToLocalTime().Date ?? DateTime.Now;
+            _time = RecordToUpdate?.RecordDateTime.ToLocalTime().TimeOfDay ?? DateTime.Now.TimeOfDay;
+        }
+        else
+        {
+            _date = DateTime.Now;
+            _time = DateTime.Now.TimeOfDay;
+        }
+
+        if (RecordToUpdate is not null)
+        {
+            _selectedCurrency = RecordToUpdate.Currency;
+
+            if (FormType is DialogFormType.Edit or DialogFormType.Clone)
+            {
+                _model = new UpdateRecordCommand(RecordToUpdate);
+            }
+        }
+
+        StateHasChanged();
+    }
+
     private async Task Submit()
     {
         if (_date is { } date && _time is { } time)
@@ -146,7 +178,7 @@
         if (_form.IsValid)
         {
             var response =
-                FormType == DialogFormType.Add
+                FormType is DialogFormType.Add or DialogFormType.Clone
                     ? await ApiClient.Create(@"api/v1/records", addRecord)
                     : await ApiClient.Put(@"api/v1/records", _model);
 
@@ -168,39 +200,6 @@
                 await response.HandleFailure(AlertService);
             }
         }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        _date = RecordToUpdate?.RecordDateTime.ToLocalTime().Date ?? DateTime.Now;
-        _time = RecordToUpdate?.RecordDateTime.ToLocalTime().TimeOfDay ?? DateTime.Now.TimeOfDay;
-
-        var response = await ApiClient.Get(@"api/v1/wallets");
-        var responseString = await response.Content.ReadAsStringAsync();
-        var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
-        _wallets = walletDtos.OrderBy(x => x.WalletName);
-
-        if (FormType == DialogFormType.Edit && RecordToUpdate is not null)
-        {
-            _model = new UpdateRecordCommand
-            {
-                Id = RecordToUpdate.Id,
-                Name = RecordToUpdate.Name,
-                Amount = RecordToUpdate.Amount,
-                PlannedAmount = RecordToUpdate.PlannedAmount,
-                AccountId = RecordToUpdate.AccountId,
-                CategoryId = RecordToUpdate.CategoryId,
-                CurrencyId = RecordToUpdate.CurrencyId,
-                StatusId = RecordToUpdate.StatusId,
-                Description = RecordToUpdate.Description,
-                RecordDateTime = RecordToUpdate.RecordDateTime,
-                TagIds = RecordToUpdate.Tags.Select(t => t.Id).ToList()
-            };
-
-            _selectedCurrency = RecordToUpdate.Currency;
-        }
-
-        StateHasChanged();
     }
 
     private async Task GetTags(Guid walletId)
