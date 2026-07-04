@@ -4,6 +4,7 @@ using BM2.Client.Services.API;
 using BM2.Client.Services.Auth;
 using BM2.Client.Services.LocalStorage;
 using BM2.Client.Services.Notification;
+using BM2.Client.Services.States;
 using BM2.Components;
 using BM2.Controllers.Utils;
 using BM2.Infrastructure;
@@ -39,6 +40,7 @@ builder.Services.AddScoped<IRecordService, RecordService>();
 builder.Services.AddScoped<IUiService, UiService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<IWalletSelectionState, WalletSelectionState>();
+builder.Services.AddScoped<IRecordEventService, RecordEventService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddTransient<IApiClient, ApiClient>();
 builder.Services.AddScoped(sp =>

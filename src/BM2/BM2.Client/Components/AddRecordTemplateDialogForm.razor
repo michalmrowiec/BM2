@@ -125,7 +125,7 @@
     private CurrencyAutocomplete _currencyAutocomplete;
     private void Cancel() => MudDialog.Cancel();
     private IEnumerable<TagDTO> _tags = [];
-    private IEnumerable<TagDTO> _selectedTags = new HashSet<TagDTO>();
+    private IReadOnlyCollection<TagDTO> _selectedTags = new HashSet<TagDTO>();
 
     private async Task Submit()
     {
@@ -199,7 +199,7 @@
         _tags = tagDtos.OrderBy(x => x.TagName);
 
         if (RecordToUpdate?.Tags != null)
-            _selectedTags = _tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
+            _selectedTags = (IReadOnlyCollection<TagDTO>)_tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
 
         StateHasChanged();
     }

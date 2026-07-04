@@ -1,15 +1,20 @@
 ﻿@page "/records2"
+
 @using System.Net
 @using BM2.Client.Components
 @using BM2.Client.Services.DisplayServices
+@using BM2.Client.Services.States
 @using BM2.Shared
 @using BM2.Shared.DTOs
 @using Newtonsoft.Json
+@implements IDisposable
 
 @inject IRecordService RecordService
 @inject IApiClient ApiClient
 @inject IDialogService DialogService
 @inject IAlertService AlertService
+@inject IWalletSelectionState WalletSelectionState
+@inject IRecordEventService RecordEventService
 
 <MudStack Row AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="mb-2">
     <MudTextField @bind-Value="_filter.SearchText" Placeholder="Search by name..." Clearable
@@ -310,16 +315,16 @@
     private TransactionFilter _filter = new();
 
     // Zmienne pomocnicze dla UI
-    private IEnumerable<Guid> _selectedStatuses = new HashSet<Guid>();
+    private IReadOnlyCollection<Guid> _selectedStatuses = new HashSet<Guid>();
     private List<RecordStatusDTO> _availableStatuses = [];
 
-    private IEnumerable<Guid> _selectedCategories = new HashSet<Guid>();
+    private IReadOnlyCollection<Guid> _selectedCategories = new HashSet<Guid>();
     private List<CategoryWalletRelationDTO> _availableCategories = [];
 
-    private IEnumerable<Guid> _selectedAccounts = new HashSet<Guid>();
+    private IReadOnlyCollection<Guid> _selectedAccounts = new HashSet<Guid>();
     private List<AccountBasicDTO> _availableAccounts = [];
 
-    private IEnumerable<Guid> _selectedTags = new HashSet<Guid>();
+    private IReadOnlyCollection<Guid> _selectedTags = new HashSet<Guid>();
     private List<TagDTO> _availableTags = [];
     private TransactionFilter.LogicalOperator _logicalTagOperator = TransactionFilter.LogicalOperator.Or;
 
@@ -329,6 +334,9 @@
 
         if (firstRender)
         {
+            WalletSelectionState.OnWalletChanged += _table.ReloadServerData;
+            RecordEventService.OnRecordsChanged += _table.ReloadServerData;
+
             await GetAccounts();
             await GetStatuses();
             await GetCategories();
@@ -381,12 +389,17 @@
         string sortLabel = string.IsNullOrEmpty(state.SortLabel) ? "RecordDateTime" : state.SortLabel;
         bool isDescending = string.IsNullOrEmpty(state.SortLabel) ? true : (state.SortDirection == SortDirection.Descending);
 
-        var result = await RecordService.GetPagedRecordsAsync(
-            state.Page,
-            state.PageSize,
-            sortLabel,
-            isDescending,
-            _filter);
+        (List<RecordDTO> Items, int TotalCount) result = ([], 0);
+        if (WalletSelectionState.SelectedWallet?.Id is not null)
+        {
+            result = await RecordService.GetPagedRecordsAsync(
+                state.Page,
+                state.PageSize,
+                sortLabel,
+                isDescending,
+                WalletSelectionState.SelectedWallet!.Id,
+                _filter);
+        }
 
         return new TableData<RecordDTO> { TotalItems = result.TotalCount, Items = result.Items };
     }
@@ -559,4 +572,11 @@
                 break;
         }
     }
+
+    public void Dispose()
+    {
+        WalletSelectionState.OnWalletChanged -= _table.ReloadServerData;
+        RecordEventService.OnRecordsChanged -= _table.ReloadServerData;
+    }
+
 }

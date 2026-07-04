@@ -25,4 +25,11 @@ public class AccountBasicDTO : IEntityDTO
 public class AccountDTO : AccountBasicDTO
 {
     public WalletBaseDTO? Wallet { get; set; }
+    
+    public override string ToString()
+    {
+        return this.DefaultCurrency != null
+            ? string.Concat(this.IsActive ? "" : "(Off) ", $"{this.Wallet?.WalletName} / ",  this.AccountName, " ", $"[{this.DefaultCurrency?.IsoCode}]")
+            : this.AccountName;
+    }
 }
