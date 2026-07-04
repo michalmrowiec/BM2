@@ -8,4 +8,6 @@ public class Record : BaseRecord
     public DateTime RecordDateTime { get; set; }
 
     public Account? Account { get; set; }
+    
+    public Guid? AccountRecordTransferId { get; set; } // ewentualnie zamienić na enum - RecordType - to jest tylko info to szybkiego oznaczenia
 }

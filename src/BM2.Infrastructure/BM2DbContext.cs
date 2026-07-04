@@ -380,12 +380,12 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .WithMany()
                 .HasForeignKey(x => x.RecordId)
                 .OnDelete(DeleteBehavior.Cascade);
-            
+
             recordTagRelationBuilder.HasOne(x => x.Tag)
                 .WithMany()
                 .HasForeignKey(x => x.TagId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             recordTagRelationBuilder.HasOne(x => x.OwnedByUser)
                 .WithMany(x => x.RecordTagRelations)
                 .HasForeignKey(x => x.OwnedByUserId)
@@ -408,6 +408,10 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .HasMaxLength(ModelsRequirements.RecordNameMaxLength);
             baseRecordBuilder.Property(x => x.Description)
                 .HasMaxLength(ModelsRequirements.RecordDescriptionMaxLength);
+            baseRecordBuilder.Property(x => x.AccountAmount)
+                .IsRequired()
+                .HasDefaultValue(0)
+                .HasPrecision(18, 2);
             baseRecordBuilder.Property(x => x.Amount)
                 .IsRequired()
                 .HasDefaultValue(0)
@@ -462,6 +466,27 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
                 .WithMany(x => x.Records)
                 .HasForeignKey(x => x.AccountId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureAccountRecordTransfer(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AccountRecordTransfer>(accountRecordTransfer =>
+        {
+            accountRecordTransfer.HasKey(x => x.Id);
+
+            accountRecordTransfer.HasOne(x => x.FromRecord)
+                .WithMany()
+                .HasForeignKey(x => x.FromRecordId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            accountRecordTransfer.HasOne(x => x.ToRecord)
+                .WithMany()
+                .HasForeignKey(x => x.ToRecordId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            accountRecordTransfer.HasIndex(x => x.FromRecordId);
+            accountRecordTransfer.HasIndex(x => x.ToRecordId);
         });
     }
 
