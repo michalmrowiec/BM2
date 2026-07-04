@@ -11,4 +11,6 @@ public interface IRecordService
         bool sortDescending,
         Guid walletId,
         TransactionFilter filter);
+
+    public Task<decimal> GetSum(Guid walletId, TransactionFilter filter);
 }
