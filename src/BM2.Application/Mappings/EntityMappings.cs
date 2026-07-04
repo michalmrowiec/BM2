@@ -86,7 +86,7 @@ public static class EntityMappings
         account.AccountName = command.AccountName;
         account.WalletId = command.WalletId;
         account.IsActive = command.IsActive;
-        account.DefaultCurrencyId = command.DefaultCurrencyId;
+        //account.DefaultCurrencyId = command.DefaultCurrencyId; brak możliwości edycji
     }
 
     public static AccountBasicDTO ToBasicDto(this Account account) => new()
