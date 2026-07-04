@@ -44,7 +44,7 @@
     private MudForm _form;
     private AddCategoryCommand _model = new();
     private IEnumerable<WalletDTO> _wallets = [];
-    private IEnumerable<WalletDTO> _selectedRelatedWallets { get; set; } = new HashSet<WalletDTO>();
+    private IReadOnlyCollection<WalletDTO> _selectedRelatedWallets { get; set; } = new HashSet<WalletDTO>();
 
     private void Cancel() => MudDialog.Cancel();
 

@@ -30,10 +30,10 @@
             <AuthorizeView>
                 <Authorized>
                     <MudText>@context.User.Identity?.Name <a href="#" @onclick="@(async () =>
-                                                                               {
-                                                                                   await AuthService.Logout();
-                                                                                   Navigation.NavigateTo("/", true);
-                                                                               })">Logout</a></MudText>
+                                                                                {
+                                                                                    await AuthService.Logout();
+                                                                                    Navigation.NavigateTo("/", true);
+                                                                                })">Logout</a></MudText>
                 </Authorized>
                 <NotAuthorized>
                     <a href="/login">Login</a>
@@ -52,10 +52,10 @@
                         <MudMenuItem>
                             <MudText>@context.User.Identity?.Name
                                 <a href="#" @onclick="@(async () =>
-                                                     {
-                                                         await AuthService.Logout();
-                                                         Navigation.NavigateTo("/", true);
-                                                     })">Logout</a></MudText>
+                                                      {
+                                                          await AuthService.Logout();
+                                                          Navigation.NavigateTo("/", true);
+                                                      })">Logout</a></MudText>
                         </MudMenuItem>
                     </Authorized>
                     <NotAuthorized>
@@ -80,6 +80,19 @@
         @if (_authInitialized)
         {
             @Body
+
+            <style>
+                .fab-menu-item-text-nowrap .mud-fab-label {
+                    white-space: nowrap;
+                    word-break: keep-all;
+                }
+            </style>
+
+            <AuthorizeView>
+                <Authorized>
+                    <RecordFabMenu/>
+                </Authorized>
+            </AuthorizeView>
         }
         else
         {
@@ -116,7 +129,7 @@
     {
         await base.OnAfterRenderAsync(firstRender);
 
-        if(firstRender)
+        if (firstRender)
         {
             await AuthService.EnsureInitializedAsync();
             _authInitialized = true;

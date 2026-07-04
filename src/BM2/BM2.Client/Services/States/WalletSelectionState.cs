@@ -1,6 +1,6 @@
 ﻿using BM2.Shared.DTOs;
 
-namespace BM2.Client.Services;
+namespace BM2.Client.Services.States;
 
 public interface IWalletSelectionState
 {

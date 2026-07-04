@@ -1,0 +1,74 @@
+﻿@using System.Net
+@using BM2.Client.Components
+@using BM2.Client.Services.DisplayServices
+@using BM2.Client.Services.States
+@using BM2.Shared
+@using BM2.Shared.DTOs
+@using Newtonsoft.Json
+
+@inject IRecordService RecordService
+@inject IApiClient ApiClient
+@inject IDialogService DialogService
+@inject IAlertService AlertService
+@inject IRecordEventService RecordEventService
+
+<MudFabMenu StartIcon="@Icons.Material.Filled.Add"
+            AlignItems="AlignItems.End"
+            Color="Color.Primary"
+            Fixed>
+    <MudFabMenuItem StartIcon="@Icons.Material.Filled.Add"
+                    Color="Color.Secondary"
+                    OnClick="_ => OpenAddRecordDialogAsync()"/>
+    <MudFabMenuItem StartIcon="@Icons.Material.Filled.ListAlt"
+                    Color="Color.Secondary"
+                    Disabled/>
+    <MudFabMenuItem EndIcon="@Icons.Material.Filled.Star"
+                    IconColor="Color.Warning"
+                    Color="Color.Dark"
+                    Class="fab-menu-item-text-nowrap"
+                    Label="Ulubiony 1"
+                    Disabled/>
+    <MudFabMenuItem EndIcon="@Icons.Material.Filled.Star"
+                    IconColor="Color.Warning"
+                    Color="Color.Dark"
+                    Class="fab-menu-item-text-nowrap"
+                    Label="Ulubiony 2"
+                    Disabled/>
+    <MudFabMenuItem EndIcon="@Icons.Material.Filled.Star"
+                    IconColor="Color.Warning"
+                    Color="Color.Dark"
+                    Class="fab-menu-item-text-nowrap" 
+                    Label="Ulubiony testowy test"
+                    Disabled/>
+</MudFabMenu>
+
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+
+@code {
+    private Task OpenAddRecordDialogAsync(DialogFormType formType = DialogFormType.Add)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick =  false,
+            BackgroundClass = "my-custom-class",
+        };
+        var parameters = new DialogParameters<AddRecordDialogForm>
+        {
+            // {
+            //     x => x.FuncsOnCreated, [EventCallback.Factory.Create(this)]
+            // },
+            {
+                x => x.FormType, formType
+            },
+        };
+        return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
+    }
+}

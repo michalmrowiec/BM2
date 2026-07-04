@@ -28,7 +28,7 @@ public class UiService : IUiService
 
     public async Task<bool> ConfirmDeleteAsync(string title, string message)
     {
-        bool? result = await _dialogService.ShowMessageBox(
+        bool? result = await _dialogService.ShowMessageBoxAsync(
             title,
             message,
             yesText: "Delete",

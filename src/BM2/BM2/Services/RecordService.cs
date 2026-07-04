@@ -9,7 +9,7 @@ namespace BM2.Services;
 public class RecordService(BM2DbContext _context) : IRecordService
 {
     public async Task<(List<RecordDTO> Items, int TotalCount)> GetPagedRecordsAsync(
-    int page, int pageSize, string? sortBy, bool sortDescending, TransactionFilter filter)
+    int page, int pageSize, string? sortBy, bool sortDescending,Guid walletId, TransactionFilter filter)
     {
         var query = _context.Records
             .Include(r => r.Category)
@@ -17,6 +17,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
             .Include(r => r.Status)
             .Include(r => r.Tags)
             .Include(r => r.Account)
+            .Where(r => r.Account!.WalletId == walletId)
             .AsNoTracking()
             .AsQueryable();
 

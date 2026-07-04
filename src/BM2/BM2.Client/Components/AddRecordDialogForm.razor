@@ -1,4 +1,5 @@
 ﻿@using System.Net
+@using BM2.Client.Services.States
 @using BM2.Shared.DTOs
 @using BM2.Shared.Requests.Commands.Record
 @using BM2.Shared.SystemCodes
@@ -6,6 +7,7 @@
 @inject ISnackbar Snackbar
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
+@inject IRecordEventService RecordEventService
 
 <BaseDialog MudDialog="@MudDialog"
             DialogTitle="@(FormType == DialogFormType.Edit ? "Edit operation" : "New operation")"
@@ -129,7 +131,7 @@
     private TimeSpan? _time;
     private void Cancel() => MudDialog.Cancel();
     private IEnumerable<TagDTO> _tags = [];
-    private IEnumerable<TagDTO> _selectedTags = new HashSet<TagDTO>();
+    private IReadOnlyCollection<TagDTO> _selectedTags = new HashSet<TagDTO>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -194,6 +196,7 @@
 
                 MudDialog.Close(DialogResult.Ok(true));
                 FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+                await RecordEventService.NotifyRecordsChanged();
             }
             else
             {
@@ -210,7 +213,8 @@
         _tags = tagDtos.OrderBy(x => x.TagName);
 
         if (RecordToUpdate?.Tags != null)
-            _selectedTags = _tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
+            _selectedTags = _tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id)).ToList();
+            //_selectedTags = (IReadOnlyCollection<TagDTO>)_tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
 
         StateHasChanged();
     }
