@@ -11,9 +11,11 @@ public abstract class BaseRecord : IEntity, IEntityAudit, IOwnedByUser
     public Guid StatusId { get; set; }
     public string Name { get; set; } = null!;
     public string? Description { get; set; }
+    public decimal AccountAmount { get; set; } // Amount in Account default currency
     public decimal Amount { get; set; }
     public decimal? PlannedAmount { get; set; }
     public Guid CurrencyId { get; set; }
+    
     public Guid OwnedByUserId { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }
