@@ -1,4 +1,5 @@
 ﻿using BM2.Application.Mappings;
+using BM2.Domain.Entities.UserRecords;
 using BM2.Infrastructure;
 using BM2.Shared;
 using BM2.Shared.DTOs;
@@ -8,8 +9,7 @@ namespace BM2.Services;
 
 public class RecordService(BM2DbContext _context) : IRecordService
 {
-    public async Task<(List<RecordDTO> Items, int TotalCount)> GetPagedRecordsAsync(
-    int page, int pageSize, string? sortBy, bool sortDescending,Guid walletId, TransactionFilter filter)
+    private IQueryable<Record> GetQuery(Guid walletId, TransactionFilter filter)
     {
         var query = _context.Records
             .Include(r => r.Category)
@@ -26,7 +26,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
         {
             string search = filter.SearchText.ToLower();
             query = query.Where(r => r.Name.ToLower().Contains(search)
-                                  || (r.Description != null && r.Description.ToLower().Contains(search)));
+                                     || (r.Description != null && r.Description.ToLower().Contains(search)));
         }
 
         // 2. Filtry dat
@@ -59,6 +59,14 @@ public class RecordService(BM2DbContext _context) : IRecordService
                 query = query.Where(r => filter.TagIds.All(id => r.Tags.Any(t => t.Id == id)));
         }
 
+        return query;
+    }
+    
+    public async Task<(List<RecordDTO> Items, int TotalCount)> GetPagedRecordsAsync(
+        int page, int pageSize, string? sortBy, bool sortDescending, Guid walletId, TransactionFilter filter)
+    {
+        var query = GetQuery(walletId, filter);
+
         // 6. Pobranie sumy i dynamiczne sortowanie (standardowe podejście MudBlazor)
         int totalCount = await query.CountAsync();
 
@@ -79,5 +87,11 @@ public class RecordService(BM2DbContext _context) : IRecordService
         var dtos = dbItems.Select(r => r.ToDto()).ToList();
 
         return (dtos, totalCount);
+    }
+
+    public Task<decimal> GetSum(Guid walletId, TransactionFilter filter)
+    {
+        var query = GetQuery(walletId, filter);
+        return query.SumAsync(r => r.Amount);
     }
 }
