@@ -431,6 +431,12 @@ namespace BM2.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal>("AccountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<decimal>("Amount")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(18, 2)
@@ -605,6 +611,9 @@ namespace BM2.Infrastructure.Migrations
                     b.HasBaseType("BM2.Domain.Entities.UserRecords.BaseRecord");
 
                     b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AccountRecordTransferId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("RecordDateTime")
