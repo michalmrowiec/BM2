@@ -63,7 +63,7 @@
                              ToggledChanged="@(async e =>
                                              {
                                                  _sumPanelOpen = e;
-                                                 _sumData = e && WalletSelectionState.SelectedWallet is not null ? _sumData = await RecordService.GetSum(WalletSelectionState.SelectedWallet!.Id, _filter) : 0;
+                                                 _sumGrouped = e && WalletSelectionState.SelectedWallet is not null ? _sumGrouped = await RecordService.GetSumForAccounts(WalletSelectionState.SelectedWallet!.Id, _filter) : [];
                                                  StateHasChanged();
                                              })"/>
     </MudButtonGroup>
@@ -218,16 +218,21 @@
     <FooterContent>
         @if (_sumPanelOpen)
         {
-            <MudTd colspan="2" Class="justify-content-end">
-                <MudText Typo="Typo.subtitle1" Align="Align.End">
-                    <strong>SUM:</strong>
-                </MudText>
-            </MudTd>
-            <MudTd colspan="6">
-                <MudText Typo="Typo.subtitle1">
-                    <strong>@_sumData</strong>
-                </MudText>
-            </MudTd>
+            @foreach (var account in _sumGrouped)
+            {
+                <MudTFootRow>
+                    <MudTd colspan="2" Class="justify-content-end">
+                        <MudText Typo="Typo.subtitle1" Align="Align.End">
+                            <strong>@account.Item1</strong>
+                        </MudText>
+                    </MudTd>
+                    <MudTd colspan="6">
+                        <MudText Typo="Typo.subtitle1">
+                            <strong>@account.Item2 @account.Item1.DefaultCurrency?.Symbol</strong>
+                        </MudText>
+                    </MudTd>
+                </MudTFootRow>
+            }
         }
     </FooterContent>
 
@@ -342,7 +347,7 @@
     private bool _drawerOpen;
     private TransactionFilter _filter = new();
     private bool _sumPanelOpen;
-    private decimal _sumData = 0;
+    private List<(AccountDTO, decimal)> _sumGrouped = [];
 
     // Zmienne pomocnicze dla UI
     private IReadOnlyCollection<Guid> _selectedStatuses = new HashSet<Guid>();
@@ -430,9 +435,8 @@
                 WalletSelectionState.SelectedWallet!.Id,
                 _filter);
 
-            _sumData = await RecordService.GetSum(WalletSelectionState.SelectedWallet!.Id, _filter);
+            _sumGrouped = await RecordService.GetSumForAccounts(WalletSelectionState.SelectedWallet!.Id, _filter);
         }
-
 
         return new TableData<RecordDTO> { TotalItems = result.TotalCount, Items = result.Items };
     }

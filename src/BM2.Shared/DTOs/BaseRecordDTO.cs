@@ -5,7 +5,7 @@ namespace BM2.Shared.DTOs;
 public abstract class BaseRecordDTO : IEntityDTO
 {
     public Guid Id { get; set; }
-    public Guid CategoryId { get; set; }
+    public Guid? CategoryId { get; set; }
     public Guid StatusId { get; set; }
     public string Name { get; set; } = null!;
     public string? Description { get; set; }

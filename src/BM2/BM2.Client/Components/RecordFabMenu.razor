@@ -22,6 +22,9 @@
     <MudFabMenuItem StartIcon="@Icons.Material.Filled.ListAlt"
                     Color="Color.Secondary"
                     Disabled/>
+    <MudFabMenuItem StartIcon="@Icons.Material.Filled.CompareArrows"
+                    Color="Color.Secondary"
+                    OnClick="_ => OpenAddTransferDialogAsync()"/>
     <MudFabMenuItem EndIcon="@Icons.Material.Filled.Star"
                     IconColor="Color.Warning"
                     Color="Color.Dark"
@@ -70,5 +73,28 @@
             },
         };
         return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
+    }
+    
+    private Task OpenAddTransferDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick =  false,
+            BackgroundClass = "my-custom-class",
+        };
+        var parameters = new DialogParameters<AddTransferDialogForm>
+        {
+            // {
+            //     x => x.FuncsOnCreated, [EventCallback.Factory.Create(this)]
+            // },
+            // {
+            //     x => x.FormType, formType
+            // },
+        };
+        return DialogService.ShowAsync<AddTransferDialogForm>(null, parameters, options);
     }
 }

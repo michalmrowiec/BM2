@@ -8,6 +8,7 @@
 @inject IAlertService AlertService
 @inject IApiClient ApiClient
 @inject IRecordEventService RecordEventService
+@inject IWalletSelectionState WalletSelectionState
 
 <BaseDialog MudDialog="@MudDialog"
             DialogTitle="@(FormType == DialogFormType.Edit ? "Edit operation" : "New operation")"
@@ -24,9 +25,10 @@
                                      AutoSelectFirstValue
                                      OnlyActive
                                      @ref="_accountAutocomplete"
-                                     SelectStartValue="@(x => RecordToUpdate is not null && x.Id == RecordToUpdate.AccountId)"
+                                     SelectStartValue="@(x => x.Id == (RecordToUpdate?.AccountId ?? WalletSelectionState.SelectedWallet?.Accounts.Where(x => x.IsActive).FirstOrDefault()?.Id))"
                                      SelectedValue="@(async (a) =>
                                                     {
+                                                        _selectedAccount = a;
                                                         _model.AccountId = a.Id;
 
                                                         if (RecordToUpdate is not null && FormType is DialogFormType.Edit or DialogFormType.Clone)
@@ -34,26 +36,22 @@
                                                             await _categoryAutocomplete.SetUri(
                                                                 $"api/v1/wallets/{a.WalletId}/categories",
                                                                 RecordToUpdate.CategoryId);
-                                                            await _currencyAutocomplete.SelectValueById(RecordToUpdate.CurrencyId);
+                                                            if (_showOtherCurrencyAmount)
+                                                            {
+                                                                await _currencyAutocomplete.SelectValueById(RecordToUpdate.CurrencyId);
+                                                            }
                                                         }
                                                         else
                                                         {
                                                             await _categoryAutocomplete.SetUri($"api/v1/wallets/{a.WalletId}/categories");
-                                                            await _currencyAutocomplete.SelectValueById(a.DefaultCurrencyId);
+                                                            if (_showOtherCurrencyAmount)
+                                                            {
+                                                                await _currencyAutocomplete.SelectValueById(a.DefaultCurrencyId);
+                                                            }
                                                         }
 
                                                         await GetTags(a.WalletId);
                                                     })"/>
-
-                <CurrencyAutocomplete Label="Currency"
-                                      Required
-                                      @ref="_currencyAutocomplete"
-                                      SelectedValue="@((c) =>
-                                                     {
-                                                         _model.CurrencyId = c.Id;
-                                                         _selectedCurrency = c;
-                                                         StateHasChanged();
-                                                     })"/>
 
                 <CategoryAutocomplete Label="Category"
                                       Required
@@ -67,15 +65,39 @@
                               MaxLength="@ModelsRequirements.RecordNameMaxLength"
                               Required/>
 
-                <MudTextField @bind-Value="_model.Amount"
-                              Label="Amount"
-                              Adornment="Adornment.End"
-                              AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)"/>
-
                 <MudTextField @bind-Value="_model.PlannedAmount"
                               Label="Planned amount"
                               Adornment="Adornment.End"
-                              AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)"/>
+                              AdornmentText="@(_selectedAccount?.DefaultCurrency?.Symbol ?? string.Empty)"/>
+
+                <MudTextField @bind-Value="_model.AccountAmount"
+                              Label="Account amount"
+                              Adornment="Adornment.End"
+                              AdornmentText="@(_selectedAccount?.DefaultCurrency?.Symbol ?? string.Empty)"/>
+
+                <MudToggleIconButton Icon="@Icons.Material.Filled.CurrencyExchange"
+                                     Color="Color.Dark"
+                                     ToggledColor="Color.Warning"
+                                     Toggled="_showOtherCurrencyAmount"
+                                     ToggledChanged="@(e => _showOtherCurrencyAmount = e)"/>
+
+                @if (_showOtherCurrencyAmount)
+                {
+                    <CurrencyAutocomplete Label="Currency"
+                                          Required
+                                          @ref="_currencyAutocomplete"
+                                          SelectedValue="@((c) =>
+                                                         {
+                                                             _model.CurrencyId = c?.Id ?? _selectedAccount.DefaultCurrencyId;
+                                                             _selectedCurrency = c;
+                                                             StateHasChanged();
+                                                         })"/>
+
+                    <MudTextField @bind-Value="_model.Amount"
+                                  Label="Amount"
+                                  Adornment="Adornment.End"
+                                  AdornmentText="@(_selectedCurrency?.Symbol ?? string.Empty)"/>
+                }
 
                 <RecordStatusAutocomplete Label="Status"
                                           Required
@@ -123,6 +145,7 @@
     private MudForm _form;
     private UpdateRecordCommand _model = new();
     private IEnumerable<WalletDTO> _wallets = [];
+    private AccountDTO? _selectedAccount;
     private CurrencyDTO? _selectedCurrency;
     private AccountAutocomplete _accountAutocomplete;
     private CategoryAutocomplete _categoryAutocomplete;
@@ -132,6 +155,7 @@
     private void Cancel() => MudDialog.Cancel();
     private IEnumerable<TagDTO> _tags = [];
     private IReadOnlyCollection<TagDTO> _selectedTags = new HashSet<TagDTO>();
+    private bool _showOtherCurrencyAmount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -170,9 +194,13 @@
             _date = date.Date.Add(time);
 
         _model.RecordDateTime = _date?.ToUniversalTime() ?? DateTime.UtcNow;
-
         _model.TagIds = _selectedTags.Select(t => t.Id).ToList();
-
+        if (_model.CurrencyId != _selectedAccount?.DefaultCurrencyId)
+        {
+            _model.CurrencyId = _selectedAccount.DefaultCurrencyId;
+            _model.Amount = _model.AccountAmount;
+        }
+        
         await _form.Validate();
 
         AddRecordCommand addRecord = _model;
@@ -214,7 +242,7 @@
 
         if (RecordToUpdate?.Tags != null)
             _selectedTags = _tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id)).ToList();
-            //_selectedTags = (IReadOnlyCollection<TagDTO>)_tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
+        //_selectedTags = (IReadOnlyCollection<TagDTO>)_tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
 
         StateHasChanged();
     }

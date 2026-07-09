@@ -17,6 +17,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
             .Include(r => r.Status)
             .Include(r => r.Tags)
             .Include(r => r.Account)
+                .ThenInclude(a => a.DefaultCurrency)
             .Where(r => r.Account!.WalletId == walletId)
             .AsNoTracking()
             .AsQueryable();
@@ -47,7 +48,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
         // 4. Multi-select Kategorie
         if (filter.CategoryIds.Any())
         {
-            query = query.Where(r => filter.CategoryIds.Contains(r.CategoryId));
+            query = query.Where(r => r.CategoryId.HasValue && filter.CategoryIds.Contains(r.CategoryId.Value));
         }
 
         // 5. Multi-select Tagi (Rekord posiada chociaż jeden z wybranych tagów)
@@ -93,5 +94,23 @@ public class RecordService(BM2DbContext _context) : IRecordService
     {
         var query = GetQuery(walletId, filter);
         return query.SumAsync(r => r.Amount);
+    }
+
+    public async Task<List<(AccountDTO, decimal)>> GetSumForAccounts(Guid walletId, TransactionFilter filter)
+    {
+        var query = GetQuery(walletId, filter);
+
+        var groupedResult = await query
+            .GroupBy(r => r.Account)
+            .Select(g => new
+            {
+                Account = g.Key,
+                TotalAmount = g.Sum(x => x.AccountAmount)
+            })
+            .ToListAsync();
+        
+        return groupedResult
+            .Select(r => (r.Account!.ToDto(), r.TotalAmount))
+            .ToList();
     }
 }

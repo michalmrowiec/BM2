@@ -142,6 +142,7 @@ public static class EntityMappings
         StatusId = command.StatusId,
         Name = command.Name,
         Description = command.Description,
+        AccountAmount = command.AccountAmount,
         Amount = command.Amount,
         PlannedAmount = command.PlannedAmount,
         CurrencyId = command.CurrencyId,
@@ -269,4 +270,53 @@ public static class EntityMappings
         dto.Status = record.Status?.ToDto();
         dto.Tags = record.Tags.Select(x => x.ToDto()).ToList();
     }
+    
+    public static Record ToFromTransferRecordEntity(this AddAccountRecordTransfer command, Guid statusId) => new()
+    {
+        Id = Guid.NewGuid(),
+        AccountId = command.FromAccountId,
+        RecordDateTime = command.RecordDateTime,
+        CategoryId = null,
+        StatusId = statusId,
+        Name = command.Name,
+        Description = command.Description,
+        AccountAmount = command.FromAmount,
+        Amount = command.FromAmount,
+        PlannedAmount = 0m,
+        CurrencyId = command.FromCurrencyId,
+        OwnedByUserId = command.OwnedByUserId,
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = command.OwnedByUserId,
+    };
+    
+    public static Record ToToTransferRecordEntity(this AddAccountRecordTransfer command, Guid statusId) => new()
+    {
+        Id = Guid.NewGuid(),
+        AccountId = command.ToAccountId,
+        RecordDateTime = command.RecordDateTime,
+        CategoryId = null,
+        StatusId = statusId,
+        Name = command.Name,
+        Description = command.Description,
+        AccountAmount = command.ToAmount,
+        Amount = command.ToAmount,
+        PlannedAmount = 0m,
+        CurrencyId = command.ToCurrencyId,
+        OwnedByUserId = command.OwnedByUserId,
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = command.OwnedByUserId,
+    };
+
+    public static AccountRecordTransferDTO ToDto(this AccountRecordTransfer entity) => new()
+    {
+        Id = entity.Id,
+        FromAccountId = entity.FromRecord.AccountId,
+        FromAccountName = entity.FromRecord.Account?.AccountName ?? string.Empty,
+        ToAccountId = entity.ToRecord.AccountId,
+        ToAccountName = entity.ToRecord.Account?.AccountName ?? string.Empty,
+        FromAmount = entity.FromRecord.AccountAmount,
+        FromCurrencyId =  entity.FromRecord.CurrencyId,
+        ToAmount = entity.ToRecord.AccountAmount,
+        ToCurrencyId = entity.ToRecord.CurrencyId,
+    };
 }

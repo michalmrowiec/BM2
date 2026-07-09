@@ -1,0 +1,175 @@
+﻿@using System.Net
+@using BM2.Client.Services.States
+@using BM2.Shared.DTOs
+@using BM2.Shared.Requests.Commands.Record
+@using Newtonsoft.Json
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IApiClient ApiClient
+@inject IRecordEventService RecordEventService
+@inject IWalletSelectionState WalletSelectionState
+
+<BaseDialog MudDialog="@MudDialog"
+            DialogTitle="New transfer"
+            ConfirmButtonText="@BaseDialog.ConfirmText.Add"
+            FuncsOnCreated="@([EventCallback.Factory.Create(this, Submit)])"
+            FuncsOnCancel="@([EventCallback.Factory.Create(this, Cancel)])">
+    <BodyContent>
+        <MudForm Model="@_model"
+                 @ref="@_form"
+                 ValidationDelay="0">
+            <MudCardContent>
+                
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <AccountAutocomplete Label="From Account"
+                                             Required
+                                             AutoSelectFirstValue
+                                             OnlyActive
+                                             @ref="_accountFromAutocomplete"
+                                             SelectStartValue="@(x => x.Id == WalletSelectionState.SelectedWallet?.Accounts.Where(a => a.IsActive).FirstOrDefault()?.Id)"
+                                             SelectedValue="@((a) => 
+                                                            { 
+                                                                _selectedFromAccount = a; 
+                                                                _model.FromAccountId = a?.Id ?? Guid.Empty;
+                                                                _model.FromCurrencyId = a?.DefaultCurrencyId ?? Guid.Empty;
+                                                                StateHasChanged();
+                                                            })"/>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <AccountAutocomplete Label="To Account"
+                                             Required
+                                             OnlyActive
+                                             @ref="_accountToAutocomplete"
+                                             SelectedValue="@((a) => 
+                                                            { 
+                                                                _selectedToAccount = a; 
+                                                                _model.ToAccountId = a?.Id ?? Guid.Empty;
+                                                                _model.ToCurrencyId = a?.DefaultCurrencyId ?? Guid.Empty;
+                                                                StateHasChanged();
+                                                            })"/>
+                    </MudItem>
+                </MudGrid>
+
+                <MudTextField @bind-Value="_model.Name"
+                              For="@(() => _model.Name)"
+                              Immediate
+                              Label="Transfer Title / Name"
+                              Required/>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_model.FromAmount"
+                                      Label="Sent Amount"
+                                      Required
+                                      Adornment="Adornment.End"
+                                      AdornmentText="@(_selectedFromAccount?.DefaultCurrency?.Symbol ?? string.Empty)"/>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_model.ToAmount"
+                                      Label="Received Amount"
+                                      Required
+                                      Adornment="Adornment.End"
+                                      AdornmentText="@(_selectedToAccount?.DefaultCurrency?.Symbol ?? string.Empty)"/>
+                    </MudItem>
+                </MudGrid>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker @bind-Date="_date"
+                                       Label="Date of transfer"
+                                       Required/>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTimePicker Label="Time of transfer"
+                                       @bind-Time="_time"
+                                       Clearable/>
+                    </MudItem>
+                </MudGrid>
+
+                <MudTextField @bind-Value="_model.Description"
+                              For="@(() => _model.Description)"
+                              Immediate
+                              Label="Note / Description"
+                              Lines="2"/>
+
+            </MudCardContent>
+        </MudForm>
+    </BodyContent>
+</BaseDialog>
+
+@code {
+    [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+
+    private MudForm _form;
+    private AddAccountRecordTransfer _model = new();
+    
+    private AccountDTO? _selectedFromAccount;
+    private AccountDTO? _selectedToAccount;
+    
+    private AccountAutocomplete _accountFromAutocomplete;
+    private AccountAutocomplete _accountToAutocomplete;
+    
+    private DateTime? _date;
+    private TimeSpan? _time;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override void OnInitialized()
+    {
+        _date = DateTime.Now;
+        _time = DateTime.Now.TimeOfDay;
+    }
+
+    private async Task Submit()
+    {
+        // Walidacja logiczna: czy konta nie są takie same
+        if (_model.FromAccountId == _model.ToAccountId && _model.FromAccountId != Guid.Empty)
+        {
+            Snackbar.Add("Source and destination accounts cannot be the same.", Severity.Warning);
+            return;
+        }
+
+        if (_date is { } date && _time is { } time)
+        {
+            _date = date.Date.Add(time);
+        }
+
+        _model.RecordDateTime = _date?.ToUniversalTime() ?? DateTime.UtcNow;
+
+        // Jeśli waluty obu kont są identyczne, a użytkownik wpisał tylko kwotę wychodzącą,
+        // automatycznie przepisujemy ją do kwoty docelowej, aby ułatwić UX.
+        if (_model.FromCurrencyId == _model.ToCurrencyId && _model.ToAmount == 0)
+        {
+            _model.ToAmount = _model.FromAmount;
+        }
+
+        await _form.Validate();
+
+        if (_form.IsValid)
+        {
+            // Strzał do API dedykowanego dla transferów
+            var response = await ApiClient.Create(@"api/v1/records/transfers", _model);
+
+            if (response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK)
+            {
+                Snackbar.Add(new MarkupString($"Transfer <b>{_model.Name}</b> has been registered successfully"), Severity.Success);
+
+                MudDialog.Close(DialogResult.Ok(true));
+                
+                // Wywołanie callbacków odświeżających (np. przeładowanie tabeli z rekordami)
+                FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+                
+                // Globalne powiadomienie o zmianie stanu UI (twój Scoped service)
+                await RecordEventService.NotifyRecordsChanged();
+            }
+            else
+            {
+                await response.HandleFailure(AlertService);
+            }
+        }
+    }
+}
