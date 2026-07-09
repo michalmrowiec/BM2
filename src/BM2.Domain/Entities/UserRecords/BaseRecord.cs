@@ -7,7 +7,7 @@ namespace BM2.Domain.Entities.UserRecords;
 public abstract class BaseRecord : IEntity, IEntityAudit, IOwnedByUser
 {
     public Guid Id { get; set; }
-    public Guid CategoryId { get; set; }
+    public Guid? CategoryId { get; set; }
     public Guid StatusId { get; set; }
     public string Name { get; set; } = null!;
     public string? Description { get; set; }

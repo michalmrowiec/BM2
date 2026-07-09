@@ -13,4 +13,5 @@ public interface IRecordService
         TransactionFilter filter);
 
     public Task<decimal> GetSum(Guid walletId, TransactionFilter filter);
+    public Task<List<(AccountDTO, decimal)>> GetSumForAccounts(Guid walletId, TransactionFilter filter);
 }

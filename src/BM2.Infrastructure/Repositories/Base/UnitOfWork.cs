@@ -25,7 +25,8 @@ public sealed class UnitOfWork(BM2DbContext context) : IDisposable
     public GenericRepository<RecordTemplate> RecordTemplateRepository { get; } = new(context);
     public GenericRepository<PeriodicRecordDefinition> PeriodicRecordDefinitionRepository { get; } = new(context);
     public GenericRepository<RecordTagRelation> RecordTagRelationRepository { get; } = new(context);
-
+    public GenericRepository<AccountRecordTransfer> AccountRecordTransferRepository { get; } = new(context);
+    
     private bool _disposed = false;
 
     private void Dispose(bool disposing)

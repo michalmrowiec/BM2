@@ -1,6 +1,7 @@
 using BM2.Infrastructure.Repositories.Base;
 using BM2.Application.Responses;
 using BM2.Domain.Entities.UserRecords;
+using BM2.Domain.Exceptions;
 using BM2.Shared.Models;
 using BM2.Shared.Requests.Commands.Record;
 using FluentValidation;
@@ -22,9 +23,16 @@ public abstract class AddBaseRecordCommandValidator<TCommand> : AbstractValidato
         RuleFor(x => x)
             .CustomAsync(async (request, context, cancellationToken) =>
             {
-                var category = await unitOfWork.CategoryRepository.GetByIdAsync(request.CategoryId);
-                category.ThrowExceptionIfNull();
-                category!.CheckPermission(request.OwnedByUserId);
+                if (request.CategoryId.HasValue)
+                {
+                    var category = await unitOfWork.CategoryRepository.GetByIdAsync(request.CategoryId.Value);
+                    category.ThrowExceptionIfNull();
+                    category!.CheckPermission(request.OwnedByUserId);
+                }
+                else
+                {
+                    throw new DomainExceptions.NotFoundException($"{nameof(Category)} not found.");
+                }
             });
 
         RuleFor(x => x)
