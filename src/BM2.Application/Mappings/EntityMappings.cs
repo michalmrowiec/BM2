@@ -180,7 +180,8 @@ public static class EntityMappings
         var dto = new RecordDTO
         {
             AccountId = record.AccountId,
-            RecordDateTime = record.RecordDateTime
+            RecordDateTime = record.RecordDateTime,
+            AccountRecordTransferId = record.AccountRecordTransferId,
         };
 
         MapBaseRecord(record, dto);
@@ -271,7 +272,7 @@ public static class EntityMappings
         dto.Tags = record.Tags.Select(x => x.ToDto()).ToList();
     }
     
-    public static Record ToFromTransferRecordEntity(this AddAccountRecordTransfer command, Guid statusId) => new()
+    public static Record ToFromTransferRecordEntity(this AddAccountRecordTransferCommand command, Guid statusId) => new()
     {
         Id = Guid.NewGuid(),
         AccountId = command.FromAccountId,
@@ -289,7 +290,7 @@ public static class EntityMappings
         CreatedBy = command.OwnedByUserId,
     };
     
-    public static Record ToToTransferRecordEntity(this AddAccountRecordTransfer command, Guid statusId) => new()
+    public static Record ToToTransferRecordEntity(this AddAccountRecordTransferCommand command, Guid statusId) => new()
     {
         Id = Guid.NewGuid(),
         AccountId = command.ToAccountId,

@@ -425,6 +425,48 @@ namespace BM2.Infrastructure.Migrations
                     b.ToTable("WalletTagRelations");
                 });
 
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.AccountRecordTransfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FromRecordId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwnedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ToRecordId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromRecordId");
+
+                    b.HasIndex("ToRecordId");
+
+                    b.ToTable("AccountRecordTransfers");
+                });
+
             modelBuilder.Entity("BM2.Domain.Entities.UserRecords.BaseRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -443,7 +485,7 @@ namespace BM2.Infrastructure.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasDefaultValue(0m);
 
-                    b.Property<Guid>("CategoryId")
+                    b.Property<Guid?>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -781,13 +823,31 @@ namespace BM2.Infrastructure.Migrations
                     b.Navigation("Wallet");
                 });
 
+            modelBuilder.Entity("BM2.Domain.Entities.UserRecords.AccountRecordTransfer", b =>
+                {
+                    b.HasOne("BM2.Domain.Entities.UserRecords.Record", "FromRecord")
+                        .WithMany()
+                        .HasForeignKey("FromRecordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Entities.UserRecords.Record", "ToRecord")
+                        .WithMany()
+                        .HasForeignKey("ToRecordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromRecord");
+
+                    b.Navigation("ToRecord");
+                });
+
             modelBuilder.Entity("BM2.Domain.Entities.UserRecords.BaseRecord", b =>
                 {
                     b.HasOne("BM2.Domain.Entities.UserProfile.Category", "Category")
                         .WithMany("Records")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("BM2.Domain.Entities.System.Currency", "Currency")
                         .WithMany("Records")

@@ -28,7 +28,8 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
     public DbSet<RecordTemplate> RecordTemplates { get; set; }
     public DbSet<RecordTagRelation> RecordTagRelations { get; set; }
     public DbSet<PeriodicRecordDefinition> PeriodicRecordDefinitions { get; set; }
-
+    public DbSet<AccountRecordTransfer>  AccountRecordTransfers { get; set; }
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -48,6 +49,7 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
         ConfigureRecords(modelBuilder);
         ConfigureRecordTemplates(modelBuilder);
         ConfigurePeriodicRecordDefinitions(modelBuilder);
+        ConfigureAccountRecordTransfer(modelBuilder);
 
         // modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseDocumentConfiguration).Assembly);
     }
@@ -399,8 +401,6 @@ public class BM2DbContext(DbContextOptions<BM2DbContext> options) : DbContext(op
         {
             baseRecordBuilder.UseTpcMappingStrategy();
             baseRecordBuilder.HasKey(x => x.Id);
-            baseRecordBuilder.Property(x => x.CategoryId)
-                .IsRequired();
             baseRecordBuilder.Property(x => x.StatusId)
                 .IsRequired();
             baseRecordBuilder.Property(x => x.Name)

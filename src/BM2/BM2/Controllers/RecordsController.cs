@@ -66,4 +66,14 @@ public class RecordsController(
 
         return result.HandleOkResult(this);
     }
+    
+    [HttpPost("transfers")]
+    public async Task<ActionResult<AccountRecordTransferDTO>> AddAccountTransfer([FromBody] AddAccountRecordTransferCommand command)
+    {
+        command.OwnedByUserId = userContextService.UserId;
+
+        var result = await mediator.Send(command);
+
+        return result.HandleCreatedResult(this, "");
+    }
 }
