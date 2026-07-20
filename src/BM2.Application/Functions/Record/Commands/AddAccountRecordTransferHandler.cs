@@ -10,9 +10,9 @@ using MediatR;
 namespace BM2.Application.Functions.Record.Commands;
 
 public class AddAccountRecordTransferHandler(UnitOfWork unitOfWork)
-    : IRequestHandler<AddAccountRecordTransfer, BaseResponse<AccountRecordTransferDTO>>
+    : IRequestHandler<AddAccountRecordTransferCommand, BaseResponse<AccountRecordTransferDTO>>
 {
-    public async Task<BaseResponse<AccountRecordTransferDTO>> Handle(AddAccountRecordTransfer request,
+    public async Task<BaseResponse<AccountRecordTransferDTO>> Handle(AddAccountRecordTransferCommand request,
         CancellationToken cancellationToken)
     {
         // var validationResult =

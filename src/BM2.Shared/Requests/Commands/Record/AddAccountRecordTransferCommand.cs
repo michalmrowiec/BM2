@@ -3,7 +3,7 @@ using BM2.Shared.DTOs;
 
 namespace BM2.Shared.Requests.Commands.Record;
 
-public class AddAccountRecordTransfer : IBaseRequest<AccountRecordTransferDTO>
+public class AddAccountRecordTransferCommand : IBaseRequest<AccountRecordTransferDTO>
 {
     public DateTime RecordDateTime { get; set; } = DateTime.Now;
     
@@ -21,7 +21,7 @@ public class AddAccountRecordTransfer : IBaseRequest<AccountRecordTransferDTO>
     [JsonIgnore] public Guid OwnedByUserId { get; set; }
     
     
-    public AddAccountRecordTransfer()
+    public AddAccountRecordTransferCommand()
     {
     }
 }

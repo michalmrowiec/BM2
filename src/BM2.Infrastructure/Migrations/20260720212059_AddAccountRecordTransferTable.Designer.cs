@@ -4,6 +4,7 @@ using BM2.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BM2.Infrastructure.Migrations
 {
     [DbContext(typeof(BM2DbContext))]
-    partial class BM2DbContextModelSnapshot : ModelSnapshot
+    [Migration("20260720212059_AddAccountRecordTransferTable")]
+    partial class AddAccountRecordTransferTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -485,7 +488,7 @@ namespace BM2.Infrastructure.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasDefaultValue(0m);
 
-                    b.Property<Guid?>("CategoryId")
+                    b.Property<Guid>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -847,7 +850,8 @@ namespace BM2.Infrastructure.Migrations
                     b.HasOne("BM2.Domain.Entities.UserProfile.Category", "Category")
                         .WithMany("Records")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("BM2.Domain.Entities.System.Currency", "Currency")
                         .WithMany("Records")

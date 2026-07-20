@@ -205,14 +205,17 @@
         <MudTd DataLabel="">
             <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context, DialogFormType.Clone))"
                            Icon="@Icons.Material.Outlined.CopyAll"
-                           Size="@Size.Small"/>
+                           Size="@Size.Small"
+                           Disabled="@context.AccountRecordTransferId.HasValue"/>
             <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context, DialogFormType.Edit))"
                            Icon="@Icons.Material.Outlined.Edit"
-                           Size="@Size.Small"/>
+                           Size="@Size.Small"
+                           Disabled="@context.AccountRecordTransferId.HasValue"/>
             <MudIconButton @onclick="@(async () => await DeleteRecordAsync(context))"
                            Icon="@Icons.Material.Outlined.Delete"
                            Color="@Color.Error"
-                           Size="@Size.Small"/>
+                           Size="@Size.Small"
+                           Disabled="@context.AccountRecordTransferId.HasValue"/>
         </MudTd>
     </RowTemplate>
     <FooterContent>

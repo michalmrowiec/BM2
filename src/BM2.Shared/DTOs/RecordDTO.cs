@@ -4,4 +4,5 @@ public class RecordDTO : BaseRecordDTO
 {
     public Guid AccountId { get; set; }
     public DateTime RecordDateTime { get; set; }
+    public Guid? AccountRecordTransferId { get; set; }
 }
