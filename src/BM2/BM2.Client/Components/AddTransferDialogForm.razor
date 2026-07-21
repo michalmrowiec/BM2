@@ -27,7 +27,7 @@
                                              AutoSelectFirstValue
                                              OnlyActive
                                              @ref="_accountFromAutocomplete"
-                                             SelectStartValue="@(x => x.Id == WalletSelectionState.SelectedWallet?.Accounts.Where(a => a.IsActive).FirstOrDefault()?.Id)"
+                                             SelectStartValue="SelectStartFromAccount"
                                              SelectedValue="@((a) => 
                                                             { 
                                                                 _selectedFromAccount = a; 
@@ -42,6 +42,7 @@
                                              Required
                                              OnlyActive
                                              @ref="_accountToAutocomplete"
+                                             SelectStartValue="SelectStartToAccount"
                                              SelectedValue="@((a) => 
                                                             { 
                                                                 _selectedToAccount = a; 
@@ -103,9 +104,10 @@
 @code {
     [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public AccountRecordTransferDTO? TransferToUpdate { get; set; }
 
     private MudForm _form;
-    private AddAccountRecordTransferCommand _model = new();
+    private UpdateAccountRecordTransferCommand _model = new();
     
     private AccountDTO? _selectedFromAccount;
     private AccountDTO? _selectedToAccount;
@@ -120,13 +122,23 @@
 
     protected override void OnInitialized()
     {
-        _date = DateTime.Now;
-        _time = DateTime.Now.TimeOfDay;
+        if (TransferToUpdate is not null)
+        {
+            _date = TransferToUpdate?.RecordDateTime.ToLocalTime().Date ?? DateTime.Now;
+            _time = TransferToUpdate?.RecordDateTime.ToLocalTime().TimeOfDay ?? DateTime.Now.TimeOfDay;
+            _model = new UpdateAccountRecordTransferCommand(TransferToUpdate!);
+        }
+        else
+        {
+            _date = DateTime.Now;
+            _time = DateTime.Now.TimeOfDay;
+        }
+        
+        StateHasChanged();
     }
 
     private async Task Submit()
     {
-        // Walidacja logiczna: czy konta nie są takie same
         if (_model.FromAccountId == _model.ToAccountId && _model.FromAccountId != Guid.Empty)
         {
             Snackbar.Add("Source and destination accounts cannot be the same.", Severity.Warning);
@@ -151,8 +163,13 @@
 
         if (_form.IsValid)
         {
-            // Strzał do API dedykowanego dla transferów
-            var response = await ApiClient.Create(@"api/v1/records/transfers", _model);
+            try
+            {
+            AddAccountRecordTransferCommand addTransfer = _model;
+            
+            var response = TransferToUpdate is not null ?
+                await ApiClient.Put(@"api/v1/records/transfers", _model) :
+                await ApiClient.Create(@"api/v1/records/transfers", addTransfer);
 
             if (response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK)
             {
@@ -160,16 +177,45 @@
 
                 MudDialog.Close(DialogResult.Ok(true));
                 
-                // Wywołanie callbacków odświeżających (np. przeładowanie tabeli z rekordami)
-                FuncsOnCreated?.ForEach(async x => await x.InvokeAsync());
+                if (FuncsOnCreated is not null)
+                {
+                    foreach (var callback in FuncsOnCreated)
+                    {
+                        await callback.InvokeAsync();
+                    }
+                }
                 
-                // Globalne powiadomienie o zmianie stanu UI (twój Scoped service)
                 await RecordEventService.NotifyRecordsChanged();
             }
             else
             {
                 await response.HandleFailure(AlertService);
             }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
+    }
+
+    private bool SelectStartFromAccount(AccountDTO account)
+    {
+        if (TransferToUpdate is not null)
+            return account.Id == TransferToUpdate.FromAccountId;
+
+        return account.Id ==
+               WalletSelectionState.SelectedWallet?
+                   .Accounts
+                   .FirstOrDefault(a => a.IsActive)?.Id;
+    }
+
+    private bool SelectStartToAccount(AccountDTO account)
+    {
+        if (TransferToUpdate is not null)
+            return account.Id == TransferToUpdate.ToAccountId;
+
+        return false;
     }
 }

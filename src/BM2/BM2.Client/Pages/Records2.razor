@@ -14,6 +14,7 @@
 @inject IAlertService AlertService
 @inject IWalletSelectionState WalletSelectionState
 @inject IRecordEventService RecordEventService
+@inject ISnackbar Snackbar
 
 <MudStack Row AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="mb-2">
     <MudTextField @bind-Value="_filter.SearchText" Placeholder="Search by name..." Clearable
@@ -207,10 +208,11 @@
                            Icon="@Icons.Material.Outlined.CopyAll"
                            Size="@Size.Small"
                            Disabled="@context.AccountRecordTransferId.HasValue"/>
-            <MudIconButton @onclick="@(async () => await OpenUpdateRecordDialogAsync(context, DialogFormType.Edit))"
+            <MudIconButton OnClick="@(async () => await (context.AccountRecordTransferId.HasValue 
+                                        ? OpenUpdateAccountTransferDialogAsync(context.AccountRecordTransferId.Value) 
+                                        : OpenUpdateRecordDialogAsync(context, DialogFormType.Edit)))"
                            Icon="@Icons.Material.Outlined.Edit"
-                           Size="@Size.Small"
-                           Disabled="@context.AccountRecordTransferId.HasValue"/>
+                           Size="@Size.Small" />
             <MudIconButton @onclick="@(async () => await DeleteRecordAsync(context))"
                            Icon="@Icons.Material.Outlined.Delete"
                            Color="@Color.Error"
@@ -551,6 +553,43 @@
             }
         };
         return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
+    }
+    
+    private async Task OpenUpdateAccountTransferDialogAsync(Guid transferId)
+    {
+        var responseMessage = await ApiClient.Get($"api/v1/records/transfers/{transferId}");
+        if (!responseMessage.IsSuccessStatusCode)
+        {
+            Snackbar.Add(new MarkupString($"Transfer is not found"), Severity.Error);
+            return;
+        }
+
+        var content = await responseMessage.Content.ReadAsStringAsync();
+        var transfer = JsonConvert.DeserializeObject<AccountRecordTransferDTO>(content);
+        if (transfer is null)
+        {
+            Snackbar.Add(new MarkupString($"Transfer is not found"), Severity.Error);
+            return;
+        }
+        
+        
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<AddTransferDialogForm>
+        {
+            {
+                x => x.FuncsOnCreated, [EventCallback.Factory.Create(this, RefreshTable)]
+            },
+            {
+                x => x.TransferToUpdate, transfer
+            }
+        };
+        await  DialogService.ShowAsync<AddTransferDialogForm>(null, parameters, options);
     }
 
     private async Task DeleteRecordAsync(RecordDTO record)

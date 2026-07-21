@@ -76,4 +76,22 @@ public class RecordsController(
 
         return result.HandleCreatedResult(this, "");
     }
+    
+    [HttpPut("transfers")]
+    public async Task<ActionResult<RecordDTO>> UpdateAccountTransfer([FromBody] UpdateAccountRecordTransferCommand command)
+    {
+        command.OwnedByUserId = userContextService.UserId;
+
+        var result = await mediator.Send(command);
+
+        return result.HandleOkResult(this);
+    }
+    
+    [HttpGet("transfers/{id:guid}")]
+    public async Task<ActionResult<AccountRecordTransferDTO>> GetAccountTransfer([FromRoute] Guid id)
+    {
+        var result = await mediator.Send(new GetAccountRecordTransferQuery(userContextService.UserId, id));
+
+        return result.HandleOkResult(this);
+    }
 }

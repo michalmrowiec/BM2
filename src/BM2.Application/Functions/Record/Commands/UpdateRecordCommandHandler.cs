@@ -20,9 +20,8 @@ public class UpdateRecordCommandHandler(UnitOfWork unitOfWork)
         if (!validationResult.IsValid) return new BaseResponse<RecordDTO>(validationResult);
 
 
-        var record = await unitOfWork.RecordRepository.GetByIdAsync(request.Id);
+        var record = (await unitOfWork.RecordRepository.GetByIdAsync(request.Id)).EnsureFound();
 
-        record.ThrowExceptionIfNull();
         record!.CheckPermission(request.OwnedByUserId);
 
         var recordTagRelations =

@@ -32,6 +32,7 @@ public class AddAccountRecordTransferHandler(UnitOfWork unitOfWork)
             Id = Guid.NewGuid(),
             FromRecord = fromRecord,
             ToRecord = toRecord,
+            OwnedByUserId = request.OwnedByUserId,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = request.OwnedByUserId,
         };
