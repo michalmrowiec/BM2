@@ -13,4 +13,9 @@ public class AccountRecordTransferDTO
     public Guid FromCurrencyId { get; set; }
     public decimal ToAmount { get; set; }
     public Guid ToCurrencyId { get; set; }
+    
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    
+    public DateTime RecordDateTime { get; set; }
 }
