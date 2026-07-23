@@ -19,6 +19,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
             .Include(r => r.Account)
                 .ThenInclude(a => a.DefaultCurrency)
             .Where(r => r.Account!.WalletId == walletId)
+            .Where(r => !r.DeletedAt.HasValue)
             .AsNoTracking()
             .AsQueryable();
 

@@ -154,6 +154,7 @@
 <MudTable ServerData="LoadTableData" T="RecordDTO" @ref="_table" Dense="false" Hover FixedHeader FixedFooter
           Height="70vh">
     <HeaderContent>
+        <MudTh></MudTh>
         <MudTh>
             <MudTableSortLabel SortLabel="RecordDateTime" T="RecordDTO" InitialDirection="SortDirection.Descending">
                 Date
@@ -178,6 +179,14 @@
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
+        <MudTd>
+            @if (context.AccountRecordTransferId.HasValue)
+            {
+                <MudTooltip Text="Account transfer">
+                    <MudIcon Icon="@Icons.Material.TwoTone.CompareArrows"></MudIcon>
+                </MudTooltip>
+            }
+        </MudTd>
         <MudTd DataLabel="Date">@context.RecordDateTime.ToString("dd.MM.yyyy")</MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
         <MudTd DataLabel="Amount">
@@ -208,16 +217,17 @@
                            Icon="@Icons.Material.Outlined.CopyAll"
                            Size="@Size.Small"
                            Disabled="@context.AccountRecordTransferId.HasValue"/>
-            <MudIconButton OnClick="@(async () => await (context.AccountRecordTransferId.HasValue 
-                                        ? OpenUpdateAccountTransferDialogAsync(context.AccountRecordTransferId.Value) 
+            <MudIconButton OnClick="@(async () => await (context.AccountRecordTransferId.HasValue
+                                        ? OpenUpdateAccountTransferDialogAsync(context.AccountRecordTransferId.Value)
                                         : OpenUpdateRecordDialogAsync(context, DialogFormType.Edit)))"
                            Icon="@Icons.Material.Outlined.Edit"
-                           Size="@Size.Small" />
-            <MudIconButton @onclick="@(async () => await DeleteRecordAsync(context))"
+                           Size="@Size.Small"/>
+            <MudIconButton OnClick="@(async () => await (context.AccountRecordTransferId.HasValue
+                                        ? DeleteAccountTransferAsync(context.AccountRecordTransferId.Value)
+                                        : DeleteRecordAsync(context)))"
                            Icon="@Icons.Material.Outlined.Delete"
                            Color="@Color.Error"
-                           Size="@Size.Small"
-                           Disabled="@context.AccountRecordTransferId.HasValue"/>
+                           Size="@Size.Small"/>
         </MudTd>
     </RowTemplate>
     <FooterContent>
@@ -554,7 +564,7 @@
         };
         return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
     }
-    
+
     private async Task OpenUpdateAccountTransferDialogAsync(Guid transferId)
     {
         var responseMessage = await ApiClient.Get($"api/v1/records/transfers/{transferId}");
@@ -571,8 +581,7 @@
             Snackbar.Add(new MarkupString($"Transfer is not found"), Severity.Error);
             return;
         }
-        
-        
+
         var options = new DialogOptions
         {
             CloseOnEscapeKey = true,
@@ -589,7 +598,7 @@
                 x => x.TransferToUpdate, transfer
             }
         };
-        await  DialogService.ShowAsync<AddTransferDialogForm>(null, parameters, options);
+        await DialogService.ShowAsync<AddTransferDialogForm>(null, parameters, options);
     }
 
     private async Task DeleteRecordAsync(RecordDTO record)
@@ -605,6 +614,41 @@
         if (response.StatusCode == HttpStatusCode.OK)
         {
             UiService.ShowDeleteSuccess(record.Name);
+            await RefreshTable();
+            return;
+        }
+
+        await response.HandleFailure(AlertService);
+    }
+
+    private async Task DeleteAccountTransferAsync(Guid transferId)
+    {
+        var responseMessage = await ApiClient.Get($"api/v1/records/transfers/{transferId}");
+        if (!responseMessage.IsSuccessStatusCode)
+        {
+            Snackbar.Add(new MarkupString($"Transfer is not found"), Severity.Error);
+            return;
+        }
+
+        var content = await responseMessage.Content.ReadAsStringAsync();
+        var transfer = JsonConvert.DeserializeObject<AccountRecordTransferDTO>(content);
+        if (transfer is null)
+        {
+            Snackbar.Add(new MarkupString($"Transfer is not found"), Severity.Error);
+            return;
+        }
+
+        var confirmed = await UiService.ConfirmDeleteAsync(
+            title: "Delete Record",
+            message: $"Do you want to delete the transfer '{transfer.Name}'?");
+
+        if (!confirmed) return;
+
+        var response = await ApiClient.Delete($"api/v1/records/transfers/{transferId}");
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            UiService.ShowDeleteSuccess(transfer.Name);
             await RefreshTable();
             return;
         }
