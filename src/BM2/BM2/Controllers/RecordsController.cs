@@ -94,4 +94,16 @@ public class RecordsController(
 
         return result.HandleOkResult(this);
     }
+    
+    [HttpDelete("transfers/{id:guid}")]
+    public async Task<ActionResult> DeleteRecordAccountTransfer([FromRoute] Guid id)
+    {
+        var result = await mediator.Send(new DeleteAccountRecordTransferCommand
+        {
+            Id = id,
+            OwnedByUserId = userContextService.UserId
+        });
+
+        return result.HandleOkResult(this);
+    }
 }
