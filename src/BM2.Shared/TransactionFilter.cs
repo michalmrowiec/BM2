@@ -8,6 +8,8 @@ public class TransactionFilter
         And = 1
     }
 
+    public bool HideAccountTransfers { get; set; }
+    
     public string? SearchText { get; set; }
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
@@ -21,7 +23,8 @@ public class TransactionFilter
 
     public bool IsEmpty() =>
         //string.IsNullOrEmpty(SearchText) &&
-        !DateFrom.HasValue
+        HideAccountTransfers == false
+        && !DateFrom.HasValue
         && !DateTo.HasValue
         && !AccountIds.Any()
         && !StatusIds.Any()
