@@ -17,11 +17,16 @@ public class RecordService(BM2DbContext _context) : IRecordService
             .Include(r => r.Status)
             .Include(r => r.Tags)
             .Include(r => r.Account)
-                .ThenInclude(a => a.DefaultCurrency)
+            .Include(r => r.Account!.DefaultCurrency)
             .Where(r => r.Account!.WalletId == walletId)
             .Where(r => !r.DeletedAt.HasValue)
             .AsNoTracking()
             .AsQueryable();
+
+        if (filter.HideAccountTransfers)
+        {
+            query = query.Where(r => !r.AccountRecordTransferId.HasValue);
+        }
 
         // 1. Global Search
         if (!string.IsNullOrWhiteSpace(filter.SearchText))
@@ -40,7 +45,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
         {
             query = query.Where(r => filter.AccountIds.Contains(r.AccountId));
         }
-        
+
         if (filter.StatusIds.Any())
         {
             query = query.Where(r => filter.StatusIds.Contains(r.StatusId));
@@ -63,7 +68,7 @@ public class RecordService(BM2DbContext _context) : IRecordService
 
         return query;
     }
-    
+
     public async Task<(List<RecordDTO> Items, int TotalCount)> GetPagedRecordsAsync(
         int page, int pageSize, string? sortBy, bool sortDescending, Guid walletId, TransactionFilter filter)
     {
@@ -77,8 +82,12 @@ public class RecordService(BM2DbContext _context) : IRecordService
         {
             "Name" => sortDescending ? query.OrderByDescending(r => r.Name) : query.OrderBy(r => r.Name),
             "Amount" => sortDescending ? query.OrderByDescending(r => r.Amount) : query.OrderBy(r => r.Amount),
-            "Account" => sortDescending ? query.OrderByDescending(r => r.Account!.AccountName) : query.OrderBy(r => r.Account!.AccountName),
-            "Status" => sortDescending ? query.OrderByDescending(r => r.Status!.RecordStatusName) : query.OrderBy(r => r.Status!.RecordStatusName),
+            "Account" => sortDescending
+                ? query.OrderByDescending(r => r.Account!.AccountName)
+                : query.OrderBy(r => r.Account!.AccountName),
+            "Status" => sortDescending
+                ? query.OrderByDescending(r => r.Status!.RecordStatusName)
+                : query.OrderBy(r => r.Status!.RecordStatusName),
             _ => sortDescending ? query.OrderByDescending(r => r.RecordDateTime) : query.OrderBy(r => r.RecordDateTime)
         };
 
@@ -97,21 +106,28 @@ public class RecordService(BM2DbContext _context) : IRecordService
         return query.SumAsync(r => r.Amount);
     }
 
-    public async Task<List<(AccountDTO, decimal)>> GetSumForAccounts(Guid walletId, TransactionFilter filter)
+    public async Task<List<RecordSum>> GetSumForAccounts(Guid walletId, TransactionFilter filter)
     {
         var query = GetQuery(walletId, filter);
 
         var groupedResult = await query
-            .GroupBy(r => r.Account)
+            .GroupBy(r => r.AccountId)
             .Select(g => new
             {
-                Account = g.Key,
+                // Wyciągamy pierwsze dopasowane konto i walutę dla danego AccountId
+                Account = g.Select(x => x.Account).FirstOrDefault(),
+                Currency = g.Select(x => x.Account!.DefaultCurrency).FirstOrDefault(),
                 TotalAmount = g.Sum(x => x.AccountAmount)
             })
             .ToListAsync();
-        
+
         return groupedResult
-            .Select(r => (r.Account!.ToDto(), r.TotalAmount))
+            .Where(r => r.Account != null)
+            .Select(r => new RecordSum(
+                r.Account!.ToDto(),
+                r.TotalAmount,
+                r.Currency?.ToDto()!
+            ))
             .ToList();
     }
 }

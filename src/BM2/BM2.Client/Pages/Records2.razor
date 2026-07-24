@@ -88,6 +88,17 @@
                 @_filter.DateFrom?.ToString("dd.MM.yyyy") - @_filter.DateTo?.ToString("dd.MM.yyyy")
             </MudChip>
         }
+
+        @if (_filter.HideAccountTransfers)
+        {
+            <MudChip T="string" OnClose="RemoveHideAccountTransfersFilter"
+                     Color="Color.Secondary"
+                     Variant="Variant.Text"
+                     Icon="@Icons.Material.Outlined.CompareArrows">
+                Hide account transfers
+            </MudChip>
+        }
+
         @foreach (var accId in _filter.AccountIds)
         {
             var accountName = _availableAccounts.FirstOrDefault(c => c.Id == accId)?.AccountName ?? "Acc";
@@ -236,14 +247,14 @@
             @foreach (var account in _sumGrouped)
             {
                 <MudTFootRow>
-                    <MudTd colspan="2" Class="justify-content-end">
+                    <MudTd colspan="3" Class="justify-content-end">
                         <MudText Typo="Typo.subtitle1" Align="Align.End">
-                            <strong>@account.Item1</strong>
+                            <strong>@account.Account.AccountName</strong>
                         </MudText>
                     </MudTd>
                     <MudTd colspan="6">
                         <MudText Typo="Typo.subtitle1">
-                            <strong>@account.Item2 @account.Item1.DefaultCurrency?.Symbol</strong>
+                            <strong>@account.Amount @account.Currency?.Symbol</strong>
                         </MudText>
                     </MudTd>
                 </MudTFootRow>
@@ -347,6 +358,8 @@
                        Label="@(_logicalTagOperator == TransactionFilter.LogicalOperator.And ? "Match: Require all tags (AND)" : "Match: Any tag (OR)")"/>
         }
 
+        <MudCheckBox @bind-Value="_hideAccountTransfers" Label="Hide account transfers"/>
+
         <div class="d-flex gap-2 mt-4">
             <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ResetAllFilters"
                        Disabled="_filter.IsEmpty()">Reset
@@ -362,9 +375,10 @@
     private bool _drawerOpen;
     private TransactionFilter _filter = new();
     private bool _sumPanelOpen;
-    private List<(AccountDTO, decimal)> _sumGrouped = [];
+    private List<RecordSum> _sumGrouped = [];
 
     // Zmienne pomocnicze dla UI
+    private bool _hideAccountTransfers;
     private IReadOnlyCollection<Guid> _selectedStatuses = new HashSet<Guid>();
     private List<RecordStatusDTO> _availableStatuses = [];
 
@@ -462,6 +476,7 @@
 
     private Task ApplyFilters()
     {
+        _filter.HideAccountTransfers = _hideAccountTransfers;
         _filter.AccountIds = _selectedAccounts.ToList();
         _filter.StatusIds = _selectedStatuses.ToList();
         _filter.CategoryIds = _selectedCategories.ToList();
@@ -506,9 +521,16 @@
         return RefreshTable();
     }
 
+    private Task RemoveHideAccountTransfersFilter()
+    {
+        _filter.HideAccountTransfers = false;
+        return RefreshTable();
+    }
+
     private Task ResetAllFilters()
     {
         _filter = new TransactionFilter() { SearchText = _filter.SearchText };
+        _hideAccountTransfers = false;
         _selectedAccounts = new HashSet<Guid>();
         _selectedStatuses = new HashSet<Guid>();
         _selectedCategories = new HashSet<Guid>();
