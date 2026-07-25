@@ -199,7 +199,8 @@
         _tags = tagDtos.OrderBy(x => x.TagName);
 
         if (RecordToUpdate?.Tags != null)
-            _selectedTags = (IReadOnlyCollection<TagDTO>)_tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
+            _selectedTags = _tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id)).ToList();
+            //_selectedTags = (IReadOnlyCollection<TagDTO>)_tags.Where(x => RecordToUpdate.Tags.Select(y => y.Id).Contains(x.Id));
 
         StateHasChanged();
     }

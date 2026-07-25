@@ -15,6 +15,7 @@ public class UpdateRecordCommand : AddRecordCommand, IBaseRequest<RecordDTO>
         Id = recordToUpdate.Id;
         Name = recordToUpdate.Name;
         Amount = recordToUpdate.Amount;
+        AccountAmount = recordToUpdate.AccountAmount;
         PlannedAmount = recordToUpdate.PlannedAmount;
         AccountId = recordToUpdate.AccountId;
         CategoryId = recordToUpdate.CategoryId;

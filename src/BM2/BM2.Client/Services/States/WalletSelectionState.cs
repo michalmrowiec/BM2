@@ -9,6 +9,7 @@ public interface IWalletSelectionState
     void SetWallets(List<WalletDTO> walletDtos, WalletDTO? selectedWallet = null);
     WalletDTO? SelectedWallet { get; }
     List<WalletDTO> Wallets { get; }
+    AccountBasicDTO? GetFirstActiveSelectedWalletAccount();
 }
 
 public class WalletSelectionState : IWalletSelectionState
@@ -29,6 +30,10 @@ public class WalletSelectionState : IWalletSelectionState
     }
 
     public List<WalletDTO> Wallets { get; private set; } = [];
+    public AccountBasicDTO? GetFirstActiveSelectedWalletAccount()
+    {
+        return _selectedWallet?.Accounts?.Where(x => x.IsActive).FirstOrDefault();
+    }
 
     public async Task SetWallet(WalletDTO? walletDto)
     {
