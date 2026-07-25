@@ -1,0 +1,90 @@
+﻿@using BM2.Client.Services.States
+@using BM2.Shared.DTOs
+@using Newtonsoft.Json
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+@inject IApiClient ApiClient
+@inject IAuthService AuthService
+@inject IDialogService DialogService
+@inject IWalletSelectionState WalletSelectionState
+
+<BaseDialog DialogTitle="Select template" MudDialog="@MudDialog"
+            DisableCreatedButton="_selectedTemplate == null"
+            FuncsOnCreated="@([EventCallback.Factory.Create(this, OpenAddRecordDialogAsync)])"
+            FuncsOnCancel="@([EventCallback.Factory.Create(this, Cancel)])">
+    <BodyContent>
+        <MudList T="RecordTemplateDTO"
+                 @bind-SelectedValue="_selectedTemplate"
+                 SelectionMode="SelectionMode.SingleSelection"
+                 Color="Color.Info">
+            <MudListSubheader>
+                <MudChip Color="@Color.Info">
+                    @(_selectedTemplate?.Name ?? "Select template")
+                </MudChip>
+            </MudListSubheader>
+
+            @foreach (var template in _recordTemplatesList)
+            {
+                <MudListItem Value="@template" Text="@template.Name" Icon="@Icons.Material.Filled.ListAlt"/>
+            }
+        </MudList>
+    </BodyContent>
+</BaseDialog>
+
+@code {
+    [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    private MudForm _form;
+    private IList<RecordTemplateDTO> _recordTemplatesList { get; set; } = [];
+    private RecordTemplateDTO? _selectedTemplate;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        if (await AuthService.EnsureInitializedAsync())
+        {
+            await GetRecordTemplates();
+        }
+    }
+
+    private async Task GetRecordTemplates()
+    {
+        var response = await ApiClient.Get("api/v1/recordTemplates");
+        var r = await response.Content.ReadAsStringAsync();
+        _recordTemplatesList = JsonConvert.DeserializeObject<IList<RecordTemplateDTO>>(r) ?? [];
+        StateHasChanged();
+    }
+
+    private Task OpenAddRecordDialogAsync()
+    {
+        if(_selectedTemplate == null)
+            return Task.CompletedTask;
+        
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false,
+            BackgroundClass = "my-custom-class",
+        };
+        var parameters = new DialogParameters<AddRecordDialogForm>
+        {
+            {
+                x => x.RecordToUpdate, new RecordDTO(_selectedTemplate, null)
+            },
+            {
+                x => x.FormType, DialogFormType.FromTemplate
+            },
+        };
+
+        MudDialog.Close();
+        return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
+    }
+
+}

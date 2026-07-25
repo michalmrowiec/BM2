@@ -21,10 +21,10 @@
                     OnClick="_ => OpenAddRecordDialogAsync()"/>
     <MudFabMenuItem StartIcon="@Icons.Material.Filled.ListAlt"
                     Color="Color.Secondary"
-                    Disabled/>
+                    OnClick="OpenSelectRecordTemplateDialogAsync"/>
     <MudFabMenuItem StartIcon="@Icons.Material.Filled.CompareArrows"
                     Color="Color.Secondary"
-                    OnClick="_ => OpenAddTransferDialogAsync()"/>
+                    OnClick="OpenAddTransferDialogAsync"/>
     <MudFabMenuItem EndIcon="@Icons.Material.Filled.Star"
                     IconColor="Color.Warning"
                     Color="Color.Dark"
@@ -75,6 +75,21 @@
         return DialogService.ShowAsync<AddRecordDialogForm>(null, parameters, options);
     }
     
+    private Task OpenSelectRecordTemplateDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick =  false,
+            BackgroundClass = "my-custom-class",
+        };
+        var parameters = new DialogParameters<SelectRecordTemplateDialogForm>();
+        return DialogService.ShowAsync<SelectRecordTemplateDialogForm>(null, parameters, options);
+    }
+    
     private Task OpenAddTransferDialogAsync()
     {
         var options = new DialogOptions
@@ -86,15 +101,7 @@
             BackdropClick =  false,
             BackgroundClass = "my-custom-class",
         };
-        var parameters = new DialogParameters<AddTransferDialogForm>
-        {
-            // {
-            //     x => x.FuncsOnCreated, [EventCallback.Factory.Create(this)]
-            // },
-            // {
-            //     x => x.FormType, formType
-            // },
-        };
+        var parameters = new DialogParameters<AddTransferDialogForm>();
         return DialogService.ShowAsync<AddTransferDialogForm>(null, parameters, options);
     }
 }

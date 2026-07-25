@@ -22,10 +22,9 @@
             <MudCardContent>
                 <AccountAutocomplete Label="Account"
                                      Required
-                                     AutoSelectFirstValue
                                      OnlyActive
                                      @ref="_accountAutocomplete"
-                                     SelectStartValue="@(x => x.Id == (RecordToUpdate?.AccountId ?? WalletSelectionState.SelectedWallet?.Accounts.Where(x => x.IsActive).FirstOrDefault()?.Id))"
+                                     SelectStartValue="@(x => x.Id == _model.AccountId)"
                                      SelectedValue="@(async (a) =>
                                                     {
                                                         _selectedAccount = a;
@@ -157,35 +156,47 @@
     private IReadOnlyCollection<TagDTO> _selectedTags = new HashSet<TagDTO>();
     private bool _showOtherCurrencyAmount;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var response = await ApiClient.Get(@"api/v1/wallets");
-        var responseString = await response.Content.ReadAsStringAsync();
-        var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
-        _wallets = walletDtos.OrderBy(x => x.WalletName);
-
-        if (FormType is DialogFormType.Edit)
+        if (firstRender)
         {
-            _date = RecordToUpdate?.RecordDateTime.ToLocalTime().Date ?? DateTime.Now;
-            _time = RecordToUpdate?.RecordDateTime.ToLocalTime().TimeOfDay ?? DateTime.Now.TimeOfDay;
-        }
-        else
-        {
-            _date = DateTime.Now;
-            _time = DateTime.Now.TimeOfDay;
-        }
+            var response = await ApiClient.Get(@"api/v1/wallets");
+            var responseString = await response.Content.ReadAsStringAsync();
+            var walletDtos = JsonConvert.DeserializeObject<List<WalletDTO>>(responseString) ?? new List<WalletDTO>();
+            _wallets = walletDtos.OrderBy(x => x.WalletName);
 
-        if (RecordToUpdate is not null)
-        {
-            _selectedCurrency = RecordToUpdate.Currency;
-
-            if (FormType is DialogFormType.Edit or DialogFormType.Clone)
+            if (FormType is DialogFormType.Edit)
             {
-                _model = new UpdateRecordCommand(RecordToUpdate);
+                _date = RecordToUpdate?.RecordDateTime.ToLocalTime().Date ?? DateTime.Now;
+                _time = RecordToUpdate?.RecordDateTime.ToLocalTime().TimeOfDay ?? DateTime.Now.TimeOfDay;
             }
-        }
+            else
+            {
+                _date = DateTime.Now;
+                _time = DateTime.Now.TimeOfDay;
+            }
 
-        StateHasChanged();
+            if (RecordToUpdate is not null)
+            {
+                _selectedCurrency = RecordToUpdate.Currency;
+
+                if (FormType is DialogFormType.Edit or DialogFormType.Clone or DialogFormType.FromTemplate)
+                {
+                    _model = new UpdateRecordCommand(RecordToUpdate);
+                }
+            }
+
+            if (_model.AccountId == Guid.Empty)
+                _model.AccountId = WalletSelectionState.GetFirstActiveSelectedWalletAccount()?.Id ?? Guid.Empty;
+
+            if (_model.AccountId != Guid.Empty && _accountAutocomplete is not null)
+                await _accountAutocomplete.SelectValueById(_model.AccountId);
+            
+            if(_model.CategoryId != Guid.Empty && _categoryAutocomplete is not null)
+                await  _categoryAutocomplete.SelectValueById(_model.CategoryId);
+            
+            StateHasChanged();
+        }
     }
 
     private async Task Submit()
@@ -200,7 +211,7 @@
             _model.CurrencyId = _selectedAccount.DefaultCurrencyId;
             _model.Amount = _model.AccountAmount;
         }
-        
+
         await _form.Validate();
 
         AddRecordCommand addRecord = _model;
@@ -208,7 +219,7 @@
         if (_form.IsValid)
         {
             var response =
-                FormType is DialogFormType.Add or DialogFormType.Clone
+                FormType is DialogFormType.Add or DialogFormType.Clone or DialogFormType.FromTemplate
                     ? await ApiClient.Create(@"api/v1/records", addRecord)
                     : await ApiClient.Put(@"api/v1/records", _model);
 

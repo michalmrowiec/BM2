@@ -10,7 +10,10 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(async () => await Cancel())">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Class="ml-auto"
+                   Disabled="DisableCreatedButton"
                    OnClick="@(async () => await Submit())">@_confirmTextDictionary[ConfirmButtonText]
         </MudButton>
     </DialogActions>
@@ -19,6 +22,7 @@
 @code {
     [Parameter] public IMudDialogInstance MudDialog { get; set; }
     [Parameter] public string DialogTitle { get; set; } = string.Empty;
+    [Parameter] public bool DisableCreatedButton { get; set; }
     [Parameter] public List<EventCallback>? FuncsOnCreated { get; set; } = new();
     [Parameter] public List<EventCallback>? FuncsOnCancel { get; set; } = new();
     [Parameter] public RenderFragment? BodyContent { get; set; }
