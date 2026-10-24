@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using BM2.Contracts.Accounts;
 using BM2.Contracts.Categories;
+using BM2.Contracts.Records;
 using BM2.Contracts.Tags;
 using BM2.Contracts.Wallets;
 using BM2.IntegrationTests.Infrastructure;
@@ -25,6 +26,10 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         new("POST", "/api/wallets/{w}/tags", _ => new CreateTagRequest("New"), MemberRole.Editor),
         new("PUT", "/api/wallets/{w}/tags/{t}", _ => new UpdateTagRequest("Renamed", false), MemberRole.Editor),
         new("DELETE", "/api/wallets/{w}/tags/{t}", null, MemberRole.Editor),
+        new("GET", "/api/wallets/{w}/records/{r}", null, MemberRole.Viewer),
+        new("POST", "/api/wallets/{w}/records", ValidRecord, MemberRole.Editor),
+        new("PUT", "/api/wallets/{w}/records/{r}", ValidRecord, MemberRole.Editor),
+        new("DELETE", "/api/wallets/{w}/records/{r}", null, MemberRole.Editor),
     ];
 
     public static TheoryData<string> Cases => new(All.Select(c => c.Name));
@@ -59,6 +64,10 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
 
     private static EndpointCase Find(string name) => All.Single(c => c.Name == name);
 
+    private static SaveRecordRequest ValidRecord(CaseIds ids) => new SaveRecordRequest(
+        RecordType.Expense, RecordStatus.Completed, new DateOnly(2026, 10, 20), ids.AccountId, 5m, "PLN", 5m, ids.CategoryId,
+        null, null, null, []);
+
     private async Task<CaseIds> SeedAsync()
     {
         var owner = await CreateUserAsync("owner@example.com");
@@ -68,7 +77,8 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         var account = await Data.AccountAsync(wallet.Id);
         var category = await Data.CategoryAsync(wallet.Id);
         var tag = await Data.TagAsync(wallet.Id);
-        return new CaseIds(wallet.Id, account.Id, other.Id, category.Id, tag.Id);
+        var record = await Data.RecordAsync(account.Id, 10m, categoryId: category.Id);
+        return new CaseIds(wallet.Id, account.Id, other.Id, category.Id, tag.Id, record.Id);
     }
 
     private async Task<HttpResponseMessage> SendAsync(EndpointCase endpoint, CaseIds ids, Guid userId)
@@ -88,13 +98,14 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         public string Name => $"{Method} {Path}";
     }
 
-    public sealed record CaseIds(Guid WalletId, Guid AccountId, Guid OtherMemberId, Guid CategoryId, Guid TagId)
+    public sealed record CaseIds(Guid WalletId, Guid AccountId, Guid OtherMemberId, Guid CategoryId, Guid TagId, Guid RecordId)
     {
         public string Fill(string path) => path
             .Replace("{w}", WalletId.ToString(), StringComparison.Ordinal)
             .Replace("{a}", AccountId.ToString(), StringComparison.Ordinal)
             .Replace("{u}", OtherMemberId.ToString(), StringComparison.Ordinal)
             .Replace("{c}", CategoryId.ToString(), StringComparison.Ordinal)
-            .Replace("{t}", TagId.ToString(), StringComparison.Ordinal);
+            .Replace("{t}", TagId.ToString(), StringComparison.Ordinal)
+            .Replace("{r}", RecordId.ToString(), StringComparison.Ordinal);
     }
 }

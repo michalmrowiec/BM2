@@ -20,7 +20,17 @@ internal static class DeleteCategory
             return Error.Forbidden().ToProblem();
         }
 
-        var deleted = await db.Categories.Where(c => c.Id == categoryId && c.WalletId == current.Id).ExecuteDeleteAsync(ct);
-        return deleted == 0 ? Error.NotFound().ToProblem() : TypedResults.NoContent();
+        if (!await db.Categories.AnyAsync(c => c.Id == categoryId && c.WalletId == current.Id, ct))
+        {
+            return Error.NotFound().ToProblem();
+        }
+
+        if (await db.Records.AnyAsync(r => r.CategoryId == categoryId, ct))
+        {
+            return Error.Conflict("This category has records. Archive it instead.").ToProblem();
+        }
+
+        await db.Categories.Where(c => c.Id == categoryId).ExecuteDeleteAsync(ct);
+        return TypedResults.NoContent();
     }
 }

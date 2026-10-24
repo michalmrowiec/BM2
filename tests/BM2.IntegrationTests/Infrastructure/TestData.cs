@@ -1,9 +1,13 @@
 using BM2.Contracts.Categories;
+using BM2.Contracts.Records;
 using BM2.Contracts.Wallets;
 using BM2.Domain.Accounts;
 using BM2.Domain.Categories;
+using BM2.Domain.Records;
+using Record = BM2.Domain.Records.Record;
 using BM2.Domain.Tags;
 using BM2.Domain.Wallets;
+using BM2.Server.Features.Records;
 using Microsoft.EntityFrameworkCore;
 
 namespace BM2.IntegrationTests.Infrastructure;
@@ -61,5 +65,45 @@ public sealed class TestData(IntegrationFixture fixture)
         db.Tags.Add(tag);
         await db.SaveChangesAsync();
         return tag;
+    }
+
+    /// <summary>Completed PLN-style record in the account's currency; finds or creates a category of the right type.</summary>
+    public async Task<Record> RecordAsync(
+        Guid accountId,
+        decimal amount,
+        RecordType type = RecordType.Expense,
+        Guid? categoryId = null,
+        DateOnly? occurredOn = null,
+        RecordStatus status = RecordStatus.Completed,
+        Guid? transferAccountId = null,
+        decimal? transferAmount = null,
+        Guid[]? tagIds = null,
+        string? name = null,
+        Guid? createdBy = null)
+    {
+        await using var db = fixture.CreateDbContext();
+        var account = await db.Accounts.AsNoTracking().SingleAsync(a => a.Id == accountId);
+        if (type != RecordType.Transfer && categoryId is null)
+        {
+            var categoryType = type == RecordType.Income ? CategoryType.Income : CategoryType.Expense;
+            var category = await db.Categories.FirstOrDefaultAsync(c => c.WalletId == account.WalletId && c.Type == categoryType)
+                ?? Category.Create(account.WalletId, categoryType == CategoryType.Income ? "Salary" : "Groceries", categoryType);
+            if (category.Id == Guid.Empty)
+            {
+                db.Categories.Add(category);
+                await db.SaveChangesAsync();
+            }
+
+            categoryId = category.Id;
+        }
+
+        var draft = new RecordDraft(
+            type, status, occurredOn ?? new DateOnly(2026, 10, 15), accountId, amount, account.Currency, amount, categoryId,
+            transferAccountId, transferAmount ?? (transferAccountId is null ? null : amount), name, tagIds ?? []);
+        var context = await RecordContextLoader.LoadAsync(db, account.WalletId, draft, CancellationToken.None);
+        var record = Record.Create(draft, context, createdBy ?? Guid.NewGuid(), DateTimeOffset.UtcNow).Value;
+        db.Records.Add(record);
+        await db.SaveChangesAsync();
+        return record;
     }
 }

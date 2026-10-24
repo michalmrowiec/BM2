@@ -23,6 +23,7 @@ internal static class DeleteWallet
 
         // Children first: wallets do not cascade to accounts, categories and tags (SQL Server multiple cascade paths).
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        await db.Records.Where(r => r.Account.WalletId == walletId).ExecuteDeleteAsync(ct);
         await db.Tags.Where(t => t.WalletId == walletId).ExecuteDeleteAsync(ct);
         await db.Categories.Where(c => c.WalletId == walletId).ExecuteDeleteAsync(ct);
         await db.Accounts.Where(a => a.WalletId == walletId).ExecuteDeleteAsync(ct);

@@ -33,7 +33,7 @@ internal static class UpdateAccount
             return AccountNames.TakenError.ToProblem();
         }
 
-        var hasRecords = false;
+        var hasRecords = await db.Records.AnyAsync(r => r.AccountId == account.Id || r.TransferAccountId == account.Id, ct);
         var result = account.Update(request.Name, request.Currency, request.OpeningBalance, request.IsArchived, hasRecords);
         if (!result.IsSuccess)
         {

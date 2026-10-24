@@ -1,5 +1,6 @@
 using BM2.Domain.Accounts;
 using BM2.Domain.Categories;
+using BM2.Domain.Records;
 using BM2.Domain.Tags;
 using BM2.Domain.Wallets;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -25,6 +26,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Category> Categories => Set<Category>();
 
     public DbSet<Tag> Tags => Set<Tag>();
+
+    public DbSet<Record> Records => Set<Record>();
 
     // Pinned so the model does not depend on IdentityOptions from DI (schema v3 adds passkeys).
     protected override Version SchemaVersion => IdentitySchemaVersions.Version3;

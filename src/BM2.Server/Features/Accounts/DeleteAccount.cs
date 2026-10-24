@@ -20,7 +20,16 @@ internal static class DeleteAccount
             return Error.Forbidden().ToProblem();
         }
 
-        var deleted = await db.Accounts.Where(a => a.Id == accountId && a.WalletId == current.Id).ExecuteDeleteAsync(ct);
-        return deleted == 0 ? Error.NotFound().ToProblem() : TypedResults.NoContent();
+        if (!await db.Accounts.AnyAsync(a => a.Id == accountId && a.WalletId == current.Id, ct))
+        {
+            return Error.NotFound().ToProblem();
+        }
+
+        // Records first, including transfers from other accounts (no cascade from accounts).
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        await db.Records.Where(r => r.AccountId == accountId || r.TransferAccountId == accountId).ExecuteDeleteAsync(ct);
+        await db.Accounts.Where(a => a.Id == accountId).ExecuteDeleteAsync(ct);
+        await transaction.CommitAsync(ct);
+        return TypedResults.NoContent();
     }
 }

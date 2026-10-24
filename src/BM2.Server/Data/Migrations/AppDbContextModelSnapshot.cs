@@ -110,6 +110,89 @@ namespace BM2.Server.Data.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("BM2.Domain.Records.Record", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("AccountAmount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateOnly>("OccurredOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("TransferAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("TransferAmount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("AccountId", "OccurredOn");
+
+                    b.HasIndex("TransferAccountId", "OccurredOn")
+                        .HasFilter("[TransferAccountId] IS NOT NULL");
+
+                    b.ToTable("Records");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Records.RecordTag", b =>
+                {
+                    b.Property<Guid>("RecordId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("RecordId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("RecordTag");
+                });
+
             modelBuilder.Entity("BM2.Domain.Tags.Tag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -452,6 +535,46 @@ namespace BM2.Server.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BM2.Domain.Records.Record", b =>
+                {
+                    b.HasOne("BM2.Domain.Accounts.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Categories.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BM2.Domain.Accounts.Account", "TransferAccount")
+                        .WithMany()
+                        .HasForeignKey("TransferAccountId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("TransferAccount");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Records.RecordTag", b =>
+                {
+                    b.HasOne("BM2.Domain.Records.Record", null)
+                        .WithMany("Tags")
+                        .HasForeignKey("RecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BM2.Domain.Tags.Tag", b =>
                 {
                     b.HasOne("BM2.Domain.Wallets.Wallet", null)
@@ -581,6 +704,11 @@ namespace BM2.Server.Data.Migrations
             modelBuilder.Entity("BM2.Domain.Accounts.Account", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Records.Record", b =>
+                {
+                    b.Navigation("Tags");
                 });
 
             modelBuilder.Entity("BM2.Domain.Wallets.Wallet", b =>
