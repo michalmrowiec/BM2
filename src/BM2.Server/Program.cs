@@ -1,8 +1,10 @@
 using BM2.Server.Components;
 using BM2.Server.Components.Account;
 using BM2.Server.Data;
+using BM2.Server.Features;
 using BM2.Server.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,10 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddBm2Authentication();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+builder.Services.AddProblemDetails();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
@@ -37,16 +43,23 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseBm2ErrorHandling();
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 app.UseRegistrationOnlyInDevelopment();
 
 app.MapStaticAssets();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
+
+app.MapBm2Api();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BM2.Client._Imports).Assembly);
