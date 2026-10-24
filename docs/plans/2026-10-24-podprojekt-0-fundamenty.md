@@ -24,15 +24,15 @@ i `BM2.Contracts`. Stary kod trafia do `legacy/`.
 - Sekrety nigdy w repo.
 - Commity na `dev` dozwolone; push tylko na prośbę użytkownika. Stopka commita:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
-- Oszczędność: w zadaniach uruchamiaj tylko testy danego zadania; pełna suita na końcu (zadanie 8).
+- Oszczędność: w zadaniach uruchamiaj tylko testy danego zadania; pełna suita na końcu (Task 8).
 
 ## Na co uważać w review
 
-1. **Restart aplikacji (recykling puli IIS)** – sesje i tokeny muszą pozostać ważne → test w zadaniu 3.
-2. **Cookie usuniętego użytkownika** – `/api/me` ma zwrócić 401, nie 500 → test w zadaniu 5.
-3. **Nieznany endpoint `/api/...`** – ma zwrócić 404 jako `application/problem+json`, nie stronę HTML → test w zadaniu 5.
-4. **Strona logowania poza Development** – bez linku do rejestracji → test w zadaniu 4.
-5. **Brute force przez prawdziwy formularz logowania** – 5 złych haseł blokuje konto → test w zadaniu 4.
+1. **Restart aplikacji (recykling puli IIS)** – sesje i tokeny muszą pozostać ważne → test w Task 3.
+2. **Cookie usuniętego użytkownika** – `/api/me` ma zwrócić 401, nie 500 → test w Task 5.
+3. **Nieznany endpoint `/api/...`** – ma zwrócić 404 jako `application/problem+json`, nie stronę HTML → test w Task 5.
+4. **Strona logowania poza Development** – bez linku do rejestracji → test w Task 4.
+5. **Brute force przez prawdziwy formularz logowania** – 5 złych haseł blokuje konto → test w Task 4.
 
 ## Mapa plików
 
@@ -56,7 +56,7 @@ tests/BM2.IntegrationTests/{DatabaseTests,Features/AuthenticationTests,Features/
 
 ---
 
-### Zadanie 1: legacy, konfiguracja budowania, Domain/Contracts, testy architektury
+### Task 1: legacy, konfiguracja budowania, Domain/Contracts, testy architektury
 
 **Pliki:**
 - Przenieś: `src/` → `legacy/src/`, `BM2.sln` → `legacy/BM2.sln` (`git mv`)
@@ -118,7 +118,7 @@ public class ArchitectureTests
 - [ ] **Krok 6: uruchom.** `dotnet test tests/BM2.UnitTests` → 3 testy PASS, build bez ostrzeżeń.
 - [ ] **Krok 7: commit.** `Move legacy code and add new solution skeleton`
 
-### Zadanie 2: serwer i klient z szablonu .NET 10
+### Task 2: serwer i klient z szablonu .NET 10
 
 **Pliki:**
 - Utwórz: `src/BM2.Server/**`, `src/BM2.Client/**` (z szablonu), `src/BM2.Server/Data/{ApplicationUser,AppDbContext,DatabaseSetup}.cs`,
@@ -175,14 +175,14 @@ public class ArchitectureTests
   → `110`. Zatrzymaj aplikację.
 - [ ] **Krok 10: commit.** `Add server and client from .NET 10 Blazor template`
 
-### Zadanie 3: infrastruktura testów integracyjnych
+### Task 3: infrastruktura testów integracyjnych
 
 **Pliki:**
 - Utwórz: `tests/BM2.IntegrationTests/BM2.IntegrationTests.csproj`,
   `Infrastructure/{IntegrationFixture,BM2AppFactory,TestAuthHandler,IntegrationTest}.cs`, `DatabaseTests.cs`
 
 **Interfejsy:**
-- Korzysta z: `AppDbContext`, `DatabaseSetup` (zadanie 2).
+- Korzysta z: `AppDbContext`, `DatabaseSetup` (Task 2).
 - Tworzy:
   - `IntegrationCollection` (`[CollectionDefinition(Name)]`, `ICollectionFixture<IntegrationFixture>`,
     `public const string Name = "Integration"`). Wszystkie testy integracyjne są w tej kolekcji, więc wykonują się
@@ -215,7 +215,7 @@ public class ArchitectureTests
 - [ ] **Krok 4: uruchom.** `dotnet test tests/BM2.IntegrationTests` → 2 PASS (oba weryfikują zadanie 2).
 - [ ] **Krok 5: commit.** `Add integration test infrastructure`
 
-### Zadanie 4: utwardzenie logowania
+### Task 4: utwardzenie logowania
 
 **Pliki:**
 - Utwórz: `src/BM2.Server/Infrastructure/ApiPaths.cs`, `src/BM2.Server/Infrastructure/AuthenticationSetup.cs`,
@@ -256,7 +256,7 @@ public class ArchitectureTests
 - [ ] **Krok 4: uruchom ponownie** → 5 PASS.
 - [ ] **Krok 5: commit.** `Harden Identity options and limit registration to development`
 
-### Zadanie 5: API – `/api/me`, `ICurrentUser`, ProblemDetails
+### Task 5: API – `/api/me`, `ICurrentUser`, ProblemDetails
 
 **Pliki:**
 - Utwórz: `src/BM2.Contracts/Me/MeResponse.cs`, `src/BM2.Server/Infrastructure/CurrentUser.cs`,
@@ -265,7 +265,7 @@ public class ArchitectureTests
 - Zmień: `Program.cs`
 
 **Interfejsy:**
-- Korzysta z: `ApiPaths` (zadanie 4), `AppDbContext` (zadanie 2).
+- Korzysta z: `ApiPaths` (Task 4), `AppDbContext` (Task 2).
 - Tworzy:
   - `BM2.Contracts.Me.MeResponse` – `public sealed record MeResponse(Guid Id, string Email);`
   - `ICurrentUser { Guid UserId { get; } }` + `HttpContextCurrentUser(IHttpContextAccessor)` (claim
@@ -298,7 +298,7 @@ public class ArchitectureTests
 - [ ] **Krok 4: uruchom ponownie** → 4 PASS; dla pewności też `AuthenticationTests` → PASS.
 - [ ] **Krok 5: commit.** `Add /api/me endpoint with ProblemDetails error handling`
 
-### Zadanie 6: klient – strona startowa i wylogowanie
+### Task 6: klient – strona startowa i wylogowanie
 
 **Pliki:**
 - Utwórz: `src/BM2.Client/Components/MeGreeting.razor`
@@ -306,7 +306,7 @@ public class ArchitectureTests
   `src/BM2.Server/wwwroot/app.css`
 
 **Interfejsy:**
-- Korzysta z: `MeResponse`, `GET /api/me` (zadanie 5).
+- Korzysta z: `MeResponse`, `GET /api/me` (Task 5).
 
 - [ ] **Krok 1: klient HTTP.** `Program.cs` klienta:
   `AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) })`.
@@ -325,7 +325,7 @@ public class ArchitectureTests
   wylogowanie → logowanie passkeyem → wylogowanie. Podaj link użytkownikowi do samodzielnego testu.
 - [ ] **Krok 5: commit.** `Add client home page with current user greeting`
 
-### Zadanie 7: CI i Dependabot
+### Task 7: CI i Dependabot
 
 **Pliki:**
 - Utwórz: `.github/workflows/ci.yml`, `.github/dependabot.yml`
@@ -345,7 +345,7 @@ public class ArchitectureTests
 - [ ] **Krok 3: commit.** `Add CI workflow and Dependabot`
 - [ ] **Krok 4: weryfikacja.** Poproś użytkownika o zgodę na push `dev`. Po pushu `gh run watch` → job zielony.
 
-### Zadanie 8: AGENTS.md i odbiór
+### Task 8: AGENTS.md i odbiór
 
 **Pliki:**
 - Zmień: `AGENTS.md`, `docs/roadmap.md`
