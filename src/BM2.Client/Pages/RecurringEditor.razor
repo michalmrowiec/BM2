@@ -1,0 +1,159 @@
+@page "/recurring/new"
+@page "/recurring/{Id:guid}"
+@attribute [Authorize]
+@using BM2.Client.Components.Records
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Records
+@using BM2.Contracts.Recurring
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+@inject NavigationManager Navigation
+
+<PageTitle>@Title · BM2</PageTitle>
+
+<section class="editor-sheet" aria-labelledby="editor-title">
+    <header class="editor-sheet__header">
+        <a class="icon-button" href="recurring" aria-label="Close"><Icon Name="close" /></a>
+        <h1 id="editor-title" class="editor-sheet__title" tabindex="-1">@Title</h1>
+        <div class="editor-sheet__actions">
+            @if (_rule is not null)
+            {
+                <button type="button" class="icon-button" aria-label="Delete rule" @onclick="() => _confirmDelete = true">
+                    <Icon Name="trash" />
+                </button>
+            }
+        </div>
+    </header>
+
+    @if (Wallet is null)
+    {
+        <WalletPlaceholder />
+    }
+    else if (_loading)
+    {
+        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    }
+    else if (_missing)
+    {
+        <EmptyState IconName="repeat" Title="This doesn't exist">It may have been deleted.</EmptyState>
+    }
+    else
+    {
+        @if (_rule is not null)
+        {
+            <p class="field__hint">Changes apply to records added from now on.</p>
+        }
+        <RecordForm @ref="_form" @key="_formKey" Wallet="Wallet" Initial="_initial" RuleMode="true" Rule="_rule" Busy="_busy"
+                    OnSubmit="SaveAsync" />
+    }
+</section>
+
+<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete recurring rule?" ConfirmLabel="Delete"
+               Danger="true" OnConfirm="DeleteAsync">
+    <p>Records it already added stay.</p>
+</ConfirmDialog>
+
+@code {
+    private RecordForm? _form;
+    private RecurringRuleItem? _rule;
+    private RecordItem? _initial;
+    private string _formKey = "";
+    private bool _loading = true;
+    private bool _missing;
+    private bool _busy;
+    private bool _confirmDelete;
+
+    [Parameter] public Guid? Id { get; set; }
+
+    /// <summary>"Make recurring": the record becomes the first occurrence.</summary>
+    [SupplyParameterFromQuery(Name = "from")] public Guid? FromId { get; set; }
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private string Title => Id is not null ? "Edit recurring" : "New recurring";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        if (Wallet is null)
+        {
+            return;
+        }
+
+        _loading = true;
+        _missing = false;
+        _rule = null;
+        _initial = null;
+        if (Id is { } id)
+        {
+            var rules = await Api.GetAsync<List<RecurringRuleItem>>($"api/wallets/{Wallet.Id}/recurring");
+            _rule = rules.Value?.Find(r => r.Id == id);
+            _initial = _rule is null ? null : RecurringText.ToRecord(_rule);
+            _missing = _rule is null;
+        }
+        else if (FromId is { } fromId)
+        {
+            var record = await Api.GetAsync<RecordItem>($"api/wallets/{Wallet.Id}/records/{fromId}");
+            _initial = record.Value;
+            _missing = !record.Ok;
+        }
+
+        _formKey = $"{Wallet.Id}/{Id}/{FromId}";
+        _loading = false;
+    }
+
+    private async Task SaveAsync(SaveRecordRequest _)
+    {
+        var request = _form!.BuildRuleRequest(Id is null ? FromId : null)!;
+        if (_rule is not null)
+        {
+            request = request with { IsPaused = _rule.IsPaused };
+        }
+
+        _busy = true;
+        var url = $"api/wallets/{Wallet!.Id}/recurring";
+        var result = Id is { } id ? await Api.PutAsync($"{url}/{id}", request) : await Api.PostAsync<RecurringRuleItem>(url, request);
+        _busy = false;
+
+        if (result.Ok)
+        {
+            Toasts.Show("Saved.", ToastKind.Success);
+            await WalletState.RefreshAsync();
+            Navigation.NavigateTo("recurring");
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't save. Check the fields.", ToastKind.Error);
+            if (result.Problem.HasFieldErrors)
+            {
+                _form.ShowServerErrors(result.Problem);
+            }
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/recurring/{Id}");
+        _confirmDelete = false;
+        if (result.Ok)
+        {
+            Toasts.Show("Recurring rule deleted.");
+            Navigation.NavigateTo("recurring");
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

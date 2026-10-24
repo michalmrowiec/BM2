@@ -1463,3 +1463,30 @@ button.list-row:hover { background: var(--wash); }
 
 .pin-toggle { color: var(--ink-muted); }
 .pin-toggle[aria-pressed="true"] { background: var(--wash); color: var(--ink); }
+
+/* Recurring: schedule fields in the record form */
+.repeat-fields {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+}
+
+.repeat-fields__every {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.repeat-fields__every .field__label {
+    margin: 0;
+}
+
+.repeat-fields__interval {
+    width: 5rem;
+}
+
+.check .icon {
+    vertical-align: -0.2em;
+}

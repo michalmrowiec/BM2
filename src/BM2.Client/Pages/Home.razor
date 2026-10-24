@@ -2,10 +2,12 @@
 @using BM2.Client.Components.Records
 @using BM2.Client.Components.Wallets
 @using BM2.Contracts.Records
+@using BM2.Contracts.Recurring
 @using BM2.Contracts.Templates
 @using BM2.Contracts.Wallets
 @inherits WalletComponentBase
 @inject ApiClient Api
+@inject ToastService Toasts
 
 <PageTitle>BM2</PageTitle>
 
@@ -78,6 +80,61 @@
                     </ul>
                 }
 
+                @if (_pending.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">To confirm</h2>
+                        <a class="link" href="records?status=Pending&all=true">All</a>
+                    </div>
+                    <ul class="list">
+                        @foreach (var record in _pending)
+                        {
+                            var label = record.Name ?? wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)?.Name ?? record.Type.ToString();
+                            <li class="template-row" @key="record.Id">
+                                <ListRow Title="@label" Subtitle="@record.OccurredOn.ToString("d MMM")" Href="@($"records/{record.Id}")">
+                                    <Leading>
+                                        <RecordAvatar Category="wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)" Type="record.Type"
+                                                      Fallback="@label" />
+                                    </Leading>
+                                    <Trailing>
+                                        <Amount Value="record.Amount" Currency="@record.Currency" Sign="TemplateText.Sign(record.Type)" />
+                                    </Trailing>
+                                </ListRow>
+                                <button type="button" class="icon-button pin-toggle" aria-label="@($"Confirm {label}")" disabled="@_busy"
+                                        @onclick="() => ConfirmAsync(record)">
+                                    <Icon Name="check" />
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (_upcoming.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Upcoming</h2>
+                        <a class="link" href="recurring">Recurring</a>
+                    </div>
+                    <ul class="list">
+                        @foreach (var (rule, index, date) in _upcoming)
+                        {
+                            var name = rule.Record.Name is { } n ? n + rule.Schedule.Suffix(index) : null;
+                            var label = name ?? wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? rule.Record.Type.ToString();
+                            <li @key="(rule.Id, index)">
+                                <ListRow Title="@label" Subtitle="@date.ToString("dddd, d MMM")" Href="@($"recurring/{rule.Id}")">
+                                    <Leading>
+                                        <RecordAvatar Category="wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)" Type="rule.Record.Type"
+                                                      Fallback="@label" />
+                                    </Leading>
+                                    <Trailing>
+                                        <Amount Value="rule.Record.Amount" Currency="@rule.Record.Currency" Sign="TemplateText.Sign(rule.Record.Type)" />
+                                    </Trailing>
+                                </ListRow>
+                            </li>
+                        }
+                    </ul>
+                }
+
                 @if (_month?.Totals.Count > 0)
                 {
                     <h2 class="section-title">This month</h2>
@@ -142,6 +199,9 @@
     private IReadOnlyList<RecordItem> _recent = [];
     private IReadOnlyList<TemplateItem> _templates = [];
     private RecordSummary? _month;
+    private IReadOnlyList<RecordItem> _pending = [];
+    private IReadOnlyList<(RecurringRuleItem Rule, int Index, DateOnly Date)> _upcoming = [];
+    private bool _busy;
     private WalletSnapshot? _loadedFor;
 
     protected override async Task OnParametersSetAsync()
@@ -168,12 +228,41 @@
         var recent = Api.GetAsync<RecordPage>($"api/wallets/{wallet.Id}/records{new RecordFilter { Limit = 5 }.ToQueryString()}");
         var summary = Api.GetAsync<RecordSummary>($"api/wallets/{wallet.Id}/records/summary{month.ToQueryString()}");
         var templates = Api.GetAsync<List<TemplateItem>>($"api/wallets/{wallet.Id}/templates");
+        var pending = Api.GetAsync<RecordPage>(
+            $"api/wallets/{wallet.Id}/records{new RecordFilter { Status = RecordStatus.Pending, Limit = 10 }.ToQueryString()}");
+        var rules = Api.GetAsync<List<RecurringRuleItem>>($"api/wallets/{wallet.Id}/recurring");
 
         // Warms the cache, so the record form opens with suggestions.
         _ = WalletState.GetSuggestionsAsync();
-        await Task.WhenAll(recent, summary, templates);
+        await Task.WhenAll(recent, summary, templates, pending, rules);
+        _pending = pending.Result.Value?.Items ?? [];
+        var until = DateOnly.FromDateTime(DateTime.Now).AddDays(30);
+        _upcoming = (rules.Result.Value ?? [])
+            .SelectMany(r => RecurringText.Upcoming(r, until).Select(o => (r, o.Index, o.Date)))
+            .OrderBy(o => o.Date)
+            .Take(10)
+            .ToList();
         _recent = recent.Result.Value?.Items ?? [];
         _templates = templates.Result.Value?.Where(t => t.IsPinned).ToList() ?? [];
         _month = summary.Result.Value;
+    }
+
+    private async Task ConfirmAsync(RecordItem r)
+    {
+        _busy = true;
+        var request = new SaveRecordRequest(
+            r.Type, RecordStatus.Completed, r.OccurredOn, r.AccountId, r.Amount, r.Currency, r.AccountAmount, r.CategoryId,
+            r.TransferAccountId, r.TransferAmount, r.Name, r.TagIds);
+        var result = await Api.PutAsync($"api/wallets/{WalletState.Current!.Id}/records/{r.Id}", request);
+        _busy = false;
+        if (result.Ok)
+        {
+            Toasts.Show("Confirmed.", ToastKind.Success);
+            await WalletState.RefreshAsync();
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't confirm the record.", ToastKind.Error);
+        }
     }
 }

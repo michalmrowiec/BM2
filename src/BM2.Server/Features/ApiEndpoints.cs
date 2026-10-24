@@ -4,6 +4,7 @@ using BM2.Server.Features.Invitations;
 using BM2.Server.Features.Members;
 using BM2.Server.Features.Profile;
 using BM2.Server.Features.Records;
+using BM2.Server.Features.Recurring;
 using BM2.Server.Features.Tags;
 using BM2.Server.Features.Templates;
 using BM2.Server.Features.Wallets;
@@ -23,6 +24,7 @@ public static class ApiEndpoints
         wallet.MapTagEndpoints();
         wallet.MapRecordEndpoints();
         wallet.MapTemplateEndpoints();
+        wallet.MapRecurringEndpoints();
         wallet.MapMemberEndpoints();
         wallet.MapInvitationManagementEndpoints();
         api.MapInvitationEndpoints();

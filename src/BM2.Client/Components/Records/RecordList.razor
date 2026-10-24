@@ -75,6 +75,9 @@
                     <button type="button" @onclick="() => SaveTemplateAsync(record)"><Icon Name="bolt" /><span>Save as template</span></button>
                 </li>
                 <li>
+                    <a href="@($"recurring/new?from={record.Id}")"><Icon Name="repeat" /><span>Make recurring</span></a>
+                </li>
+                <li>
                     <button type="button" class="danger-text" @onclick="AskDelete"><Icon Name="trash" /><span>Delete</span></button>
                 </li>
             }

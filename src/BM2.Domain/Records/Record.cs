@@ -50,6 +50,12 @@ public sealed class Record
 
     public DateTimeOffset? UpdatedAt { get; private set; }
 
+    /// <summary>The recurring rule that added the record; null once the rule is deleted.</summary>
+    public Guid? RecurringRuleId { get; private set; }
+
+    /// <summary>The scheduled date of the occurrence; unique per rule, so catch-up never adds it twice.</summary>
+    public DateOnly? OccurrenceDate { get; private set; }
+
     public Account Account { get; private set; } = null!;
 
     public Account? TransferAccount { get; private set; }
@@ -82,6 +88,12 @@ public sealed class Record
         Apply(draft, context);
         UpdatedAt = now;
         return Result.Success;
+    }
+
+    public void LinkToRule(Guid ruleId, DateOnly occurrenceDate)
+    {
+        RecurringRuleId = ruleId;
+        OccurrenceDate = occurrenceDate;
     }
 
     // Archived accounts and categories only block new assignments, so old records stay editable.

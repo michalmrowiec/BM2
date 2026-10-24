@@ -1,0 +1,125 @@
+@page "/recurring"
+@attribute [Authorize]
+@using BM2.Client.Components.Records
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Recurring
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>Recurring · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Recurring</h1>
+    @if (CanWrite)
+    {
+        <a class="btn btn-primary btn-sm" href="recurring/new"><Icon Name="plus" /> New</a>
+    }
+</header>
+
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else if (_rules is null)
+{
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+}
+else if (_rules.Count == 0)
+{
+    <EmptyState IconName="repeat" Title="Nothing recurring yet">
+        Turn on Repeat when adding a record, or choose Make recurring in a record's menu (⋯).
+    </EmptyState>
+}
+else
+{
+    <ul class="list stagger">
+        @foreach (var rule in _rules)
+        {
+            var label = Label(rule);
+            <li class="template-row" @key="rule.Id">
+                <ListRow Title="@label" Subtitle="@Subtitle(rule)" Href="@(CanWrite ? $"recurring/{rule.Id}" : null)">
+                    <Leading>
+                        <RecordAvatar Category="Wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)" Type="rule.Record.Type"
+                                      Fallback="@label" />
+                    </Leading>
+                    <Trailing>
+                        <Amount Value="rule.Record.Amount" Currency="@rule.Record.Currency" Sign="TemplateText.Sign(rule.Record.Type)" />
+                    </Trailing>
+                </ListRow>
+                @if (CanWrite && rule.NextDate is not null)
+                {
+                    <button type="button" class="icon-button pin-toggle" aria-pressed="@(rule.IsPaused ? "true" : "false")"
+                            aria-label="@(rule.IsPaused ? $"Resume {label}" : $"Pause {label}")" disabled="@_busy"
+                            @onclick="() => TogglePauseAsync(rule)">
+                        <Icon Name="@(rule.IsPaused ? "play" : "pause")" />
+                    </button>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private List<RecurringRuleItem>? _rules;
+    private WalletSnapshot? _loadedFor;
+    private bool _busy;
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool CanWrite => Wallet?.Accounts.Any(a => a.CanWrite) == true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync(bool force = false)
+    {
+        var wallet = Wallet;
+        if (wallet is null || (!force && ReferenceEquals(wallet, _loadedFor)))
+        {
+            return;
+        }
+
+        _loadedFor = wallet;
+        var result = await Api.GetAsync<List<RecurringRuleItem>>($"api/wallets/{wallet.Id}/recurring");
+        _rules = result.Value ?? [];
+    }
+
+    private string Label(RecurringRuleItem rule) =>
+        rule.Record.Name ?? Wallet!.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? rule.Record.Type.ToString();
+
+    private static string Subtitle(RecurringRuleItem rule)
+    {
+        var next = rule switch
+        {
+            { NextDate: null } => "Ended",
+            { IsPaused: true } => "Paused",
+            _ => $"Next {rule.NextDate:d MMM yyyy}",
+        };
+        return $"{next} · {RecurringText.Describe(rule.Schedule)}";
+    }
+
+    private async Task TogglePauseAsync(RecurringRuleItem rule)
+    {
+        _busy = true;
+        var request = new SaveRecurringRuleRequest(rule.Record, rule.Schedule, rule.Mode, !rule.IsPaused, null);
+        var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/recurring/{rule.Id}", request);
+        _busy = false;
+        if (result.Ok)
+        {
+            await LoadAsync(force: true);
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't change the rule.", ToastKind.Error);
+        }
+    }
+}

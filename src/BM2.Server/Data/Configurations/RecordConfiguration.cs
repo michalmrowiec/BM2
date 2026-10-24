@@ -1,5 +1,6 @@
 using BM2.Contracts.Common;
 using BM2.Domain.Records;
+using BM2.Domain.Recurring;
 using BM2.Domain.Tags;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -20,6 +21,9 @@ internal sealed class RecordConfiguration : IEntityTypeConfiguration<Record>
 
         builder.HasMany(r => r.Tags).WithOne().HasForeignKey(t => t.RecordId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(r => r.Tags).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasOne<RecurringRule>().WithMany().HasForeignKey(r => r.RecurringRuleId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(r => new { r.RecurringRuleId, r.OccurrenceDate }).IsUnique().HasFilter("[RecurringRuleId] IS NOT NULL");
 
         builder.HasIndex(r => new { r.AccountId, r.OccurredOn });
         builder.HasIndex(r => new { r.TransferAccountId, r.OccurredOn }).HasFilter("[TransferAccountId] IS NOT NULL");

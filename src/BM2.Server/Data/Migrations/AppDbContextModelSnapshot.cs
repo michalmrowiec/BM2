@@ -205,6 +205,12 @@ namespace BM2.Server.Data.Migrations
                     b.Property<DateOnly>("OccurredOn")
                         .HasColumnType("date");
 
+                    b.Property<DateOnly?>("OccurrenceDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("RecurringRuleId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -227,6 +233,10 @@ namespace BM2.Server.Data.Migrations
 
                     b.HasIndex("AccountId", "OccurredOn");
 
+                    b.HasIndex("RecurringRuleId", "OccurrenceDate")
+                        .IsUnique()
+                        .HasFilter("[RecurringRuleId] IS NOT NULL");
+
                     b.HasIndex("TransferAccountId", "OccurredOn")
                         .HasFilter("[TransferAccountId] IS NOT NULL");
 
@@ -246,6 +256,108 @@ namespace BM2.Server.Data.Migrations
                     b.HasIndex("TagId");
 
                     b.ToTable("RecordTag");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Recurring.RecurringRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("AccountAmount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<int>("End")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Interval")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPaused")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateOnly?>("NextDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("NextIndex")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("TransferAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("TransferAmount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WalletId", "NextDate");
+
+                    b.ToTable("RecurringRules");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Recurring.RecurringRuleTag", b =>
+                {
+                    b.Property<Guid>("RecurringRuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("RecurringRuleId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("RecurringRuleTag");
                 });
 
             modelBuilder.Entity("BM2.Domain.Tags.Tag", b =>
@@ -684,6 +796,11 @@ namespace BM2.Server.Data.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("BM2.Domain.Recurring.RecurringRule", null)
+                        .WithMany()
+                        .HasForeignKey("RecurringRuleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("BM2.Domain.Accounts.Account", "TransferAccount")
                         .WithMany()
                         .HasForeignKey("TransferAccountId")
@@ -701,6 +818,30 @@ namespace BM2.Server.Data.Migrations
                     b.HasOne("BM2.Domain.Records.Record", null)
                         .WithMany("Tags")
                         .HasForeignKey("RecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BM2.Domain.Recurring.RecurringRule", b =>
+                {
+                    b.HasOne("BM2.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BM2.Domain.Recurring.RecurringRuleTag", b =>
+                {
+                    b.HasOne("BM2.Domain.Recurring.RecurringRule", null)
+                        .WithMany("Tags")
+                        .HasForeignKey("RecurringRuleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -867,6 +1008,11 @@ namespace BM2.Server.Data.Migrations
                 });
 
             modelBuilder.Entity("BM2.Domain.Records.Record", b =>
+                {
+                    b.Navigation("Tags");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Recurring.RecurringRule", b =>
                 {
                     b.Navigation("Tags");
                 });

@@ -3,6 +3,7 @@
 @attribute [Authorize]
 @using BM2.Client.Components.Records
 @using BM2.Contracts.Records
+@using BM2.Contracts.Recurring
 @using BM2.Contracts.Templates
 @using BM2.Contracts.Wallets
 @using BM2.Client.Components.Wallets
@@ -142,7 +143,19 @@
     {
         _busy = true;
         var url = $"api/wallets/{Wallet!.Id}/records";
-        var result = Id is { } id ? await Api.PutAsync($"{url}/{id}", request) : await Api.PostAsync<RecordItem>(url, request);
+        var created = Id is null ? await Api.PostAsync<RecordItem>(url, request) : null;
+        var result = created ?? await Api.PutAsync($"{url}/{Id}", request);
+
+        // Repeat: the new record is the first occurrence and the rule continues after it.
+        if (created?.Value is { } record && _form?.BuildRuleRequest(record.Id) is { } rule)
+        {
+            var saved = await Api.PostAsync<RecurringRuleItem>($"api/wallets/{Wallet.Id}/recurring", rule);
+            if (!saved.Ok)
+            {
+                Toasts.Show(saved.Problem!.Detail ?? "The record is saved, but the repeat couldn't be.", ToastKind.Error);
+            }
+        }
+
         _busy = false;
 
         if (result.Ok)
