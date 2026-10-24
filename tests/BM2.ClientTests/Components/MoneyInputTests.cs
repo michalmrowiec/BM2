@@ -36,6 +36,21 @@ public class MoneyInputTests : BunitContext
         cut.Find("input").GetAttribute("aria-invalid").ShouldBe("true");
     }
 
+    [Theory]
+    [InlineData("pl-PL", "1.500")]
+    [InlineData("pl-PL", "1,500")]
+    [InlineData("en-US", "2.750")]
+    public void Third_decimal_digit_is_rejected_even_when_zero(string culture, string typed)
+    {
+        using var scope = new CultureScope(culture);
+        var cut = Render<MoneyFormHost>();
+
+        cut.Find("input").Change(typed);
+
+        cut.Find(".field__error").TextContent.ShouldNotBeEmpty();
+        cut.Instance.Model.Amount.ShouldBeNull();
+    }
+
     [Fact]
     public void Empty_text_clears_the_value()
     {

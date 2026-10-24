@@ -4,7 +4,13 @@
 @inject IJSRuntime JS
 
 <div class="field @(Large ? "field--large" : null)">
-    <label class="field__label" for="@FieldId">@Label</label>
+    <label class="field__label" for="@FieldId">
+        @Label
+        @if (Currency is not null)
+        {
+            <span class="sr-only">(@Currency)</span>
+        }
+    </label>
     <div class="money-input">
         <input @ref="_input" @attributes="AdditionalAttributes" id="@FieldId" class="field__control money-input__control num"
                type="text" inputmode="decimal" autocomplete="off" value="@CurrentValueAsString"
@@ -48,14 +54,16 @@
     protected override bool TryParseValueFromString(
         string? value, out decimal? result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
-        if (!AmountParser.TryParse(value, CultureInfo.CurrentCulture, out result))
+        if (!AmountParser.TryParse(value, CultureInfo.CurrentCulture, out result, out var decimals))
         {
             validationErrorMessage = "Enter a number.";
             return false;
         }
 
-        if (result is { } amount && decimal.Round(amount, Decimals) != amount)
+        // Typed digits count, not the value: "1.500" in pl-PL must not quietly become 1.50.
+        if (decimals > Decimals)
         {
+            result = null;
             validationErrorMessage = $"Use at most {Decimals} decimal places.";
             return false;
         }

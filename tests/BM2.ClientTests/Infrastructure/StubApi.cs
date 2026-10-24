@@ -8,13 +8,17 @@ namespace BM2.ClientTests.Infrastructure;
 /// <summary>Fake API: answers by method and path (with query) and records every request as "METHOD path".</summary>
 public sealed class StubApi : HttpMessageHandler
 {
-    private readonly List<(HttpMethod Method, string Path, Func<HttpRequestMessage, HttpResponseMessage> Respond)> _routes = [];
+    private readonly List<(HttpMethod Method, string Path, Func<HttpRequestMessage, Task<HttpResponseMessage>> Respond)> _routes = [];
 
     public List<string> Requests { get; } = [];
 
     public List<(string Request, string? Body)> Bodies { get; } = [];
 
-    public StubApi On(HttpMethod method, string path, Func<HttpRequestMessage, HttpResponseMessage> respond)
+    public StubApi On(HttpMethod method, string path, Func<HttpRequestMessage, HttpResponseMessage> respond) =>
+        OnAsync(method, path, request => Task.FromResult(respond(request)));
+
+    /// <summary>For responses the test releases later (e.g. to simulate a slow request).</summary>
+    public StubApi OnAsync(HttpMethod method, string path, Func<HttpRequestMessage, Task<HttpResponseMessage>> respond)
     {
         _routes.Insert(0, (method, path, respond));
         return this;
@@ -44,6 +48,6 @@ public sealed class StubApi : HttpMessageHandler
         Bodies.Add((key, request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken)));
 
         var route = _routes.FirstOrDefault(r => r.Method == request.Method && r.Path == path);
-        return route.Respond is null ? new HttpResponseMessage(HttpStatusCode.NotFound) : route.Respond(request);
+        return route.Respond is null ? new HttpResponseMessage(HttpStatusCode.NotFound) : await route.Respond(request);
     }
 }

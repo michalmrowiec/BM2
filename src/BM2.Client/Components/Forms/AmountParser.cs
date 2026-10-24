@@ -5,9 +5,11 @@ namespace BM2.Client.Components.Forms;
 /// <summary>Parses amounts typed on phones, where the keyboard may offer "." or "," regardless of culture.</summary>
 public static class AmountParser
 {
-    public static bool TryParse(string? text, CultureInfo culture, out decimal? value)
+    /// <param name="decimals">Digits typed after the decimal separator ("1.500" has 3), so trailing zeros still count.</param>
+    public static bool TryParse(string? text, CultureInfo culture, out decimal? value, out int decimals)
     {
         value = null;
+        decimals = 0;
         if (string.IsNullOrWhiteSpace(text))
         {
             return true;
@@ -15,10 +17,12 @@ public static class AmountParser
 
         var cleaned = new string(text.Where(c => char.IsAsciiDigit(c) || c is '.' or ',' or '-').ToArray());
         var separator = cleaned.LastIndexOfAny(['.', ',']);
-        var normalized = separator < 0 || IsGroupSeparator(cleaned, separator, culture)
+        var hasDecimals = separator >= 0 && !IsGroupSeparator(cleaned, separator, culture);
+        var normalized = !hasDecimals
             ? cleaned.Replace(".", "", StringComparison.Ordinal).Replace(",", "", StringComparison.Ordinal)
             : cleaned[..separator].Replace(".", "", StringComparison.Ordinal).Replace(",", "", StringComparison.Ordinal)
                 + "." + cleaned[(separator + 1)..];
+        decimals = hasDecimals ? cleaned.Length - separator - 1 : 0;
 
         if (!decimal.TryParse(normalized, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
                 CultureInfo.InvariantCulture, out var parsed))

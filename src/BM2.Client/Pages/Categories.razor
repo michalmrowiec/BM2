@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @using BM2.Contracts.Categories
 @using BM2.Contracts.Wallets
+@using BM2.Client.Components.Wallets
 @inherits WalletComponentBase
 @inject ApiClient Api
 @inject ToastService Toasts
@@ -20,7 +21,7 @@
 
 @if (Wallet is null)
 {
-    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    <WalletPlaceholder />
 }
 else
 {

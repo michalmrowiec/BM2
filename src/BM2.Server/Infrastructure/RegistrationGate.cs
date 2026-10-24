@@ -41,6 +41,7 @@ public static class RegistrationGate
         var db = context.RequestServices.GetRequiredService<AppDbContext>();
         var time = context.RequestServices.GetRequiredService<TimeProvider>();
         var invitation = await InvitationLookup.FindAsync(db, token, context.RequestAborted);
-        return invitation?.IsPending(time.GetUtcNow()) == true;
+        return invitation is not null
+            && (await InvitationAcceptance.CheckAsync(db, invitation, time.GetUtcNow(), context.RequestAborted)).IsSuccess;
     }
 }

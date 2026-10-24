@@ -45,6 +45,11 @@ public sealed class WalletState(ApiClient api, BrowserStorage storage)
     {
         var stored = await storage.GetAsync(WalletKey);
         await ReloadAsync(Guid.TryParse(stored, out var id) ? id : null);
+        if (Problem is not null)
+        {
+            // Let the next page try again instead of keeping the failure.
+            _initialization = null;
+        }
     }
 
     private async Task ReloadAsync(Guid? preferred)

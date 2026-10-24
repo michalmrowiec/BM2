@@ -3,6 +3,7 @@
 @using BM2.Client.Components.Accounts
 @using BM2.Contracts.Accounts
 @using BM2.Contracts.Wallets
+@using BM2.Client.Components.Wallets
 @inherits WalletComponentBase
 @inject ApiClient Api
 @inject ToastService Toasts
@@ -19,7 +20,7 @@
 
 @if (Wallet is null)
 {
-    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    <WalletPlaceholder />
 }
 else if (Wallet.Accounts.Count == 0)
 {

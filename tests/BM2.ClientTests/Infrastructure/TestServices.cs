@@ -15,6 +15,7 @@ public static class TestServices
         context.JSInterop.SetupModule("./Components/Forms/MoneyInput.razor.js").Mode = JSRuntimeMode.Loose;
         context.JSInterop.SetupModule("./Pages/Members.razor.js").Mode = JSRuntimeMode.Loose;
         context.JSInterop.SetupModule("./Pages/Records.razor.js").Mode = JSRuntimeMode.Loose;
+        context.JSInterop.SetupModule("./Components/ToastHost.razor.js").Mode = JSRuntimeMode.Loose;
         context.Services.AddSingleton(api.CreateClient());
         context.Services.AddBm2Client();
         context.SetRendererInfo(new RendererInfo("WebAssembly", isInteractive: true));

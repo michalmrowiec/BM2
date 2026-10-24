@@ -1,6 +1,6 @@
 @typeparam TValue
 
-<div class="chip-group @Class" role="group" aria-label="@Label">
+<div class="chip-group @Class" role="group" aria-label="@Label" aria-describedby="@DescribedBy">
     @foreach (var option in Options)
     {
         var pressed = Selected.Contains(option.Value);
@@ -23,6 +23,9 @@
     [Parameter, EditorRequired] public string Label { get; set; } = "";
 
     [Parameter] public string? Class { get; set; }
+
+    /// <summary>Id of the message (e.g. a validation error) that describes the group.</summary>
+    [Parameter] public string? DescribedBy { get; set; }
 
     private Task ToggleAsync(TValue value)
     {

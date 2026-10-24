@@ -41,30 +41,52 @@ public class InviteRegistrationTests(IntegrationFixture fixture) : IntegrationTe
     }
 
     [Fact]
-    public async Task Registering_with_invite_creates_confirmed_user_and_returns_to_invite()
+    public async Task Registering_with_invite_joins_the_wallet_and_uses_up_the_link()
     {
-        var token = await InvitationTokenAsync();
+        var (walletId, token) = await InvitationAsync();
         using var client = Factory.CreateAnonymousClient();
 
-        using var response = await FormPost.SubmitAsync(client, $"/Account/Register?invite={token}", "register", new Dictionary<string, string>
+        using var response = await RegisterAsync(client, token, "new@example.com");
+
+        ((int)response.StatusCode).ShouldBeInRange(300, 399);
+        response.Headers.GetValues("Set-Cookie").ShouldContain(c => c.StartsWith(".AspNetCore.Identity.Application", StringComparison.Ordinal));
+        await using var db = Fixture.CreateDbContext();
+        var user = await db.Users.SingleAsync(u => u.Email == "new@example.com", Ct);
+        user.EmailConfirmed.ShouldBeTrue();
+        (await db.WalletMembers.SingleAsync(m => m.UserId == user.Id, Ct)).ShouldSatisfyAllConditions(
+            m => m.WalletId.ShouldBe(walletId),
+            m => m.Role.ShouldBe(MemberRole.Editor));
+        (await db.Invitations.SingleAsync(Ct)).AcceptedByUserId.ShouldBe(user.Id);
+    }
+
+    [Fact]
+    public async Task Invite_link_cannot_register_a_second_account()
+    {
+        var (_, token) = await InvitationAsync();
+        using var first = Factory.CreateAnonymousClient();
+        (await RegisterAsync(first, token, "first@example.com")).Dispose();
+        using var second = Factory.CreateAnonymousClient();
+
+        var response = await second.GetAsync($"/Account/Register?invite={token}", Ct);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    private static Task<HttpResponseMessage> RegisterAsync(HttpClient client, string token, string email) =>
+        FormPost.SubmitAsync(client, $"/Account/Register?invite={token}", "register", new Dictionary<string, string>
         {
-            ["Input.Email"] = "new@example.com",
+            ["Input.Email"] = email,
             ["Input.Password"] = DefaultPassword,
             ["Input.ConfirmPassword"] = DefaultPassword,
         }, Ct);
 
-        ((int)response.StatusCode).ShouldBeInRange(300, 399);
-        response.Headers.Location!.OriginalString.ShouldEndWith($"invite/{token}");
-        response.Headers.GetValues("Set-Cookie").ShouldContain(c => c.StartsWith(".AspNetCore.Identity.Application", StringComparison.Ordinal));
-        await using var db = Fixture.CreateDbContext();
-        (await db.Users.SingleAsync(u => u.Email == "new@example.com", Ct)).EmailConfirmed.ShouldBeTrue();
-    }
-
-    private async Task<string> InvitationTokenAsync()
+    private async Task<(Guid WalletId, string Token)> InvitationAsync()
     {
         var owner = await CreateUserAsync("owner@example.com");
         var wallet = await Data.WalletAsync(owner.Id);
         var (_, token) = await Data.InvitationAsync(wallet.Id, owner.Id, MemberRole.Editor);
-        return token;
+        return (wallet.Id, token);
     }
+
+    private async Task<string> InvitationTokenAsync() => (await InvitationAsync()).Token;
 }

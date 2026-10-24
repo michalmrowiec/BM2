@@ -37,6 +37,8 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         new("GET", "/api/wallets/{w}/members", null, MemberRole.Viewer),
         new("PUT", "/api/wallets/{w}/members/{u}", _ => new UpdateRoleRequest(MemberRole.Viewer), MemberRole.Owner),
         new("PUT", "/api/wallets/{w}/accounts/{a}/members/{u}", _ => new UpdateRoleRequest(MemberRole.Viewer), MemberRole.Owner),
+        new("DELETE", "/api/wallets/{w}/members/{u}", null, MemberRole.Owner),
+        new("DELETE", "/api/wallets/{w}/accounts/{a}/members/{u}", null, MemberRole.Owner),
         new("POST", "/api/wallets/{w}/invitations", _ => new CreateInvitationRequest(MemberRole.Viewer, null), MemberRole.Owner),
         new("DELETE", "/api/wallets/{w}/invitations/{i}", null, MemberRole.Owner),
     ];

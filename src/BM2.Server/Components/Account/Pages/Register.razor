@@ -78,7 +78,8 @@
     {
         // Defense in depth: RegistrationGate already blocks this page outside Development without a valid invitation.
         var invitation = Invite is null ? null : await InvitationLookup.FindAsync(Db, Invite, CancellationToken.None);
-        var invited = invitation?.IsPending(Time.GetUtcNow()) == true;
+        var invited = invitation is not null
+            && (await InvitationAcceptance.CheckAsync(Db, invitation, Time.GetUtcNow(), CancellationToken.None)).IsSuccess;
         if (!Environment.IsDevelopment() && !invited)
         {
             return;
@@ -102,10 +103,17 @@
         if (invited)
         {
             // No email is sent here: the invitation link from the owner stands in for confirming the address.
+            // Joining in the same request uses the link up, so it cannot open registration for anyone else.
             var confirmation = await UserManager.GenerateEmailConfirmationTokenAsync(user);
             await UserManager.ConfirmEmailAsync(user, confirmation);
+            var joined = await InvitationAcceptance.AcceptAsync(Db, invitation!, user.Id, Time.GetUtcNow(), CancellationToken.None);
+            if (joined.IsSuccess)
+            {
+                await Db.SaveChangesAsync();
+            }
+
             await SignInManager.SignInAsync(user, isPersistent: true);
-            RedirectManager.RedirectTo($"invite/{Invite}");
+            RedirectManager.RedirectTo("");
             return;
         }
 

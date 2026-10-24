@@ -20,7 +20,7 @@ internal static class GetInvitation
             return Error.NotFound().ToProblem();
         }
 
-        var usable = invitation.CheckUsable(time.GetUtcNow());
+        var usable = await InvitationAcceptance.CheckAsync(db, invitation, time.GetUtcNow(), ct);
         if (!usable.IsSuccess)
         {
             return usable.Error!.ToProblem();

@@ -92,6 +92,37 @@ public class InvitationTests(IntegrationFixture fixture) : IntegrationTest(fixtu
         preview.StatusCode.ShouldBe(HttpStatusCode.Gone);
     }
 
+    [Fact]
+    public async Task Invitation_from_a_removed_owner_returns_410()
+    {
+        var s = await SetupAsync();
+        var coOwner = await CreateUserAsync("coowner@example.com");
+        await Data.MemberAsync(s.Wallet, coOwner.Id, MemberRole.Owner);
+        var (_, token) = await Data.InvitationAsync(s.Wallet, coOwner.Id, MemberRole.Owner);
+        await s.Owner.DeleteAsync($"/api/wallets/{s.Wallet}/members/{coOwner.Id}", Ct);
+
+        var preview = await s.Guest.GetAsync($"/api/invitations/{token}", Ct);
+        var accept = await s.Guest.PostAsync($"/api/invitations/{token}/accept", null, Ct);
+
+        preview.StatusCode.ShouldBe(HttpStatusCode.Gone);
+        accept.StatusCode.ShouldBe(HttpStatusCode.Gone);
+        (await s.Guest.GetAsync($"/api/wallets/{s.Wallet}", Ct)).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Invitation_from_a_demoted_owner_returns_410()
+    {
+        var s = await SetupAsync();
+        var coOwner = await CreateUserAsync("coowner@example.com");
+        await Data.MemberAsync(s.Wallet, coOwner.Id, MemberRole.Owner);
+        var (_, token) = await Data.InvitationAsync(s.Wallet, coOwner.Id, MemberRole.Editor);
+        await s.Owner.PutAsJsonAsync($"/api/wallets/{s.Wallet}/members/{coOwner.Id}", new UpdateRoleRequest(MemberRole.Viewer), Ct);
+
+        var accept = await s.Guest.PostAsync($"/api/invitations/{token}/accept", null, Ct);
+
+        accept.StatusCode.ShouldBe(HttpStatusCode.Gone);
+    }
+
     [Theory]
     [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")]
     [InlineData("not-a-token")]

@@ -4,10 +4,13 @@
 @using BM2.Client.Components.Records
 @using BM2.Contracts.Records
 @using BM2.Contracts.Wallets
+@using BM2.Client.Components.Wallets
 @inherits WalletComponentBase
 @inject ApiClient Api
 @inject ToastService Toasts
 @inject NavigationManager Navigation
+@inject AppNavigation AppNavigation
+@inject IJSRuntime JS
 
 <PageTitle>@Title · BM2</PageTitle>
 
@@ -26,7 +29,11 @@
         </div>
     </header>
 
-    @if (Wallet is null || _loading)
+    @if (Wallet is null)
+    {
+        <WalletPlaceholder />
+    }
+    else if (_loading)
     {
         <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
     }
@@ -129,7 +136,7 @@
             await WalletState.SetLastAccountAsync(request.AccountId);
             Toasts.Show("Saved.", ToastKind.Success);
             await WalletState.RefreshAsync();
-            Navigation.NavigateTo("records");
+            await GoBackAsync();
         }
         else if (result.Problem!.HasFieldErrors)
         {
@@ -145,6 +152,19 @@
         }
     }
 
+    // "Save and go back" (spec): to the previous app page, or to Records when the editor was opened directly.
+    private async Task GoBackAsync()
+    {
+        if (AppNavigation.CanGoBack)
+        {
+            await JS.InvokeVoidAsync("history.back");
+        }
+        else
+        {
+            Navigation.NavigateTo("records");
+        }
+    }
+
     private async Task DeleteAsync()
     {
         var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/records/{Id}");
@@ -153,7 +173,7 @@
         {
             Toasts.Show("Record deleted.");
             await WalletState.RefreshAsync();
-            Navigation.NavigateTo("records");
+            await GoBackAsync();
         }
         else
         {

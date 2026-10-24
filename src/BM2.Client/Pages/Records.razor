@@ -4,6 +4,7 @@
 @using BM2.Client.Components.Records
 @using BM2.Contracts.Records
 @using BM2.Contracts.Wallets
+@using BM2.Client.Components.Wallets
 @inherits WalletComponentBase
 @implements IAsyncDisposable
 @inject ApiClient Api
@@ -73,7 +74,11 @@
     </div>
 }
 
-@if (Wallet is null || _loading)
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else if (_loading)
 {
     <div aria-busy="true">
         <span class="skeleton skeleton--line"></span>
@@ -114,6 +119,7 @@ else
     private RecordSummary? _summary;
     private string? _nextCursor;
     private string? _loadedKey;
+    private int _version;
     private WalletSnapshot? _loadedSnapshot;
     private bool _loading = true;
     private bool _loadingMore;
@@ -232,12 +238,19 @@ else
         _loadedSnapshot = wallet;
         _loadedKey = key;
         _loading = true;
+        var version = ++_version;
         await StopObservingAsync();
 
         var baseUrl = $"api/wallets/{wallet.Id}/records";
         var page = Api.GetAsync<RecordPage>(baseUrl + key);
         var summary = Api.GetAsync<RecordSummary>($"{baseUrl}/summary{key}");
         await Task.WhenAll(page, summary);
+
+        // A newer month or filter started loading meanwhile: its result wins.
+        if (version != _version)
+        {
+            return;
+        }
 
         _failed = !page.Result.Ok;
         _items = page.Result.Value?.Items.ToList() ?? [];
@@ -256,6 +269,7 @@ else
 
         _loadingMore = true;
         StateHasChanged();
+        var version = _version;
         var filter = CurrentFilter;
         var query = new RecordFilter
         {
@@ -263,6 +277,12 @@ else
             Type = filter.Type, Status = filter.Status, Search = filter.Search, Cursor = _nextCursor,
         }.ToQueryString();
         var page = await Api.GetAsync<RecordPage>($"api/wallets/{Wallet.Id}/records{query}");
+        if (version != _version)
+        {
+            _loadingMore = false;
+            return;
+        }
+
         if (page.Ok)
         {
             _items.AddRange(page.Value!.Items);

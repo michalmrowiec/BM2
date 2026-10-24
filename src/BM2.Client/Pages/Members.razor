@@ -4,6 +4,7 @@
 @using BM2.Contracts.Invitations
 @using BM2.Contracts.Members
 @using BM2.Contracts.Wallets
+@using BM2.Client.Components.Wallets
 @inherits WalletComponentBase
 @implements IAsyncDisposable
 @inject ApiClient Api
@@ -23,7 +24,7 @@
 
 @if (Wallet is null)
 {
-    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    <WalletPlaceholder />
 }
 else if (Wallet.Role is null)
 {

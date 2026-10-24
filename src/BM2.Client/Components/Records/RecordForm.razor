@@ -27,7 +27,8 @@
         <div class="field record-form__categories">
             <span class="field__label" id="record-category-label">Category</span>
             <ChipGroup TValue="Guid" Options="CategoryOptions" Selected="SelectedCategory" SelectedChanged="OnCategoryChanged"
-                       Label="Category" Class="chip-group--categories" />
+                       Label="Category" Class="chip-group--categories"
+                       DescribedBy="@(ErrorFor(nameof(FormModel.CategoryId)) is null ? null : "record-category-error")" />
             <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint" />
         </div>
     }

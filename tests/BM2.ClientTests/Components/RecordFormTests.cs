@@ -202,6 +202,26 @@ public class RecordFormTests : BunitContext
         _submitted.ShouldBeNull();
     }
 
+    [Fact]
+    public void Category_error_is_linked_to_the_chip_group()
+    {
+        var cut = RenderForm();
+        cut.Find("#record-amount").Change("5");
+
+        cut.Find("form").Submit();
+
+        var errorId = cut.Find(".record-form__categories .field__error").Id;
+        cut.Find(".chip-group--categories").GetAttribute("aria-describedby").ShouldBe(errorId);
+    }
+
+    [Fact]
+    public void Amount_label_names_the_currency_for_screen_readers()
+    {
+        var cut = RenderForm(defaultAccount: Euro.Id);
+
+        cut.Find("label[for=record-amount]").TextContent.ShouldContain("EUR");
+    }
+
     protected override void Dispose(bool disposing)
     {
         _culture.Dispose();
