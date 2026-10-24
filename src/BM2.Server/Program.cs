@@ -24,6 +24,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddBm2Authentication();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+builder.Services.AddBm2Features();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 

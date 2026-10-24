@@ -13,6 +13,10 @@ public abstract class IntegrationTest(IntegrationFixture fixture) : IAsyncLifeti
 
     protected BM2AppFactory Factory => Fixture.Factory;
 
+    protected TestData Data => new(Fixture);
+
+    protected static CancellationToken Ct => TestContext.Current.CancellationToken;
+
     public async ValueTask InitializeAsync() => await Fixture.ResetDatabaseAsync();
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
