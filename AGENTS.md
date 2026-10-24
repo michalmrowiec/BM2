@@ -17,7 +17,11 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Decyzje:** proste decyzje i wątpliwości rozstrzygaj sam, wybierając najbardziej optymalny darmowy wariant
   (i krótko je odnotuj). Dopytuj tylko przy istotnych decyzjach produktowych/architektonicznych.
 - Gdy powstaje działające demo – uruchom je lokalnie i podaj link do przetestowania.
-- Każdy podprojekt: spec → plan → implementacja. Bez kodu produkcyjnego przed zatwierdzeniem speca.
+- **Tryb obecny (od 2026-10-24): najpierw funkcje, najniższym kosztem.** Funkcje robimy tak, jak opisuje je
+  użytkownik: krótkie potwierdzenie w czacie zamiast speca i planu, bez nowych testów, bez pełnego WCAG i bez i18n
+  (UI tylko po angielsku, teksty wprost w komponentach). Zostaje to, co nic nie kosztuje: autoryzacja przez
+  `WalletAccessFilter`, zgodność z MSSQL 2012, istniejące komponenty i tokeny, kod się buduje. Zasady o testach,
+  WCAG i i18n poniżej obowiązują ponownie przy uzupełnianiu braków przed wdrożeniem (razem z utwardzeniem 1C).
 - Commity na `dev` są dozwolone bez pytania (gałąź robocza `dev`, główna `master`). Push, merge do `master`
   i operacje nieodwracalne – tylko na wyraźną prośbę.
 - **Język:** rozmowa i dokumentacja (`docs/`) po polsku; kod, identyfikatory, komentarze i commity po angielsku
