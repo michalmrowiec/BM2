@@ -8,4 +8,5 @@ public static class Limits
     public const int CategoryName = 50;
     public const int TagName = 30;
     public const int RecordName = 100;
+    public const int CategoryEmoji = 16;
 }

@@ -10,6 +10,10 @@ public static class RuleExtensions
             .Must(name => !string.IsNullOrWhiteSpace(name)).WithMessage("Enter a name.")
             .Must(name => name.Trim().Length <= maxLength).WithMessage($"Use at most {maxLength} characters.");
 
+    public static IRuleBuilderOptions<T, string?> Emoji<T>(this IRuleBuilder<T, string?> rule) =>
+        rule.Must(emoji => emoji is null || emoji.Trim().Length <= Limits.CategoryEmoji)
+            .WithMessage($"Use at most {Limits.CategoryEmoji} characters.");
+
     public static IRuleBuilderOptions<T, string> Currency<T>(this IRuleBuilder<T, string> rule) =>
         rule.Must(Currencies.IsSupported).WithMessage("Choose a supported currency.");
 

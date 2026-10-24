@@ -88,6 +88,10 @@ namespace BM2.Server.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Emoji")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
 
@@ -267,6 +271,69 @@ namespace BM2.Server.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Tags");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Templates.Template", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("TransferAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("Templates");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Templates.TemplateTag", b =>
+                {
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("TemplateId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("TemplateTag");
                 });
 
             modelBuilder.Entity("BM2.Domain.Wallets.Wallet", b =>
@@ -649,6 +716,30 @@ namespace BM2.Server.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BM2.Domain.Templates.Template", b =>
+                {
+                    b.HasOne("BM2.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BM2.Domain.Templates.TemplateTag", b =>
+                {
+                    b.HasOne("BM2.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Templates.Template", null)
+                        .WithMany("Tags")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BM2.Domain.Wallets.WalletMember", b =>
                 {
                     b.HasOne("BM2.Server.Data.ApplicationUser", null)
@@ -772,6 +863,11 @@ namespace BM2.Server.Data.Migrations
                 });
 
             modelBuilder.Entity("BM2.Domain.Records.Record", b =>
+                {
+                    b.Navigation("Tags");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Templates.Template", b =>
                 {
                     b.Navigation("Tags");
                 });

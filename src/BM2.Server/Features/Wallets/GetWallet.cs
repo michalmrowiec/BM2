@@ -35,7 +35,7 @@ internal static class GetWallet
             .AsNoTracking()
             .Where(c => c.WalletId == access.WalletId)
             .OrderBy(c => c.IsArchived).ThenBy(c => c.Type).ThenBy(c => c.Name)
-            .Select(c => new CategoryItem(c.Id, c.Name, c.Type, c.IsArchived))
+            .Select(c => new CategoryItem(c.Id, c.Name, c.Type, c.IsArchived, c.Emoji))
             .ToListAsync(ct);
         var tags = await db.Tags
             .AsNoTracking()

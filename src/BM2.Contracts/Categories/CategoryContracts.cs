@@ -9,12 +9,12 @@ public enum CategoryType
     Income = 2,
 }
 
-public sealed record CategoryItem(Guid Id, string Name, CategoryType Type, bool IsArchived);
+public sealed record CategoryItem(Guid Id, string Name, CategoryType Type, bool IsArchived, string? Emoji = null);
 
-public sealed record CreateCategoryRequest(string Name, CategoryType Type);
+public sealed record CreateCategoryRequest(string Name, CategoryType Type, string? Emoji = null);
 
 /// <summary>The type is fixed after creation, because records rely on it.</summary>
-public sealed record UpdateCategoryRequest(string Name, bool IsArchived);
+public sealed record UpdateCategoryRequest(string Name, bool IsArchived, string? Emoji = null);
 
 public sealed class CreateCategoryRequestValidator : AbstractValidator<CreateCategoryRequest>
 {
@@ -22,10 +22,15 @@ public sealed class CreateCategoryRequestValidator : AbstractValidator<CreateCat
     {
         RuleFor(x => x.Name).Name(Limits.CategoryName);
         RuleFor(x => x.Type).IsInEnum().WithMessage("Choose expense or income.");
+        RuleFor(x => x.Emoji).Emoji();
     }
 }
 
 public sealed class UpdateCategoryRequestValidator : AbstractValidator<UpdateCategoryRequest>
 {
-    public UpdateCategoryRequestValidator() => RuleFor(x => x.Name).Name(Limits.CategoryName);
+    public UpdateCategoryRequestValidator()
+    {
+        RuleFor(x => x.Name).Name(Limits.CategoryName);
+        RuleFor(x => x.Emoji).Emoji();
+    }
 }

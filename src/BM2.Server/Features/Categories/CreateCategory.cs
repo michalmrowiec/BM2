@@ -27,12 +27,12 @@ internal static class CreateCategory
             return CategoryNames.TakenError.ToProblem();
         }
 
-        var category = Category.Create(current.Id, request.Name, request.Type);
+        var category = Category.Create(current.Id, request.Name, request.Type, request.Emoji);
         db.Categories.Add(category);
         await db.SaveChangesAsync(ct);
 
         return TypedResults.Created(
             $"{ApiPaths.Prefix}/wallets/{current.Id}/categories/{category.Id}",
-            new CategoryItem(category.Id, category.Name, category.Type, false));
+            new CategoryItem(category.Id, category.Name, category.Type, false, category.Emoji));
     }
 }

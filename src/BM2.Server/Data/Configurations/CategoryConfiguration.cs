@@ -12,6 +12,7 @@ internal sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
     public void Configure(EntityTypeBuilder<Category> builder)
     {
         builder.Property(c => c.Name).HasMaxLength(Limits.CategoryName);
+        builder.Property(c => c.Emoji).HasMaxLength(Limits.CategoryEmoji);
         builder.HasIndex(c => new { c.WalletId, c.Type, c.Name }).IsUnique();
         builder.HasOne<Wallet>().WithMany().HasForeignKey(c => c.WalletId).OnDelete(DeleteBehavior.NoAction);
     }

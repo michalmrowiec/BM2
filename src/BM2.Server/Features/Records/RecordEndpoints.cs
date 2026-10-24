@@ -12,6 +12,7 @@ public static class RecordEndpoints
         var records = wallet.MapGroup("/records");
         ListRecords.Map(records);
         GetRecordSummary.Map(records);
+        GetRecordSuggestions.Map(records);
         GetRecord.Map(records);
         CreateRecord.Map(records);
         UpdateRecord.Map(records);
