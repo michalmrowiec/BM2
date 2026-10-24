@@ -133,6 +133,11 @@
                 }
             </span>
         </div>
+        @if (SelectedItems.Count < Items.Count)
+        {
+            @* Selects the records loaded so far; scrolling loads more. *@
+            <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.UnionWith(Items.Select(i => i.Id))">Select all</button>
+        }
         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.Clear()">Clear</button>
         <button type="button" class="btn btn-danger btn-sm" @onclick="() => _confirmBulk = true">
             <Icon Name="trash" /> Delete
