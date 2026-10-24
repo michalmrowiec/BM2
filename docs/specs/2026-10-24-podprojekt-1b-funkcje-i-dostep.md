@@ -1,6 +1,6 @@
 # Podprojekt 1B – Funkcje i model dostępu
 
-Data: 2026-10-24 · Roadmapa: [docs/roadmap.md](../roadmap.md) · Poprzednie: [podprojekt 0](2026-10-24-podprojekt-0-fundamenty.md),
+Data: 2026-10-24 · Status: ukończony 2026-10-24 · Roadmapa: [docs/roadmap.md](../roadmap.md) · Poprzednie: [podprojekt 0](2026-10-24-podprojekt-0-fundamenty.md),
 [podprojekt 1A](2026-10-24-podprojekt-1a-design-system.md)
 
 ## Cel

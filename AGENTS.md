@@ -45,14 +45,32 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Serwer:** foldery per funkcja `Features/<Obszar>/<Akcja>.cs` z `Map<Obszar>Endpoints(this RouteGroupBuilder)`;
   bez MediatR i repozytoriów (endpoint używa `AppDbContext`); `TypedResults`; błędy API jako ProblemDetails;
   bieżący użytkownik przez `ICurrentUser`; wszystko pod `/api` wymaga logowania (wyjątki jawnie `AllowAnonymous()`).
+- **Wynik i błędy:** reguły domenowe zwracają `Result`/`Result<T>` z `Error` (Validation, NotFound, Forbidden, Conflict,
+  Gone); endpoint mapuje je przez `error.ToProblem()` (400 z błędem pola, 404, 403, 409, 410). Walidacja żądań:
+  walidator FluentValidation w `BM2.Contracts` obok requestu + `.Validate<TRequest>()` na endpoincie (wspólne reguły
+  w `RuleExtensions`: `Name(max)`, `Currency()`, `Balance()`).
+- **Dostęp do portfela:** endpointy portfela są w grupie `/api/wallets/{walletId}` z `WalletAccessFilter`, który ładuje
+  `WalletAccess` (rola w portfelu + role na udostępnionych kontach) do scoped `CurrentWallet`. Brak dostępu → 404,
+  za niska rola → 403 (`Access.Can(...)`, `CanWriteRecord(...)`). Identyfikatory z żądania zawsze sprawdzaj względem
+  portfela z trasy. Każdy nowy endpoint portfela dopisuje przypadek do `WalletEndpointAccessTests`.
+- **Rekordy:** kwota zawsze dodatnia, kierunek wynika z typu (wydatek/przychód/transfer jako jeden wiersz); data rekordu
+  `DateOnly` (`date`), momenty `DateTimeOffset` UTC z wstrzykiwanego `TimeProvider`; saldo = saldo otwarcia + rekordy
+  `Completed`; sumy zawsze per waluta konta.
+- **Klient:** strony korzystające z portfela dziedziczą `WalletComponentBase` (`WalletState` z migawką portfela,
+  ostatni wybór w `localStorage`); API przez `ApiClient` (`ApiResult`/`ApiProblem`, 401 → logowanie); formularze to
+  `EditForm` na modyfikowalnym modelu z nazwami pól jak w requeście + `FluentValidator` (ten sam walidator co serwer,
+  `ShowServerErrors` dla 400/409). Komponenty bazowe: `Sheet` (natywny `<dialog>`), `ConfirmDialog`, `TextField`,
+  `SelectField`, `MoneyInput`, `DateField`, `SegmentedControl`, `ChipGroup`, `ListRow`, `Amount`, `ToastHost`.
+  Usługi klienta są rejestrowane także na serwerze (prerendering); API wołamy tylko w trybie interaktywnym.
 - **Konfiguracja:** `ConnectionStrings:BM2`; `Database:PrepareOnStartup` (tylko dev/testy) tworzy i migruje bazę.
   Paczki w `Directory.Packages.props` (centralnie, z pinowaniem zależności przechodnich), źródło tylko nuget.org.
 - **Testy:** xUnit v3 na Microsoft.Testing.Platform (`dotnet test --project …`, filtry `-- --filter-class …`).
   Integracyjne w kolekcji `Integration` (sekwencyjnie), baza tymczasowa na serwerze z `BM2_TEST_SQL`
   (domyślnie `localhost\SQLEXPRESS`), Respawn czyści dane między testami. Komponenty klienta testujemy bUnit
-  w `BM2.ClientTests` (HTTP przez stub `HttpMessageHandler`, bez bibliotek do mocków).
+  w `BM2.ClientTests` (HTTP przez `StubApi`, `UseBm2Client()`, bez bibliotek do mocków). Dane testów integracyjnych
+  przez `TestData` (encje tworzone przez domenę), czas przez `TestTimeProvider` (`Factory.Time`, reset przed testem).
 - Narzędzia lokalne: `dotnet tool restore`. Uruchomienie lokalne: [docs/dev-setup.md](docs/dev-setup.md).
-- `legacy/` – stary kod, tylko do odczytu jako źródło do przenoszenia.
+- Stary kod (`legacy/`) usunięty w podprojekcie 1B; w razie potrzeby: `git show d4e818c:legacy/...`.
 
 ## Bezpieczeństwo (punkt odniesienia: OWASP ASVS poziom 2)
 

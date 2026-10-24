@@ -1,5 +1,0 @@
-using BM2.Shared.DTOs;
-
-namespace BM2.Shared.Requests.Queries.Record;
-
-public record GetAllPeriodicRecordDefinitionsQuery(Guid UserId) : IBaseRequestCollection<PeriodicRecordDefinitionDTO>;

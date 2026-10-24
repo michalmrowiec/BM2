@@ -23,6 +23,12 @@ rejestracji.
 - E-mail: `demo@bm2.test`
 - Hasło: `bm2-local-demo-2026`
 
+## Współdzielenie lokalnie
+
+Members → Invite tworzy jednorazowy link (`/invite/{token}`, ważny 7 dni). Otwórz go w oknie prywatnym: „Create account”
+zakłada nowe konto z potwierdzonym e-mailem i wraca na stronę zaproszenia, „Join” dołącza do portfela. Poza
+Development rejestracja działa tylko z ważnym zaproszeniem.
+
 ## Testy
 
 ```bash
