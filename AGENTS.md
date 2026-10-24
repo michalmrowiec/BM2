@@ -108,7 +108,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   w `BM2.Server/wwwroot/css` (`tokens.css` → `base.css` → `components.css`, `account.css` tylko dla stron Identity),
   kolory i odstępy wyłącznie przez tokeny (`--paper`, `--sheet`, `--ink`, `--ink-muted`, `--rule`, `--wash`,
   `--vivid`, `--link`, `--positive`, `--negative`, `--space-*`, `--radius*`). Fonty: Inter (UI), Fraunces (nagłówki,
-  kwoty – klasa `.num`). Ikony przez komponent `Icon` (własne SVG). Kwoty zawsze ze znakiem `+`/`−`.
+  kwoty – klasa `.num`). Ikony przez komponent `Icon`: Lucide (ISC, `lucide-static` 1.61.0) wstawione lokalnie jako
+  markup SVG, licencja w `BM2.Client/wwwroot/icons/LICENSE-lucide.txt`; nowe ikony dopisuj z tej samej wersji.
+  Kwoty zawsze ze znakiem `+`/`−`.
 - Motyw jasny/ciemny/systemowy obsługuje `wwwroot/js/theme.js` (przycisk z atrybutem `data-theme-toggle`). Bez skryptów
   inline (przyszły CSP).
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko

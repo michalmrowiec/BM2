@@ -21,9 +21,12 @@ public static class CategoryIcons
 {
     public static readonly IReadOnlyList<string> All =
     [
-        "cart", "basket", "food", "coffee", "fuel", "car", "bus", "home", "bolt", "water", "wifi", "pill", "gift", "plane",
-        "shirt", "kids", "pet", "sport", "film", "book", "beauty", "tools", "briefcase", "piggy", "trend", "receipt",
-        "shield", "repeat", "heart", "dots",
+        "cart", "basket", "bag", "store", "food", "pizza", "coffee", "beer", "cake", "car", "fuel", "bus",
+        "train", "taxi", "bike", "plane", "luggage", "home", "key", "sofa", "bolt", "plug", "flame", "water",
+        "wifi", "phone", "tv", "laptop", "tools", "hammer", "pill", "stethoscope", "beauty", "scissors",
+        "sport", "shirt", "kids", "pet", "film", "music", "gamepad", "ticket", "book", "graduation", "gift",
+        "heart", "briefcase", "banknote", "coins", "card", "piggy", "trend", "handcoins", "receipt",
+        "shield", "umbrella", "repeat", "dots",
     ];
 
     /// <summary>No icon is valid too.</summary>
