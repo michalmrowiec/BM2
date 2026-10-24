@@ -1,0 +1,49 @@
+@using System.Diagnostics.CodeAnalysis
+@using System.Globalization
+@using BM2.Contracts.Common
+@inherits FieldBase<decimal?>
+
+<div class="field @(Large ? "field--large" : null)">
+    <label class="field__label" for="@FieldId">@Label</label>
+    <div class="money-input">
+        <input @attributes="AdditionalAttributes" id="@FieldId" class="field__control money-input__control num" type="text"
+               inputmode="decimal" autocomplete="off" autofocus="@Autofocus" value="@CurrentValueAsString"
+               @onchange="e => CurrentValueAsString = e.Value?.ToString()"
+               aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
+        @if (Currency is not null)
+        {
+            <span class="money-input__currency" aria-hidden="true">@Currency</span>
+        }
+    </div>
+    <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
+</div>
+
+@code {
+    [Parameter] public string? Currency { get; set; }
+
+    [Parameter] public bool Large { get; set; }
+
+    [Parameter] public bool Autofocus { get; set; }
+
+    protected override string? FormatValueAsString(decimal? value) =>
+        value?.ToString("0.00", CultureInfo.CurrentCulture);
+
+    protected override bool TryParseValueFromString(
+        string? value, out decimal? result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        if (!AmountParser.TryParse(value, CultureInfo.CurrentCulture, out result))
+        {
+            validationErrorMessage = "Enter a number.";
+            return false;
+        }
+
+        if (result is { } amount && !MoneyRules.HasAtMostTwoDecimals(amount))
+        {
+            validationErrorMessage = "Use at most 2 decimal places.";
+            return false;
+        }
+
+        validationErrorMessage = null;
+        return true;
+    }
+}

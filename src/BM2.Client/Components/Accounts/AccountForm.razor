@@ -1,0 +1,82 @@
+@using BM2.Contracts.Accounts
+@inject ApiClient Api
+@inject ToastService Toasts
+
+@* Adds an account, or edits one when Account is set. *@
+<EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
+    <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToUpdateRequest()" />
+    <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
+    <SelectField Label="Currency" @bind-Value="_model.Currency" Options="Options.Currencies" />
+    <MoneyInput Label="Opening balance" Currency="@_model.Currency" @bind-Value="_model.OpeningBalance"
+                Hint="What the account held when you started tracking it." />
+    @if (Account is not null)
+    {
+        <label class="check">
+            <InputCheckbox @bind-Value="_model.IsArchived" />
+            <span>Archived <span class="muted">· hidden when adding records</span></span>
+        </label>
+    }
+    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(Account is null ? "Add account" : "Save")</button>
+</EditForm>
+
+@code {
+    private static readonly UpdateAccountRequestValidator Validator = new();
+    private FormModel _model = new();
+    private FluentValidator? _validator;
+    private bool _busy;
+
+    [Parameter, EditorRequired] public Guid WalletId { get; set; }
+
+    [Parameter] public AccountItem? Account { get; set; }
+
+    [Parameter] public string DefaultCurrency { get; set; } = "PLN";
+
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    protected override void OnInitialized() => _model = Account is null
+        ? new FormModel { Currency = DefaultCurrency }
+        : new FormModel
+        {
+            Name = Account.Name,
+            Currency = Account.Currency,
+            OpeningBalance = Account.OpeningBalance,
+            IsArchived = Account.IsArchived,
+        };
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        var request = _model.ToUpdateRequest();
+        var result = Account is null
+            ? await Api.PostAsync<AccountItem>(
+                $"api/wallets/{WalletId}/accounts", new CreateAccountRequest(request.Name, request.Currency, request.OpeningBalance))
+            : await Api.PutAsync($"api/wallets/{WalletId}/accounts/{Account.Id}", request);
+        _busy = false;
+
+        if (result.Ok)
+        {
+            await OnSaved.InvokeAsync();
+        }
+        else if (result.Problem!.HasFieldErrors)
+        {
+            _validator?.ShowServerErrors(result.Problem);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private sealed class FormModel
+    {
+        public string? Name { get; set; }
+
+        public string Currency { get; set; } = "PLN";
+
+        public decimal? OpeningBalance { get; set; }
+
+        public bool IsArchived { get; set; }
+
+        public UpdateAccountRequest ToUpdateRequest() => new(Name ?? "", Currency, OpeningBalance ?? 0, IsArchived);
+    }
+}

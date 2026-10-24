@@ -1,0 +1,120 @@
+@page "/accounts"
+@attribute [Authorize]
+@using BM2.Client.Components.Accounts
+@using BM2.Contracts.Accounts
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>Accounts · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Accounts</h1>
+    @if (Wallet?.Permissions.ManageAccounts == true)
+    {
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> New</button>
+    }
+</header>
+
+@if (Wallet is null)
+{
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+}
+else if (Wallet.Accounts.Count == 0)
+{
+    <EmptyState IconName="bank" Title="No accounts yet">
+        Add cash, a bank account or savings to start tracking money.
+    </EmptyState>
+}
+else
+{
+    <ul class="list stagger">
+        @foreach (var account in Wallet.Accounts.Where(a => !a.IsArchived))
+        {
+            <li>@Row(account)</li>
+        }
+    </ul>
+
+    @if (Wallet.Accounts.Any(a => a.IsArchived))
+    {
+        <details class="disclosure">
+            <summary class="section-title">Archived</summary>
+            <ul class="list">
+                @foreach (var account in Wallet.Accounts.Where(a => a.IsArchived))
+                {
+                    <li>@Row(account)</li>
+                }
+            </ul>
+        </details>
+    }
+}
+
+@if (Wallet is not null)
+{
+    <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v" Title="@(_editing?.Name ?? "New account")">
+        <AccountForm @key="_editing?.Id" WalletId="Wallet.Id" Account="_editing" DefaultCurrency="@Wallet.BaseCurrency"
+                     OnSaved="OnSavedAsync" />
+        @if (_editing is not null)
+        {
+            <button type="button" class="btn btn-ghost btn-block danger-text" @onclick="AskDelete">
+                <Icon Name="trash" /> Delete account
+            </button>
+        }
+    </Sheet>
+
+    <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@($"Delete {_editing?.Name}?")"
+                   ConfirmLabel="Delete account" Danger="true" OnConfirm="DeleteAsync">
+        <p>The account and all its records will be deleted, including transfers to other accounts. This can't be undone.</p>
+        <p class="muted">To keep the history, archive the account instead.</p>
+    </ConfirmDialog>
+}
+
+@code {
+    private bool _editorOpen;
+    private bool _confirmDelete;
+    private AccountItem? _editing;
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private RenderFragment Row(AccountItem account) =>
+        @<ListRow Title="@account.Name" Subtitle="@(account.IsArchived ? $"{account.Currency} · Archived" : account.Currency)"
+                  OnClick="@(Wallet!.Permissions.ManageAccounts ? EventCallback.Factory.Create(this, () => OpenEditor(account)) : default)">
+            <Leading><Icon Name="bank" /></Leading>
+            <Trailing><Amount Value="account.Balance" Currency="@account.Currency" /></Trailing>
+        </ListRow>;
+
+    private void OpenEditor(AccountItem? account)
+    {
+        _editing = account;
+        _editorOpen = true;
+    }
+
+    private async Task OnSavedAsync()
+    {
+        _editorOpen = false;
+        await WalletState.RefreshAsync();
+        Toasts.Show("Account saved.", ToastKind.Success);
+    }
+
+    private void AskDelete()
+    {
+        _editorOpen = false;
+        _confirmDelete = true;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/accounts/{_editing!.Id}");
+        _confirmDelete = false;
+        if (result.Ok)
+        {
+            await WalletState.RefreshAsync();
+            Toasts.Show("Account deleted.");
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

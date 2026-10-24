@@ -1,0 +1,39 @@
+@using System.Globalization
+
+<span class="amount num @SignClass @(Large ? "amount--large" : null)" @key="Key">@Text</span>
+
+@code {
+    [Parameter] public decimal Value { get; set; }
+
+    [Parameter, EditorRequired] public string Currency { get; set; } = "";
+
+    [Parameter] public AmountSign Sign { get; set; } = AmountSign.Auto;
+
+    [Parameter] public bool Large { get; set; }
+
+    private AmountSign Effective => Sign switch
+    {
+        AmountSign.Auto when Value > 0 => AmountSign.Plus,
+        AmountSign.Auto when Value < 0 => AmountSign.Minus,
+        AmountSign.Auto => AmountSign.None,
+        _ => Sign,
+    };
+
+    private string? SignClass => Effective switch
+    {
+        AmountSign.Plus => "amount--positive",
+        AmountSign.Minus => "amount--negative",
+        _ => null,
+    };
+
+    // Minus is U+2212 so it lines up with the plus sign.
+    private string Text => Effective switch
+    {
+        AmountSign.Plus => "+",
+        AmountSign.Minus => "−",
+        _ => "",
+    } + Math.Abs(Value).ToString("N2", CultureInfo.CurrentCulture) + " " + Currency;
+
+    // A new key replays the entrance animation when the amount changes.
+    private string Key => Text;
+}

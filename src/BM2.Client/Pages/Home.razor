@@ -26,6 +26,31 @@
             <p class="eyebrow">@DateTime.Now.ToString("dddd, d MMMM")</p>
             <h1 class="page-title">@wallet.Name</h1>
 
+            var accounts = wallet.Accounts.Where(a => !a.IsArchived).ToList();
+            if (accounts.Count > 0)
+            {
+                <section class="balance" aria-label="Total balance">
+                    @foreach (var total in accounts.GroupBy(a => a.Currency).Select(g => (Currency: g.Key, Sum: g.Sum(a => a.Balance))))
+                    {
+                        <Amount Value="total.Sum" Currency="@total.Currency" Large="true"
+                                Sign="@(total.Sum < 0 ? AmountSign.Minus : AmountSign.None)" />
+                    }
+                </section>
+
+                <ul class="account-cards stagger">
+                    @foreach (var account in accounts)
+                    {
+                        <li>
+                            <a class="account-card" href="@($"records?accountId={account.Id}")">
+                                <span class="account-card__name">@account.Name</span>
+                                <Amount Value="account.Balance" Currency="@account.Currency" />
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
             <EmptyState IconName="wallet" Title="Add your first account">
                 <ChildContent>Accounts are where your money lives: cash, a bank account, savings.</ChildContent>
                 <Actions>
@@ -35,6 +60,7 @@
                     }
                 </Actions>
             </EmptyState>
+            }
         }
         else
         {

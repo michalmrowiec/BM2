@@ -185,3 +185,21 @@ html.theme-switching::view-transition-new(root) {
         transform: translateY(0.75rem) scale(0.96);
     }
 }
+
+/* A changed amount settles into place (Amount re-keys on change). */
+.amount { animation: amount-in 420ms var(--ease-out); }
+
+@keyframes amount-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.35em);
+    }
+}
+
+/* Lists cascade in, one row after another. */
+.stagger > * { animation: ink-rise 460ms var(--ease-out) both; }
+.stagger > :nth-child(2) { animation-delay: 40ms; }
+.stagger > :nth-child(3) { animation-delay: 80ms; }
+.stagger > :nth-child(4) { animation-delay: 120ms; }
+.stagger > :nth-child(5) { animation-delay: 160ms; }
+.stagger > :nth-child(n + 6) { animation-delay: 200ms; }
