@@ -8,7 +8,7 @@ public class MoneyRulesTests
     [Theory]
     [InlineData("0.01", true)]
     [InlineData("999999999999.99", true)]
-    [InlineData("0", false)]
+    [InlineData("0", true)]
     [InlineData("-5", false)]
     [InlineData("1.005", false)]
     [InlineData("1000000000000", false)]

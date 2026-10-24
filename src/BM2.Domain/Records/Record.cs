@@ -6,7 +6,7 @@ using BM2.Domain.Common;
 
 namespace BM2.Domain.Records;
 
-/// <summary>An expense, income or transfer. Amounts are positive; the type gives the direction.</summary>
+/// <summary>An expense, income or transfer. Amounts are never negative; the type gives the direction.</summary>
 public sealed class Record
 {
     private readonly List<RecordTag> _tags = [];

@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace BM2.Contracts.Records;
 
-/// <summary>Creates or replaces a record. Amounts are positive; <see cref="Type"/> gives the direction.</summary>
+/// <summary>Creates or replaces a record. Amounts are never negative; <see cref="Type"/> gives the direction.</summary>
 public sealed record SaveRecordRequest(
     RecordType Type,
     RecordStatus Status,
@@ -20,7 +20,7 @@ public sealed record SaveRecordRequest(
 
 public sealed class SaveRecordRequestValidator : AbstractValidator<SaveRecordRequest>
 {
-    private const string AmountMessage = "Enter an amount above 0 with at most 2 decimal places.";
+    private const string AmountMessage = "Enter an amount of 0 or more with at most 2 decimal places.";
 
     public SaveRecordRequestValidator()
     {

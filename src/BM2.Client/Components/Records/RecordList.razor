@@ -34,7 +34,10 @@
                                 <span class="record-row__where">@view.Meta</span>
                                 @foreach (var tag in view.Tags)
                                 {
-                                    <span class="tag-pill @TagPalette.ClassFor(tag.Color)">#@tag.Name</span>
+                                    <span aria-hidden="true"> · </span>
+                                    <span class="record-row__tag @TagPalette.ClassFor(tag.Color)">
+                                        <span class="tag-dot" aria-hidden="true"></span>@tag.Name
+                                    </span>
                                 }
                             </span>
                         </span>

@@ -57,7 +57,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   `WalletAccess` (rola w portfelu + role na udostępnionych kontach) do scoped `CurrentWallet`. Brak dostępu → 404,
   za niska rola → 403 (`Access.Can(...)`, `CanWriteRecord(...)`). Identyfikatory z żądania zawsze sprawdzaj względem
   portfela z trasy. Każdy nowy endpoint portfela dopisuje przypadek do `WalletEndpointAccessTests`.
-- **Rekordy:** kwota zawsze dodatnia, kierunek wynika z typu (wydatek/przychód/transfer jako jeden wiersz); data rekordu
+- **Rekordy:** kwota nieujemna (0 dozwolone), kierunek wynika z typu (wydatek/przychód/transfer jako jeden wiersz); data rekordu
   `DateOnly` (`date`), momenty `DateTimeOffset` UTC z wstrzykiwanego `TimeProvider`; saldo = saldo otwarcia + rekordy
   `Completed`; sumy zawsze per waluta konta.
 - **Szablony i podpowiedzi:** `Template` (portfel, pola opcjonalne, bez FK do kont/kategorii – zarchiwizowane

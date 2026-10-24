@@ -36,7 +36,7 @@ public sealed class SaveTemplateRequestValidator : AbstractValidator<SaveTemplat
         RuleFor(x => x.Type).IsInEnum();
         RuleFor(x => x.Amount)
             .Must(amount => amount is null || MoneyRules.IsValidAmount(amount.Value))
-            .WithMessage("Enter an amount above 0 with at most 2 decimal places.");
+            .WithMessage("Enter an amount of 0 or more with at most 2 decimal places.");
         RuleFor(x => x.Currency).Must(c => c is null || Currencies.IsSupported(c)).WithMessage("Choose a supported currency.");
         RuleFor(x => x.Name)
             .Must(name => name is null || name.Trim().Length <= Limits.RecordName)

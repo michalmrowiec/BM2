@@ -7,7 +7,7 @@
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToUpdateRequest()" />
     <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
     <SelectField Label="Currency" @bind-Value="_model.Currency" Options="Options.Currencies" />
-    <MoneyInput Label="Opening balance" Currency="@_model.Currency" @bind-Value="_model.OpeningBalance"
+    <MoneyInput Label="Opening balance" Currency="@_model.Currency" @bind-Value="_model.OpeningBalance" AllowNegative="true"
                 Hint="What the account held when you started tracking it." />
     @if (Account is not null)
     {

@@ -14,7 +14,7 @@
     <SegmentedControl TValue="RecordType" Options="TypeOptions" Value="_model.Type" ValueChanged="OnTypeChanged" Label="Record type"
                       Class="segmented--block" />
 
-    <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null || Template?.Amount is not null)"
+    <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null || Template?.Amount > 0)"
                 Currency="@AccountCurrency" @bind-Value="_model.Amount" @bind-Value:after="Recalculate" />
 
     <div class="field name-field">
@@ -269,7 +269,7 @@
                 Name = record.Name,
                 TagIds = record.TagIds.ToList(),
             };
-            if (IsForeign)
+            if (IsForeign && record.Amount > 0)
             {
                 _model.Rate = ExchangeMath.RateOf(record.Amount, record.AccountAmount);
             }
@@ -284,8 +284,9 @@
                 Type = template?.Type ?? RecordType.Expense,
                 OccurredOn = today,
                 AccountId = accountId,
-                Amount = template?.Amount,
-                Currency = template is { Amount: not null, Currency: { } currency } ? currency : accountCurrency,
+                // A template amount of 0 means "type it each time": the field stays empty.
+                Amount = template?.Amount > 0 ? template.Amount : null,
+                Currency = template is { Amount: > 0, Currency: { } currency } ? currency : accountCurrency,
                 CategoryId = template?.CategoryId,
                 TransferAccountId = template?.TransferAccountId,
                 Name = template?.Name,

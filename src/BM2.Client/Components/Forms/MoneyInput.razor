@@ -14,6 +14,7 @@
     <div class="money-input">
         <input @ref="_input" @attributes="AdditionalAttributes" id="@FieldId" class="field__control money-input__control num"
                type="text" inputmode="decimal" autocomplete="off" value="@CurrentValueAsString"
+               data-money="@Decimals" data-money-negative="@(AllowNegative ? "" : null)"
                @onchange="e => CurrentValueAsString = e.Value?.ToString()"
                aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
         @if (Currency is not null)
@@ -38,6 +39,9 @@
 
     /// <summary>Allowed decimal places: 2 for money, more for exchange rates.</summary>
     [Parameter] public int Decimals { get; set; } = 2;
+
+    /// <summary>Lets the field take a leading minus, e.g. for an opening balance.</summary>
+    [Parameter] public bool AllowNegative { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

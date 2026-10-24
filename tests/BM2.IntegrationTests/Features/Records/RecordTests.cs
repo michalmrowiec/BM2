@@ -203,7 +203,7 @@ public class RecordTests(IntegrationFixture fixture) : IntegrationTest(fixture)
     {
         var s = await SetupAsync(MemberRole.Owner);
 
-        var response = await s.Client.PostAsJsonAsync(s.Records, Expense(s, 0m), Ct);
+        var response = await s.Client.PostAsJsonAsync(s.Records, Expense(s, -1m), Ct);
         var problem = await response.Content.ReadFromJsonAsync<HttpValidationProblemDetails>(Ct);
 
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
