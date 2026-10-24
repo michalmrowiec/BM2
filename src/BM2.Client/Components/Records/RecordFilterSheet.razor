@@ -1,0 +1,100 @@
+@using BM2.Contracts.Records
+@using BM2.Contracts.Wallets
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Filters">
+    <ChildContent>
+        <EditForm Model="_model" OnSubmit="ApplyAsync" class="form-stack" id="record-filters">
+            <SelectField TValue="Guid?" id="filter-account" Label="Account" Options="AccountOptions" @bind-Value="_model.AccountId" />
+            <SelectField TValue="Guid?" id="filter-category" Label="Category" Options="CategoryOptions" @bind-Value="_model.CategoryId" />
+            @if (Wallet.Tags.Count > 0)
+            {
+                <SelectField TValue="Guid?" id="filter-tag" Label="Tag" Options="TagOptions" @bind-Value="_model.TagId" />
+            }
+            <SelectField TValue="RecordType?" id="filter-type" Label="Type" Options="TypeOptions" @bind-Value="_model.Type" />
+            <SelectField TValue="RecordStatus?" id="filter-status" Label="Status" Options="StatusOptions" @bind-Value="_model.Status" />
+        </EditForm>
+    </ChildContent>
+    <Footer>
+        <button type="button" class="btn btn-secondary" @onclick="ClearAsync">Clear</button>
+        <button type="submit" form="record-filters" class="btn btn-primary">Show records</button>
+    </Footer>
+</Sheet>
+
+@code {
+    private static readonly IReadOnlyList<(RecordType? Value, string Label)> TypeOptions =
+        [(null, "All types"), (RecordType.Expense, "Expenses"), (RecordType.Income, "Income"), (RecordType.Transfer, "Transfers")];
+
+    private static readonly IReadOnlyList<(RecordStatus? Value, string Label)> StatusOptions =
+        [(null, "Any status"), (RecordStatus.Completed, "Completed"), (RecordStatus.Pending, "Pending"), (RecordStatus.Planned, "Planned")];
+
+    private FilterModel _model = new();
+    private bool _wasOpen;
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
+
+    [Parameter, EditorRequired] public RecordFilter Value { get; set; } = new();
+
+    [Parameter] public EventCallback<RecordFilter> ValueChanged { get; set; }
+
+    private IReadOnlyList<(Guid? Value, string Label)> AccountOptions =>
+        [(null, "All accounts"), .. Wallet.Accounts.Select(a => ((Guid?)a.Id, a.Name))];
+
+    private IReadOnlyList<(Guid? Value, string Label)> CategoryOptions =>
+        [(null, "All categories"), .. Wallet.Categories.OrderBy(c => c.Type).ThenBy(c => c.Name).Select(c => ((Guid?)c.Id, c.Name))];
+
+    private IReadOnlyList<(Guid? Value, string Label)> TagOptions =>
+        [(null, "All tags"), .. Wallet.Tags.Select(t => ((Guid?)t.Id, t.Name))];
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_wasOpen)
+        {
+            _model = new FilterModel
+            {
+                AccountId = Value.AccountId,
+                CategoryId = Value.CategoryId,
+                TagId = Value.TagId,
+                Type = Value.Type,
+                Status = Value.Status,
+            };
+        }
+
+        _wasOpen = Open;
+    }
+
+    private async Task ApplyAsync()
+    {
+        await ValueChanged.InvokeAsync(new RecordFilter
+        {
+            AccountId = _model.AccountId,
+            CategoryId = _model.CategoryId,
+            TagId = _model.TagId,
+            Type = _model.Type,
+            Status = _model.Status,
+        });
+        await OpenChanged.InvokeAsync(false);
+    }
+
+    private async Task ClearAsync()
+    {
+        await ValueChanged.InvokeAsync(new RecordFilter());
+        await OpenChanged.InvokeAsync(false);
+    }
+
+    private sealed class FilterModel
+    {
+        public Guid? AccountId { get; set; }
+
+        public Guid? CategoryId { get; set; }
+
+        public Guid? TagId { get; set; }
+
+        public RecordType? Type { get; set; }
+
+        public RecordStatus? Status { get; set; }
+    }
+}

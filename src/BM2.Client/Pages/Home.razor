@@ -1,6 +1,10 @@
 ﻿@page "/"
+@using BM2.Client.Components.Records
 @using BM2.Client.Components.Wallets
+@using BM2.Contracts.Records
+@using BM2.Contracts.Wallets
 @inherits WalletComponentBase
+@inject ApiClient Api
 
 <PageTitle>BM2</PageTitle>
 
@@ -41,25 +45,52 @@
                     @foreach (var account in accounts)
                     {
                         <li>
-                            <a class="account-card" href="@($"records?accountId={account.Id}")">
+                            <a class="account-card" href="@($"records?accountId={account.Id}&all=true")">
                                 <span class="account-card__name">@account.Name</span>
                                 <Amount Value="account.Balance" Currency="@account.Currency" />
                             </a>
                         </li>
                     }
                 </ul>
+
+                @if (_month?.Totals.Count > 0)
+                {
+                    <h2 class="section-title">This month</h2>
+                    <div class="month-stats">
+                        @foreach (var total in _month.Totals)
+                        {
+                            <a class="stat" href="records?type=Income">
+                                <span class="stat__label">Income</span>
+                                <Amount Value="total.Income" Currency="@total.Currency" Sign="AmountSign.Plus" />
+                            </a>
+                            <a class="stat" href="records?type=Expense">
+                                <span class="stat__label">Expenses</span>
+                                <Amount Value="total.Expense" Currency="@total.Currency" Sign="AmountSign.Minus" />
+                            </a>
+                        }
+                    </div>
+                }
+
+                @if (_recent.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Recent</h2>
+                        <a class="link" href="records">All records</a>
+                    </div>
+                    <RecordList Items="_recent" Wallet="wallet" />
+                }
             }
             else
             {
-            <EmptyState IconName="wallet" Title="Add your first account">
-                <ChildContent>Accounts are where your money lives: cash, a bank account, savings.</ChildContent>
-                <Actions>
-                    @if (wallet.Permissions.ManageAccounts)
-                    {
-                        <a class="btn btn-primary" href="accounts">Add account</a>
-                    }
-                </Actions>
-            </EmptyState>
+                <EmptyState IconName="wallet" Title="Add your first account">
+                    <ChildContent>Accounts are where your money lives: cash, a bank account, savings.</ChildContent>
+                    <Actions>
+                        @if (wallet.Permissions.ManageAccounts)
+                        {
+                            <a class="btn btn-primary" href="accounts">Add account</a>
+                        }
+                    </Actions>
+                </EmptyState>
             }
         }
         else
@@ -81,3 +112,37 @@
         </section>
     </NotAuthorized>
 </AuthorizeView>
+
+@code {
+    private IReadOnlyList<RecordItem> _recent = [];
+    private RecordSummary? _month;
+    private WalletSnapshot? _loadedFor;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var wallet = WalletState.Current;
+        if (wallet is null || ReferenceEquals(wallet, _loadedFor))
+        {
+            return;
+        }
+
+        _loadedFor = wallet;
+        var monthStart = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var month = new RecordFilter { From = monthStart, To = monthStart.AddMonths(1), Status = RecordStatus.Completed };
+        var recent = Api.GetAsync<RecordPage>($"api/wallets/{wallet.Id}/records{new RecordFilter { Limit = 5 }.ToQueryString()}");
+        var summary = Api.GetAsync<RecordSummary>($"api/wallets/{wallet.Id}/records/summary{month.ToQueryString()}");
+        await Task.WhenAll(recent, summary);
+        _recent = recent.Result.Value?.Items ?? [];
+        _month = summary.Result.Value;
+    }
+}

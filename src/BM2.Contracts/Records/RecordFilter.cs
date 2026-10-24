@@ -23,6 +23,9 @@ public sealed class RecordFilter
 
     public string? Cursor { get; init; }
 
+    /// <summary>Page size, 1–50 (default 50).</summary>
+    public int? Limit { get; init; }
+
     public string ToQueryString()
     {
         var parts = new List<string>();
@@ -35,6 +38,7 @@ public sealed class RecordFilter
         Add(parts, "status", Status?.ToString());
         Add(parts, "search", string.IsNullOrWhiteSpace(Search) ? null : Search.Trim());
         Add(parts, "cursor", Cursor);
+        Add(parts, "limit", Limit?.ToString(CultureInfo.InvariantCulture));
         return parts.Count == 0 ? "" : "?" + string.Join("&", parts);
     }
 

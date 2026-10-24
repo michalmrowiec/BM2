@@ -10,7 +10,7 @@ namespace BM2.Server.Features.Records;
 
 internal static class ListRecords
 {
-    private const int PageSize = 50;
+    private const int MaxPageSize = 50;
 
     public static void Map(RouteGroupBuilder records) => records.MapGet("/", HandleAsync);
 
@@ -34,13 +34,15 @@ internal static class ListRecords
                     || (r.CreatedAt == cursor.CreatedAt && r.Id.CompareTo(cursor.Id) < 0))));
         }
 
+        var pageSize = Math.Clamp(filter.Limit ?? MaxPageSize, 1, MaxPageSize);
+
         // Keys first, then the page's items: keeps the TOP query free of the tag collection.
         var keys = await query
             .OrderByDescending(r => r.OccurredOn).ThenByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id)
             .Select(r => new RecordCursor(r.OccurredOn, r.CreatedAt, r.Id))
-            .Take(PageSize + 1)
+            .Take(pageSize + 1)
             .ToListAsync(ct);
-        var page = keys.Take(PageSize).ToList();
+        var page = keys.Take(pageSize).ToList();
         var ids = page.Select(k => k.Id).ToList();
         var items = await db.Records
             .AsNoTracking()
@@ -48,7 +50,7 @@ internal static class ListRecords
             .Select(RecordQueries.ToItem)
             .ToDictionaryAsync(i => i.Id, ct);
 
-        var next = keys.Count > PageSize ? page[^1].Encode() : null;
+        var next = keys.Count > pageSize ? page[^1].Encode() : null;
         return TypedResults.Ok(new RecordPage(page.Select(k => items[k.Id]).ToList(), next));
     }
 }

@@ -1,0 +1,81 @@
+@using System.Globalization
+@using BM2.Contracts.Records
+@using BM2.Contracts.Wallets
+
+@foreach (var day in RecordGrouping.ByDay(Items, CurrencyOf))
+{
+    <section class="record-day" @key="day.Date">
+        <h2 class="record-day__header">
+            <span>@day.Date.ToString("dddd, d MMMM", CultureInfo.CurrentCulture)</span>
+            <span class="record-day__total">
+                @foreach (var total in day.Totals)
+                {
+                    <Amount Value="total.Net" Currency="@total.Currency" />
+                }
+            </span>
+        </h2>
+        <ul class="list record-list stagger">
+            @foreach (var item in day.Items)
+            {
+                var view = View(item);
+                <li @key="item.Id">
+                    <a class="record-row" href="@($"records/{item.Id}")">
+                        <span class="record-row__icon record-row__icon--@view.Kind" aria-hidden="true"><Icon Name="@view.Icon" /></span>
+                        <span class="record-row__text">
+                            <span class="record-row__title">@view.Title</span>
+                            <span class="record-row__meta">@view.Meta</span>
+                        </span>
+                        <span class="record-row__end">
+                            <Amount Value="view.Amount" Currency="@view.Currency" Sign="view.Sign" />
+                            @if (item.Status != RecordStatus.Completed)
+                            {
+                                <span class="tag">@item.Status</span>
+                            }
+                        </span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<RecordItem> Items { get; set; } = [];
+
+    [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
+
+    /// <summary>The account the list is filtered by; transfers into it read as incoming.</summary>
+    [Parameter] public Guid? AccountId { get; set; }
+
+    private string? CurrencyOf(Guid accountId) => Wallet.Accounts.FirstOrDefault(a => a.Id == accountId)?.Currency;
+
+    private RowView View(RecordItem item)
+    {
+        var tags = item.TagIds.Select(id => Wallet.Tags.FirstOrDefault(t => t.Id == id)?.Name).OfType<string>();
+        if (item.Type == RecordType.Transfer)
+        {
+            // A transfer reads as incoming when the list is about its target, or the source account is not visible.
+            var incoming = AccountId == item.TransferAccountId || CurrencyOf(item.AccountId) is null;
+            return incoming
+                ? new RowView(item.Name ?? $"Transfer from {item.AccountName}", Meta(item.TransferAccountName ?? "", tags), "transfer",
+                    "transfer", item.TransferAmount ?? item.Amount, CurrencyOf(item.TransferAccountId!.Value) ?? item.Currency, AmountSign.Plus)
+                : new RowView(item.Name ?? $"Transfer to {item.TransferAccountName}", Meta(item.AccountName, tags), "transfer",
+                    "transfer", item.AccountAmount, CurrencyOf(item.AccountId) ?? item.Currency, AmountSign.Minus);
+        }
+
+        var category = Wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name;
+        var income = item.Type == RecordType.Income;
+        return new RowView(
+            item.Name ?? category ?? (income ? "Income" : "Expense"),
+            Meta(item.AccountName, item.Name is not null && category is not null ? tags.Prepend(category) : tags),
+            income ? "income" : "expense",
+            income ? "in" : "out",
+            item.AccountAmount,
+            CurrencyOf(item.AccountId) ?? item.Currency,
+            income ? AmountSign.Plus : AmountSign.Minus);
+    }
+
+    private static string Meta(string account, IEnumerable<string> extras) => string.Join(" · ", extras.Prepend(account));
+
+    private sealed record RowView(string Title, string Meta, string Kind, string Icon, decimal Amount, string Currency, AmountSign Sign);
+}

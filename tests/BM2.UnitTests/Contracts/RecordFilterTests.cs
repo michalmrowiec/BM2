@@ -22,5 +22,9 @@ public class RecordFilterTests
     }
 
     [Fact]
+    public void Limit_is_written_last() =>
+        new RecordFilter { Search = "x", Limit = 5 }.ToQueryString().ShouldBe("?search=x&limit=5");
+
+    [Fact]
     public void Blank_search_is_left_out() => new RecordFilter { Search = "  " }.ToQueryString().ShouldBe("");
 }

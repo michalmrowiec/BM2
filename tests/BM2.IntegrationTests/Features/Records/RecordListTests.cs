@@ -49,6 +49,18 @@ public class RecordListTests(IntegrationFixture fixture) : IntegrationTest(fixtu
     }
 
     [Fact]
+    public async Task Limit_caps_the_page_size()
+    {
+        var s = await SetupAsync();
+        await SeedManyAsync(s, 8);
+
+        var page = await ListAsync(s, new RecordFilter { Limit = 5 });
+
+        page.Items.Count.ShouldBe(5);
+        page.NextCursor.ShouldNotBeNull();
+    }
+
+    [Fact]
     public async Task Tag_filter_without_dates_spans_all_time()
     {
         var s = await SetupAsync();
