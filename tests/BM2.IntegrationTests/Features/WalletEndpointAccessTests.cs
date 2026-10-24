@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using BM2.Contracts.Accounts;
 using BM2.Contracts.Categories;
+using BM2.Contracts.Members;
 using BM2.Contracts.Records;
 using BM2.Contracts.Tags;
 using BM2.Contracts.Wallets;
@@ -32,6 +33,9 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         new("POST", "/api/wallets/{w}/records", ValidRecord, MemberRole.Editor),
         new("PUT", "/api/wallets/{w}/records/{r}", ValidRecord, MemberRole.Editor),
         new("DELETE", "/api/wallets/{w}/records/{r}", null, MemberRole.Editor),
+        new("GET", "/api/wallets/{w}/members", null, MemberRole.Viewer),
+        new("PUT", "/api/wallets/{w}/members/{u}", _ => new UpdateRoleRequest(MemberRole.Viewer), MemberRole.Owner),
+        new("PUT", "/api/wallets/{w}/accounts/{a}/members/{u}", _ => new UpdateRoleRequest(MemberRole.Viewer), MemberRole.Owner),
     ];
 
     public static TheoryData<string> Cases => new(All.Select(c => c.Name));
