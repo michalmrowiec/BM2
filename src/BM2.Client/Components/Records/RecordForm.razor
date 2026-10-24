@@ -78,17 +78,18 @@
 
     @if (RuleMode)
     {
-        <RepeatFields Model="_repeat" Start="_model.OccurredOn" />
+        <RepeatFields Model="_repeat" Start="_model.OccurredOn" Existing="Rule" FirstStatus="@(Rule is null && Initial is not null ? Initial.Status : null)"
+                      FirstExists="true" />
     }
     else if (Initial is null || IsCopy)
     {
         <label class="check">
-            <input type="checkbox" checked="@_repeatOn" @onchange="e => _repeatOn = e.Value is true" />
-            <span><Icon Name="repeat" /> Repeat</span>
+            <input type="checkbox" checked="@_repeatOn" @onchange="OnRepeatChanged" />
+            <span><Icon Name="repeat" /> Repeat – save this record now and add the next ones automatically</span>
         </label>
         @if (_repeatOn)
         {
-            <RepeatFields Model="_repeat" Start="_model.OccurredOn" />
+            <RepeatFields Model="_repeat" Start="_model.OccurredOn" FirstStatus="_model.Status" />
         }
     }
 
@@ -134,7 +135,8 @@
         <div class="form-stack">
             @if (!RuleMode)
             {
-                <SelectField id="record-status" Label="Status" Options="StatusOptions" @bind-Value="_model.Status" />
+                <SelectField id="record-status" Label="@(_repeatOn ? "Status of this record" : "Status")" Options="StatusOptions"
+                             @bind-Value="_model.Status" @bind-Value:after="SyncRepeatMode" />
             }
             @if (_model.Type != RecordType.Transfer)
             {
@@ -370,6 +372,15 @@
         var messages = _editContext.GetValidationMessages(_editContext.Field(field)).ToList();
         return messages.Count == 0 ? null : string.Join(" ", messages);
     }
+
+    private void OnRepeatChanged(ChangeEventArgs e)
+    {
+        _repeatOn = e.Value is true;
+        SyncRepeatMode();
+    }
+
+    // The next records default to the status picked for this one; the user can still change them separately.
+    private void SyncRepeatMode() => _repeat.Confirm = _model.Status == RecordStatus.Pending;
 
     private void OnTypeChanged(RecordType type)
     {

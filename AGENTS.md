@@ -102,6 +102,10 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 ## UI, dostępność, i18n
 
 - Mobile-first. Dodanie rekordu ma zajmować < 5 s.
+- **Zrozumiałość:** użytkownik ma od razu wiedzieć, po co jest dana opcja, co robi i jaki będzie efekt. Każde pole
+  i przełącznik ma widoczną etykietę (w razie potrzeby krótki opis). Gdy zapis ma skutki poza bieżącym rekordem
+  (powtarzanie, zmiany wielu rekordów, usuwanie powiązanych danych), UI przed zapisem mówi to wprost: podsumowanie
+  skutku albo pytanie z nazwanymi wariantami zamiast domyślnego „OK”.
 - Wygląd ma być unikalny i dopracowany – nie generyczny „kolejny panel”. Spójność z design systemem (tokeny CSS,
   komponenty bazowe); bez doklejania gotowych bibliotek UI.
 - **Design system „Paper and ink”** ([spec](docs/specs/2026-10-24-podprojekt-1a-design-system.md)): style globalne

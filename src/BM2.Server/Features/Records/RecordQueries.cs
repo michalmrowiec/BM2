@@ -76,6 +76,15 @@ internal static class RecordQueries
             query = query.Where(r => r.Status == status);
         }
 
+        if (filter.RuleId is { } ruleId)
+        {
+            query = query.Where(r => r.RecurringRuleId == ruleId);
+        }
+        else if (filter.Recurring == true)
+        {
+            query = query.Where(r => r.RecurringRuleId != null);
+        }
+
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             // Unnamed records are shown by their category, so the category name is searched too.

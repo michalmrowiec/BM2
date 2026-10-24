@@ -44,6 +44,54 @@ public sealed class RepeatModel
         record, ToSchedule(record.OccurredOn), Confirm ? RecurringMode.Confirm : RecurringMode.Auto, IsPaused, fromRecordId);
 
     public string Describe(DateOnly start) => RecurringText.Describe(ToSchedule(start));
+
+    /// <summary>Plain sentences saying what saving will do: the record now, past dates added at once, the next ones.</summary>
+    public IEnumerable<string> Effect(
+        DateOnly start, RecordStatus? firstStatus, bool firstExists, RecurringRuleItem? existing, DateOnly today)
+    {
+        var schedule = ToSchedule(start);
+        var status = Confirm ? "pending (to confirm)" : "completed";
+        int first;
+        if (existing is not null)
+        {
+            first = schedule.FirstIndexOnOrAfter(existing.NextDate ?? today);
+            yield return existing.RecordCount == 1
+                ? "1 record was already added; when saving you choose whether it changes too."
+                : $"{existing.RecordCount} records were already added; when saving you choose whether they change too.";
+        }
+        else if (firstStatus is { } saved)
+        {
+            first = 1;
+            yield return firstExists
+                ? $"This record ({Day(start)}) counts as the first one."
+                : $"Saves this record now ({Day(start)}, {saved.ToString().ToLowerInvariant()}).";
+        }
+        else
+        {
+            first = 0;
+        }
+
+        var past = new List<DateOnly>();
+        var next = new List<DateOnly>();
+        for (var i = first; schedule.NextDate(i) is { } date && next.Count < 3 && past.Count < 1000; i++)
+        {
+            (date <= today ? past : next).Add(date);
+        }
+
+        if (past.Count > 0 && existing is null)
+        {
+            yield return past.Count == 1
+                ? $"Adds 1 past record right away ({Day(past[0])}), as {status}."
+                : $"Adds {past.Count} past records right away ({Day(past[0])} – {Day(past[^1])}), as {status}.";
+        }
+
+        var total = End == RecurrenceEnd.AfterCount ? $" ({Count} in total)" : End == RecurrenceEnd.Never ? ", with no end" : "";
+        yield return next.Count == 0
+            ? "No further records: the schedule ends before the next date."
+            : $"Then adds automatically on {string.Join(", ", next.Select(Day))}{(next.Count == 3 ? "…" : "")}{total}, as {status}.";
+    }
+
+    private static string Day(DateOnly date) => date.ToString("d MMM yyyy", CultureInfo.CurrentCulture);
 }
 
 public static class RecurringText

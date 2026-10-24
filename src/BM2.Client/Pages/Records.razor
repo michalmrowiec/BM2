@@ -148,6 +148,10 @@ else
 
     [SupplyParameterFromQuery(Name = "q")] public string? Search { get; set; }
 
+    [SupplyParameterFromQuery] public Guid? RuleId { get; set; }
+
+    [SupplyParameterFromQuery] public bool? Recurring { get; set; }
+
     private WalletSnapshot? Wallet => WalletState.Current;
 
     private bool IsAllTime => All == true;
@@ -166,6 +170,8 @@ else
         Type = Enum.TryParse<RecordType>(Type, out var type) ? type : null,
         Status = Enum.TryParse<RecordStatus>(Status, out var status) ? status : null,
         Search = Search,
+        RuleId = RuleId,
+        Recurring = Recurring,
     };
 
     private List<(string Key, string Label)> ActiveFilters
@@ -183,6 +189,8 @@ else
             Add(filters, "tagId", Wallet.Tags.FirstOrDefault(t => t.Id == TagId)?.Name);
             Add(filters, "type", CurrentFilter.Type?.ToString());
             Add(filters, "status", CurrentFilter.Status?.ToString());
+            Add(filters, "ruleId", RuleId is null ? null : "One recurring rule");
+            Add(filters, "recurring", Recurring == true ? "Added by recurring rules" : null);
             return filters;
         }
     }
@@ -305,6 +313,7 @@ else
             ["tagId"] = filter.TagId,
             ["type"] = filter.Type?.ToString(),
             ["status"] = filter.Status?.ToString(),
+            ["recurring"] = filter.Recurring == true ? true : null,
         }));
 
     private async Task OnSearchInput(ChangeEventArgs e)

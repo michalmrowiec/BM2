@@ -1490,3 +1490,22 @@ button.list-row:hover { background: var(--wash); }
 .check .icon {
     vertical-align: -0.2em;
 }
+
+.repeat-fields__effect {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border-radius: var(--radius-s);
+    background: var(--wash);
+    color: var(--ink-muted);
+    font-size: 0.875rem;
+}
+
+.repeat-fields__effect p {
+    margin: 0;
+}
+
+.repeat-fields__rule {
+    color: var(--ink);
+    font-weight: 600;
+}

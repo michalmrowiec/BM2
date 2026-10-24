@@ -41,9 +41,11 @@
     }
     else
     {
-        @if (_rule is not null)
+        @if (_rule is { RecordCount: > 0 } rule)
         {
-            <p class="field__hint">Changes apply to records added from now on.</p>
+            <p class="field__hint">
+                <a class="link" href="@($"records?ruleId={rule.Id}&all=true")">Show the @rule.RecordCount records it added</a>
+            </p>
         }
         <RecordForm @ref="_form" @key="_formKey" Wallet="Wallet" Initial="_initial" RuleMode="true" Rule="_rule" Busy="_busy"
                     OnSubmit="SaveAsync" />
@@ -52,8 +54,28 @@
 
 <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete recurring rule?" ConfirmLabel="Delete"
                Danger="true" OnConfirm="DeleteAsync">
-    <p>Records it already added stay.</p>
+    <p>No more records will be added.</p>
+    @if (_rule is { RecordCount: > 0 } rule)
+    {
+        <label class="check">
+            <input type="checkbox" checked="@_deleteRecords" @onchange="e => _deleteRecords = e.Value is true" />
+            <span>Also delete the @rule.RecordCount records it added (otherwise they stay as normal records)</span>
+        </label>
+    }
 </ConfirmDialog>
+
+<Sheet Open="_pending is not null" OpenChanged="v => { if (!v) _pending = null; }" Title="Apply changes to which records?">
+    <div class="form-stack">
+        <p>The rule already added @_rule?.RecordCount records. Their dates and statuses never change.</p>
+        <button type="button" class="btn btn-primary btn-block" disabled="@_busy" @onclick="() => SendAsync(applyToPast: false)">
+            Only records added from now on
+        </button>
+        <button type="button" class="btn btn-secondary btn-block" disabled="@_busy" @onclick="() => SendAsync(applyToPast: true)">
+            Also update the @_rule?.RecordCount added records
+        </button>
+        <p class="field__hint">Updating rewrites their name (with k/N), amount, category, account and tags.</p>
+    </div>
+</Sheet>
 
 @code {
     private RecordForm? _form;
@@ -64,6 +86,8 @@
     private bool _missing;
     private bool _busy;
     private bool _confirmDelete;
+    private bool _deleteRecords;
+    private SaveRecurringRuleRequest? _pending;
 
     [Parameter] public Guid? Id { get; set; }
 
@@ -121,10 +145,23 @@
             request = request with { IsPaused = _rule.IsPaused };
         }
 
+        _pending = request;
+        if (_rule is not { RecordCount: > 0 })
+        {
+            await SendAsync(applyToPast: false);
+        }
+    }
+
+    private async Task SendAsync(bool applyToPast)
+    {
+        var request = _pending!;
         _busy = true;
         var url = $"api/wallets/{Wallet!.Id}/recurring";
-        var result = Id is { } id ? await Api.PutAsync($"{url}/{id}", request) : await Api.PostAsync<RecurringRuleItem>(url, request);
+        var result = Id is { } id
+            ? await Api.PutAsync($"{url}/{id}?applyToPast={(applyToPast ? "true" : "false")}", request)
+            : await Api.PostAsync<RecurringRuleItem>(url, request);
         _busy = false;
+        _pending = null;
 
         if (result.Ok)
         {
@@ -137,18 +174,19 @@
             Toasts.Show(result.Problem!.Detail ?? "Couldn't save. Check the fields.", ToastKind.Error);
             if (result.Problem.HasFieldErrors)
             {
-                _form.ShowServerErrors(result.Problem);
+                _form?.ShowServerErrors(result.Problem);
             }
         }
     }
 
     private async Task DeleteAsync()
     {
-        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/recurring/{Id}");
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/recurring/{Id}?withRecords={(_deleteRecords ? "true" : "false")}");
         _confirmDelete = false;
         if (result.Ok)
         {
-            Toasts.Show("Recurring rule deleted.");
+            Toasts.Show(_deleteRecords ? "Rule and its records deleted." : "Recurring rule deleted.");
+            await WalletState.RefreshAsync();
             Navigation.NavigateTo("recurring");
         }
         else

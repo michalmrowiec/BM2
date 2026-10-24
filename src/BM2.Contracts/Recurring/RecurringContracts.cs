@@ -82,7 +82,8 @@ public sealed record RecurringRuleItem(
     RecurringMode Mode,
     bool IsPaused,
     int NextIndex,
-    DateOnly? NextDate);
+    DateOnly? NextDate,
+    int RecordCount);
 
 /// <summary>
 /// Creates or replaces a rule. <see cref="Record"/> gives the fields of each record; its date and status are ignored

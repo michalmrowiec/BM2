@@ -68,15 +68,13 @@ public sealed class RecurringRule
 
     public RecurrenceSchedule Schedule => new(Frequency, Interval, StartDate, End, EndDate, Count);
 
-    /// <param name="continueAfter">Date of an existing record taken as the first occurrence; the rule then skips
-    /// everything up to it and before today (no backfill).</param>
-    public static RecurringRule Create(
-        Guid walletId, SaveRecurringRuleRequest request, Guid userId, DateTimeOffset now, DateOnly today, DateOnly? continueAfter)
+    /// <param name="continueAfter">Date of an existing record taken as the first occurrence; the rule continues
+    /// after it (catch-up adds the missed ones up to today).</param>
+    public static RecurringRule Create(Guid walletId, SaveRecurringRuleRequest request, Guid userId, DateTimeOffset now, DateOnly? continueAfter)
     {
         var rule = new RecurringRule { WalletId = walletId, CreatedByUserId = userId, CreatedAt = now };
         rule.Apply(request);
-        var schedule = rule.Schedule;
-        rule.MoveTo(continueAfter is { } date ? Math.Max(1, schedule.FirstIndexOnOrAfter(Max(date.AddDays(1), today))) : 0);
+        rule.MoveTo(continueAfter is { } date ? Math.Max(1, rule.Schedule.FirstIndexOnOrAfter(date.AddDays(1))) : 0);
         return rule;
     }
 
@@ -89,15 +87,19 @@ public sealed class RecurringRule
         MoveTo(Schedule.FirstIndexOnOrAfter(resumed ? Max(covered, today) : covered));
     }
 
-    /// <summary>The record for occurrence <see cref="NextIndex"/>; installments get " k/N" after the name.</summary>
-    public RecordDraft NextDraft()
+    /// <summary>The record for occurrence <see cref="NextIndex"/>.</summary>
+    public RecordDraft NextDraft() =>
+        DraftFor(NextIndex, NextDate!.Value, Mode == RecurringMode.Confirm ? RecordStatus.Pending : RecordStatus.Completed);
+
+    /// <summary>The record for occurrence <paramref name="index"/>; installments get " k/N" after the name.</summary>
+    public RecordDraft DraftFor(int index, DateOnly date, RecordStatus status)
     {
-        var suffix = Schedule.Suffix(NextIndex);
+        var suffix = Schedule.Suffix(index);
         var name = Name is null ? suffix?.Trim() : Name[..Math.Min(Name.Length, Limits.RecordName - (suffix?.Length ?? 0))] + suffix;
         return new RecordDraft(
             Type,
-            Mode == RecurringMode.Confirm ? RecordStatus.Pending : RecordStatus.Completed,
-            NextDate!.Value,
+            status,
+            date,
             AccountId,
             Amount,
             Currency,

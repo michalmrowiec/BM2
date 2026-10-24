@@ -1,4 +1,5 @@
 @using System.Globalization
+@using BM2.Contracts.Records
 @using BM2.Contracts.Recurring
 
 @* Schedule part of the record form: every N days/weeks/months/years, an optional end and the confirm mode. *@
@@ -38,12 +39,25 @@
         </div>
     }
 
-    <label class="check">
-        <input type="checkbox" checked="@Model.Confirm" @onchange="e => Model.Confirm = e.Value is true" />
-        <span>Ask me to confirm each one (adds it as pending)</span>
-    </label>
+    <div class="field">
+        <label class="field__label" for="repeat-mode">Next records are added as</label>
+        <div class="field__select">
+            <select id="repeat-mode" class="field__control" value="@(Model.Confirm ? "pending" : "completed")"
+                    @onchange="SetMode">
+                <option value="completed">Completed – counted in the balance right away</option>
+                <option value="pending">Pending – wait for your ✓ in To confirm on Home</option>
+            </select>
+            <Icon Name="chevron-down" Class="field__select-icon" />
+        </div>
+    </div>
 
-    <p class="field__hint">@Model.Describe(Start)</p>
+    <div class="repeat-fields__effect" role="status">
+        <p class="repeat-fields__rule">@Model.Describe(Start)</p>
+        @foreach (var line in Model.Effect(Start, FirstStatus, FirstExists, Existing, DateOnly.FromDateTime(DateTime.Now)))
+        {
+            <p>@line</p>
+        }
+    </div>
 </div>
 
 @code {
@@ -57,6 +71,17 @@
 
     /// <summary>The first occurrence (the record date or the rule start).</summary>
     [Parameter] public DateOnly Start { get; set; }
+
+    /// <summary>Status of the record saved now as the first occurrence; null when only the rule is saved.</summary>
+    [Parameter] public RecordStatus? FirstStatus { get; set; }
+
+    /// <summary>The first occurrence is an existing record ("Make recurring"), not one saved now.</summary>
+    [Parameter] public bool FirstExists { get; set; }
+
+    /// <summary>The rule being edited.</summary>
+    [Parameter] public RecurringRuleItem? Existing { get; set; }
+
+    private void SetMode(ChangeEventArgs e) => Model.Confirm = e.Value?.ToString() == "pending";
 
     private static int ParseInt(object? value, int fallback) =>
         int.TryParse(value?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) && n > 0 ? n : fallback;

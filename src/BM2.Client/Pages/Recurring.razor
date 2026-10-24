@@ -104,7 +104,8 @@ else
             { IsPaused: true } => "Paused",
             _ => $"Next {rule.NextDate:d MMM yyyy}",
         };
-        return $"{next} · {RecurringText.Describe(rule.Schedule)}";
+        var added = rule.RecordCount == 1 ? "1 record added" : $"{rule.RecordCount} records added";
+        return $"{next} · {RecurringText.Describe(rule.Schedule)} · {added}";
     }
 
     private async Task TogglePauseAsync(RecurringRuleItem rule)

@@ -12,6 +12,7 @@
             }
             <SelectField TValue="RecordType?" id="filter-type" Label="Type" Options="TypeOptions" @bind-Value="_model.Type" />
             <SelectField TValue="RecordStatus?" id="filter-status" Label="Status" Options="StatusOptions" @bind-Value="_model.Status" />
+            <SelectField TValue="bool?" id="filter-source" Label="Added by" Options="SourceOptions" @bind-Value="_model.Recurring" />
         </EditForm>
     </ChildContent>
     <Footer>
@@ -26,6 +27,9 @@
 
     private static readonly IReadOnlyList<(RecordStatus? Value, string Label)> StatusOptions =
         [(null, "Any status"), (RecordStatus.Completed, "Completed"), (RecordStatus.Pending, "Pending"), (RecordStatus.Planned, "Planned")];
+
+    private static readonly IReadOnlyList<(bool? Value, string Label)> SourceOptions =
+        [(null, "Anyone"), (true, "Recurring rules only")];
 
     private FilterModel _model = new();
     private bool _wasOpen;
@@ -60,6 +64,7 @@
                 TagId = Value.TagId,
                 Type = Value.Type,
                 Status = Value.Status,
+                Recurring = Value.Recurring,
             };
         }
 
@@ -75,6 +80,7 @@
             TagId = _model.TagId,
             Type = _model.Type,
             Status = _model.Status,
+            Recurring = _model.Recurring,
         });
         await OpenChanged.InvokeAsync(false);
     }
@@ -96,5 +102,7 @@
         public RecordType? Type { get; set; }
 
         public RecordStatus? Status { get; set; }
+
+        public bool? Recurring { get; set; }
     }
 }
