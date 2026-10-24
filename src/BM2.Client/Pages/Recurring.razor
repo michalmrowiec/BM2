@@ -39,7 +39,7 @@ else
         {
             var label = Label(rule);
             <li class="template-row" @key="rule.Id">
-                <ListRow Title="@label" Subtitle="@Subtitle(rule)" Href="@(CanWrite ? $"recurring/{rule.Id}" : null)">
+                <ListRow Title="@label" Subtitle="@Subtitle(rule)" OnClick="() => _menuFor = rule">
                     <Leading>
                         <RecordAvatar Category="Wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)" Type="rule.Record.Type"
                                       Fallback="@label" />
@@ -59,12 +59,89 @@ else
             </li>
         }
     </ul>
+
+    <Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuFor is null ? "Recurring" : Label(_menuFor))">
+        @if (_menuFor is { } rule)
+        {
+            <ul class="menu-list">
+                @if (CanWrite)
+                {
+                    <li>
+                        <a href="@($"recurring/{rule.Id}")"><Icon Name="edit" /><span>Edit rule</span></a>
+                    </li>
+                }
+                <li>
+                    <a href="@($"records?ruleId={rule.Id}&all=true")">
+                        <Icon Name="list" /><span>Show records it added</span><span class="menu-list__trail">@rule.RecordCount</span>
+                    </a>
+                </li>
+                @if (CanWrite)
+                {
+                    @if (rule.NextDate is not null)
+                    {
+                        <li>
+                            <button type="button" disabled="@_busy" @onclick="() => TogglePauseAsync(rule)">
+                                <Icon Name="@(rule.IsPaused ? "play" : "pause")" />
+                                <span>@(rule.IsPaused ? "Resume (continues from today)" : "Pause (adds nothing until resumed)")</span>
+                            </button>
+                        </li>
+                    }
+                    @if (rule.RecordCount > 0)
+                    {
+                        <li>
+                            <button type="button" class="danger-text" @onclick="() => Ask(rule, DeleteKind.Records)">
+                                <Icon Name="trash" /><span>Delete the records it added (keep the rule)</span>
+                            </button>
+                        </li>
+                    }
+                    <li>
+                        <button type="button" class="danger-text" @onclick="() => Ask(rule, DeleteKind.Rule)">
+                            <Icon Name="trash" /><span>Delete rule</span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+    </Sheet>
+
+    <ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Danger="true"
+                   Title="@(_deleteKind == DeleteKind.Records ? "Delete the records it added?" : "Delete recurring rule?")"
+                   ConfirmLabel="Delete" OnConfirm="DeleteAsync">
+        @if (_deleting is { } rule)
+        {
+            @if (_deleteKind == DeleteKind.Records)
+            {
+                <p>Deletes all @rule.RecordCount records this rule added. The rule stays and adds only future ones. This can't be undone.</p>
+            }
+            else
+            {
+                <p>No more records will be added.</p>
+                @if (rule.RecordCount > 0)
+                {
+                    <label class="check">
+                        <input type="checkbox" checked="@_withRecords" @onchange="e => _withRecords = e.Value is true" />
+                        <span>Also delete the @rule.RecordCount records it added (otherwise they stay as normal records)</span>
+                    </label>
+                }
+            }
+        }
+    </ConfirmDialog>
 }
 
 @code {
     private List<RecurringRuleItem>? _rules;
     private WalletSnapshot? _loadedFor;
     private bool _busy;
+    private RecurringRuleItem? _menuFor;
+    private RecurringRuleItem? _deleting;
+    private DeleteKind _deleteKind;
+    private bool _withRecords;
+
+    private enum DeleteKind
+    {
+        Rule,
+        Records,
+    }
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
@@ -116,11 +193,38 @@ else
         _busy = false;
         if (result.Ok)
         {
+            _menuFor = null;
             await LoadAsync(force: true);
         }
         else
         {
             Toasts.Show(result.Problem!.Detail ?? "Couldn't change the rule.", ToastKind.Error);
+        }
+    }
+
+    private void Ask(RecurringRuleItem rule, DeleteKind kind)
+    {
+        _menuFor = null;
+        _deleteKind = kind;
+        _withRecords = false;
+        _deleting = rule;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var rule = _deleting!;
+        var url = $"api/wallets/{Wallet!.Id}/recurring/{rule.Id}";
+        var result = await Api.DeleteAsync(_deleteKind == DeleteKind.Records ? $"{url}/records" : $"{url}?withRecords={(_withRecords ? "true" : "false")}");
+        _deleting = null;
+        if (result.Ok)
+        {
+            Toasts.Show(_deleteKind == DeleteKind.Records ? "Records deleted." : _withRecords ? "Rule and its records deleted." : "Rule deleted.");
+            await WalletState.RefreshAsync();
+            await LoadAsync(force: true);
+        }
+        else
+        {
+            Toasts.ShowError();
         }
     }
 }

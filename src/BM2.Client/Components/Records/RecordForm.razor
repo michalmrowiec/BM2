@@ -74,7 +74,19 @@
     <SelectField id="record-account" Label="@(_model.Type == RecordType.Income ? "To account" : "From account")"
                  Options="AccountOptions" @bind-Value="_model.AccountId" @bind-Value:after="OnAccountChanged" />
 
-    <DateField id="record-date" Label="@(RuleMode ? "Starts" : "Date")" @bind-Value="_model.OccurredOn" />
+    @if (Rule is { RecordCount: > 0 })
+    {
+        @* Moving the start would renumber and shift dates of records already added, so it is fixed. *@
+        <div class="field">
+            <span class="field__label">Starts</span>
+            <p class="field__static">@_model.OccurredOn.ToString("d MMM yyyy")</p>
+            <p class="field__hint">Fixed once records were added. To start on another day, create a new rule.</p>
+        </div>
+    }
+    else
+    {
+        <DateField id="record-date" Label="@(RuleMode ? "Starts" : "Date")" @bind-Value="_model.OccurredOn" />
+    }
 
     @if (RuleMode)
     {

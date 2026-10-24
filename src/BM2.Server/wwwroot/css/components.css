@@ -1509,3 +1509,9 @@ button.list-row:hover { background: var(--wash); }
     color: var(--ink);
     font-weight: 600;
 }
+
+.field__static {
+    margin: 0;
+    padding: var(--space-2) 0;
+    font-weight: 600;
+}

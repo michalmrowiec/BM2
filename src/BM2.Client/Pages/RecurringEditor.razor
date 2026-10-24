@@ -41,12 +41,6 @@
     }
     else
     {
-        @if (_rule is { RecordCount: > 0 } rule)
-        {
-            <p class="field__hint">
-                <a class="link" href="@($"records?ruleId={rule.Id}&all=true")">Show the @rule.RecordCount records it added</a>
-            </p>
-        }
         <RecordForm @ref="_form" @key="_formKey" Wallet="Wallet" Initial="_initial" RuleMode="true" Rule="_rule" Busy="_busy"
                     OnSubmit="SaveAsync" />
     }

@@ -22,6 +22,7 @@ public static class RecurringEndpoints
         rules.MapPost("/", CreateAsync).Validate<SaveRecurringRuleRequest>();
         rules.MapPut("/{ruleId:guid}", UpdateAsync).Validate<SaveRecurringRuleRequest>();
         rules.MapDelete("/{ruleId:guid}", DeleteAsync);
+        rules.MapDelete("/{ruleId:guid}/records", DeleteRecordsAsync);
         return wallet;
     }
 
@@ -129,20 +130,43 @@ public static class RecurringEndpoints
             return Error.Forbidden().ToProblem();
         }
 
-        if (withRecords)
+        if (withRecords && await DeleteRuleRecordsAsync(db, current.Access, ruleId, ct) is { } error)
         {
-            var accounts = await db.Records.Where(r => r.RecurringRuleId == ruleId)
-                .Select(r => new { r.AccountId, r.TransferAccountId }).ToListAsync(ct);
-            if (!accounts.TrueForAll(a => current.Access.CanWriteRecord(a.AccountId, a.TransferAccountId)))
-            {
-                return Error.Forbidden().ToProblem();
-            }
-
-            await db.Records.Where(r => r.RecurringRuleId == ruleId).ExecuteDeleteAsync(ct);
+            return error.ToProblem();
         }
 
         await db.RecurringRules.Where(r => r.Id == ruleId).ExecuteDeleteAsync(ct);
         return TypedResults.NoContent();
+    }
+
+    // Deletes the records a rule added and keeps the rule; catch-up does not add them again.
+    private static async Task<Results<NoContent, ProblemHttpResult>> DeleteRecordsAsync(
+        Guid ruleId, CurrentWallet current, AppDbContext db, CancellationToken ct)
+    {
+        var rule = await db.RecurringRules
+            .AsNoTracking()
+            .Where(r => r.Id == ruleId && r.WalletId == current.Id)
+            .Select(r => new { r.AccountId, r.TransferAccountId })
+            .SingleOrDefaultAsync(ct);
+        if (rule is null || !current.Access.CanReadRecord(rule.AccountId, rule.TransferAccountId))
+        {
+            return Error.NotFound().ToProblem();
+        }
+
+        return await DeleteRuleRecordsAsync(db, current.Access, ruleId, ct) is { } error ? error.ToProblem() : TypedResults.NoContent();
+    }
+
+    private static async Task<Error?> DeleteRuleRecordsAsync(AppDbContext db, WalletAccess access, Guid ruleId, CancellationToken ct)
+    {
+        var accounts = await db.Records.Where(r => r.RecurringRuleId == ruleId)
+            .Select(r => new { r.AccountId, r.TransferAccountId }).ToListAsync(ct);
+        if (!accounts.TrueForAll(a => access.CanWriteRecord(a.AccountId, a.TransferAccountId)))
+        {
+            return Error.Forbidden();
+        }
+
+        await db.Records.Where(r => r.RecurringRuleId == ruleId).ExecuteDeleteAsync(ct);
+        return null;
     }
 
     /// <summary>The same checks as a new record dated on the schedule start.</summary>
