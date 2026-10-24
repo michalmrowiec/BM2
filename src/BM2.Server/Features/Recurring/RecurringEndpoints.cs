@@ -232,9 +232,12 @@ internal static partial class RecurringCatchUp
     /// copy, so a parallel run that loses simply stops. Occurrences whose account or category is archived or gone are
     /// skipped.
     /// </summary>
-    public static async Task RunAsync(AppDbContext db, Guid walletId, TimeProvider time, ILogger logger, CancellationToken ct)
+    /// <param name="deviceToday">The user's calendar day; trusted only within a day of UTC, so no future records.</param>
+    public static async Task RunAsync(
+        AppDbContext db, Guid walletId, TimeProvider time, DateOnly? deviceToday, ILogger logger, CancellationToken ct)
     {
-        var today = RecurringEndpoints.Today(time);
+        var utcToday = RecurringEndpoints.Today(time);
+        var today = deviceToday is { } device && Math.Abs(device.DayNumber - utcToday.DayNumber) <= 1 ? device : utcToday;
         var rules = await db.RecurringRules
             .Include(r => r.Tags)
             .Where(r => r.WalletId == walletId && !r.IsPaused && r.NextDate != null && r.NextDate <= today)

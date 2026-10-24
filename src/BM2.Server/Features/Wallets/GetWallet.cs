@@ -16,12 +16,12 @@ internal static class GetWallet
     public static void Map(RouteGroupBuilder wallet) => wallet.MapGet("/", HandleAsync);
 
     private static async Task<Ok<WalletSnapshot>> HandleAsync(
-        CurrentWallet current, AppDbContext db, TimeProvider time, ILoggerFactory loggers, CancellationToken ct)
+        CurrentWallet current, AppDbContext db, TimeProvider time, ILoggerFactory loggers, CancellationToken ct, DateOnly? today = null)
     {
         var access = current.Access;
 
         // Opening a wallet adds due recurring records first, so balances include them.
-        await RecurringCatchUp.RunAsync(db, access.WalletId, time, loggers.CreateLogger(nameof(RecurringCatchUp)), ct);
+        await RecurringCatchUp.RunAsync(db, access.WalletId, time, today, loggers.CreateLogger(nameof(RecurringCatchUp)), ct);
 
         var wallet = await db.Wallets
             .AsNoTracking()

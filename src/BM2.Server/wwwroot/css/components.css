@@ -1515,3 +1515,33 @@ button.list-row:hover { background: var(--wash); }
     padding: var(--space-2) 0;
     font-weight: 600;
 }
+
+.record-row__auto {
+    display: inline-flex;
+    margin-left: var(--space-1);
+    color: var(--ink-muted);
+    vertical-align: -0.15em;
+}
+
+.record-row__auto .icon {
+    width: 0.9em;
+    height: 0.9em;
+}
+
+/* Neutral info box (not an error) */
+.notice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-s);
+    background: var(--wash);
+    color: var(--ink-muted);
+    font-size: 0.875rem;
+}
+
+.notice p {
+    flex: 1;
+    margin: 0;
+}

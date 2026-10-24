@@ -24,7 +24,8 @@ internal static class RecordQueries
         r.TransferAccount != null ? r.TransferAccount.Name : null,
         r.TransferAmount,
         r.Name,
-        r.Tags.Select(t => t.TagId).ToList());
+        r.Tags.Select(t => t.TagId).ToList(),
+        r.RecurringRuleId);
 
     /// <summary>Records touching an account the user can read (either side of a transfer).</summary>
     public static IQueryable<Record> Visible(this IQueryable<Record> records, IReadOnlyCollection<Guid> readableAccountIds) =>

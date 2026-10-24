@@ -61,6 +61,14 @@
     }
     else
     {
+        @if (Id is not null && _record?.RecurringRuleId is { } ruleId)
+        {
+            <div class="notice">
+                <Icon Name="repeat" />
+                <p>Added by a recurring rule. Changes here apply only to this record.</p>
+                <a class="btn btn-secondary btn-sm" href="@($"recurring/{ruleId}")">Edit the rule</a>
+            </div>
+        }
         <RecordForm @ref="_form" @key="_formKey" Wallet="Wallet" Initial="_record" IsCopy="@(CopyId is not null && Id is null)"
                     Template="_template" Suggestions="_suggestions" DefaultAccountId="_lastAccount" Busy="_busy" OnSubmit="SaveAsync"
                     OnSaveTemplate="SaveTemplateAsync" />

@@ -29,7 +29,13 @@
                     <a class="record-row__main" href="@($"records/{item.Id}")">
                         <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
                         <span class="record-row__text">
-                            <span class="record-row__title">@view.Title</span>
+                            <span class="record-row__title">
+                                @view.Title
+                                @if (item.RecurringRuleId is not null)
+                                {
+                                    <span class="record-row__auto" title="Added by a recurring rule"><Icon Name="repeat" /><span class="sr-only">Recurring</span></span>
+                                }
+                            </span>
                             <span class="record-row__meta">
                                 <span class="record-row__where">@view.Meta</span>
                                 @foreach (var tag in view.Tags)
@@ -75,7 +81,14 @@
                     <button type="button" @onclick="() => SaveTemplateAsync(record)"><Icon Name="bolt" /><span>Save as template</span></button>
                 </li>
                 <li>
-                    <a href="@($"recurring/new?from={record.Id}")"><Icon Name="repeat" /><span>Make recurring</span></a>
+                    @if (record.RecurringRuleId is { } ruleId)
+                    {
+                        <a href="@($"recurring/{ruleId}")"><Icon Name="repeat" /><span>Edit recurring rule (future records)</span></a>
+                    }
+                    else
+                    {
+                        <a href="@($"recurring/new?from={record.Id}")"><Icon Name="repeat" /><span>Make recurring</span></a>
+                    }
                 </li>
                 <li>
                     <button type="button" class="danger-text" @onclick="AskDelete"><Icon Name="trash" /><span>Delete</span></button>

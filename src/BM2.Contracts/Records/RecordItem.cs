@@ -19,4 +19,5 @@ public sealed record RecordItem(
     string? TransferAccountName,
     decimal? TransferAmount,
     string? Name,
-    IReadOnlyList<Guid> TagIds);
+    IReadOnlyList<Guid> TagIds,
+    Guid? RecurringRuleId = null);

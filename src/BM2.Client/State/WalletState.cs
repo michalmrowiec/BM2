@@ -92,7 +92,8 @@ public sealed class WalletState(ApiClient api, BrowserStorage storage)
             Wallets = list.Value!;
             var selected = Wallets.Any(w => w.Id == preferred) ? preferred : Wallets.Count > 0 ? Wallets[0].Id : null;
             var snapshot = selected is { } walletId
-                ? await api.GetAsync<WalletSnapshot>($"api/wallets/{walletId}")
+                ? await api.GetAsync<WalletSnapshot>(
+                    $"api/wallets/{walletId}?today={DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}")
                 : new ApiResult<WalletSnapshot>(null, null);
             Current = snapshot.Value;
             Problem = snapshot.Problem;
