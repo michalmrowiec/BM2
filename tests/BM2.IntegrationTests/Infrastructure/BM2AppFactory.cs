@@ -1,8 +1,10 @@
+using BM2.Server.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BM2.IntegrationTests.Infrastructure;
@@ -27,6 +29,8 @@ public sealed class BM2AppFactory(string connectionString) : WebApplicationFacto
         builder.UseSetting("Database:PrepareOnStartup", "true");
         builder.ConfigureTestServices(services =>
         {
+            services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(new SqlServer2012Guard()));
+
             services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { })
                 .AddPolicyScheme(TestOrIdentityScheme, null, options => options.ForwardDefaultSelector = context =>

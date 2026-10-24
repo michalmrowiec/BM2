@@ -30,7 +30,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   i `Virtualize`, wykresy Apache ECharts. Tylko online.
 - Backend: ASP.NET Core API w tym samym hoście (same-origin), uwierzytelnianie cookie (ASP.NET Core Identity).
 - Baza: SQL Server przez EF Core z `UseCompatibilityLevel(110)` – produkcja to **MSSQL 2012**. Nie używaj funkcji
-  SQL Server 2016+ (OPENJSON / kolumny JSON, `STRING_AGG`, temporal tables itp.).
+  SQL Server 2016+ (funkcje JSON / `OPENJSON`, `STRING_AGG`, `STRING_SPLIT`, temporal tables itp.). Tryb 110 na
+  nowszym silniku ich nie blokuje – w testach pilnuje tego `SqlServer2012Guard` (interceptor EF). Kolumna JSON
+  Identity dla passkeys jest dozwolona (zapisywana w całości jako tekst, sprawdzone testem).
 - Brak zależności od WebSocketów i od ciągłego działania procesu (pula IIS może usypiać). Zadania cykliczne jako
   idempotentny catch-up.
 - Paczki NuGet tylko w wersjach stabilnych (bez preview/beta).
