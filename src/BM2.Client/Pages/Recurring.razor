@@ -38,7 +38,7 @@ else
         @foreach (var rule in _rules)
         {
             var label = Label(rule);
-            <li class="template-row" @key="rule.Id">
+            <li class="template-row" @key="rule.Id" @oncontextmenu="() => _menuFor = rule" @oncontextmenu:preventDefault="true">
                 <ListRow Title="@label" Subtitle="@Subtitle(rule)" OnClick="() => _menuFor = rule">
                     <Leading>
                         <RecordAvatar Category="Wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)" Type="rule.Record.Type"
@@ -48,14 +48,10 @@ else
                         <Amount Value="rule.Record.Amount" Currency="@rule.Record.Currency" Sign="TemplateText.Sign(rule.Record.Type)" />
                     </Trailing>
                 </ListRow>
-                @if (CanWrite && rule.NextDate is not null)
-                {
-                    <button type="button" class="icon-button pin-toggle" aria-pressed="@(rule.IsPaused ? "true" : "false")"
-                            aria-label="@(rule.IsPaused ? $"Resume {label}" : $"Pause {label}")" disabled="@_busy"
-                            @onclick="() => TogglePauseAsync(rule)">
-                        <Icon Name="@(rule.IsPaused ? "play" : "pause")" />
-                    </button>
-                }
+                <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {label}")"
+                        @onclick="() => _menuFor = rule">
+                    <Icon Name="dots" />
+                </button>
             </li>
         }
     </ul>

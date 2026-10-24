@@ -99,7 +99,7 @@ else if (_items.Count == 0)
 }
 else
 {
-    <RecordList Items="_items" Wallet="Wallet" AccountId="AccountId" />
+    <RecordList Items="_items" Wallet="Wallet" AccountId="AccountId" Selectable="true" />
     @if (_nextCursor is not null)
     {
         <div class="load-more" @ref="_sentinel">

@@ -25,9 +25,28 @@
             {
                 var view = View(item);
                 @* Right click and Android long press open the same menu as the dots button. *@
-                <li @key="item.Id" class="record-row" @oncontextmenu="() => _menuFor = item" @oncontextmenu:preventDefault="true">
-                    <a class="record-row__main" href="@($"records/{item.Id}")">
-                        <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
+                var selected = _selected.Contains(item.Id);
+                <li @key="item.Id" class="record-row @(selected ? "is-selected" : null)" @oncontextmenu="() => _menuFor = item" @oncontextmenu:preventDefault="true">
+                    @if (Selectable)
+                    {
+                        @* Tapping the icon selects; the rest of the row opens the record. *@
+                        <button type="button" class="record-row__select" aria-pressed="@(selected ? "true" : "false")"
+                                aria-label="@($"Select {view.Title}")" @onclick="() => ToggleSelected(item.Id)">
+                            @if (selected)
+                            {
+                                <span class="avatar avatar--selected" aria-hidden="true"><Icon Name="check" /></span>
+                            }
+                            else
+                            {
+                                <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
+                            }
+                        </button>
+                    }
+                    <a class="record-row__main @(Selectable ? "record-row__main--after-select" : null)" href="@($"records/{item.Id}")">
+                        @if (!Selectable)
+                        {
+                            <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
+                        }
                         <span class="record-row__text">
                             <span class="record-row__title">
                                 @view.Title
@@ -98,6 +117,34 @@
     }
 </Sheet>
 
+@if (SelectedItems.Count > 0)
+{
+    <div class="selection-bar" role="region" aria-label="Selected records">
+        <div class="selection-bar__info">
+            <strong>@SelectedItems.Count selected</strong>
+            <span class="selection-bar__sums">
+                @foreach (var (currency, sum) in SelectedSums)
+                {
+                    <Amount Value="Math.Abs(sum)" Currency="@currency" Sign="@(sum < 0 ? AmountSign.Minus : AmountSign.Plus)" />
+                }
+                @if (SelectedItems.Any(i => i.Type == RecordType.Transfer))
+                {
+                    <span class="selection-bar__note">transfers not counted</span>
+                }
+            </span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.Clear()">Clear</button>
+        <button type="button" class="btn btn-danger btn-sm" @onclick="() => _confirmBulk = true">
+            <Icon Name="trash" /> Delete
+        </button>
+    </div>
+}
+
+<ConfirmDialog Open="_confirmBulk" OpenChanged="v => _confirmBulk = v" Title="@($"Delete {SelectedItems.Count} records?")"
+               ConfirmLabel="Delete" Danger="true" OnConfirm="DeleteSelectedAsync">
+    <p>This can't be undone. Records you can only view are skipped.</p>
+</ConfirmDialog>
+
 <ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="Delete record?" ConfirmLabel="Delete"
                Danger="true" OnConfirm="DeleteAsync">
     <p>This can't be undone.</p>
@@ -106,6 +153,46 @@
 @code {
     private RecordItem? _menuFor;
     private RecordItem? _deleting;
+    private readonly HashSet<Guid> _selected = [];
+    private bool _confirmBulk;
+
+    /// <summary>Lets the user select records by tapping their icon, with a sum and bulk delete.</summary>
+    [Parameter] public bool Selectable { get; set; }
+
+    private List<RecordItem> SelectedItems => Items.Where(i => _selected.Contains(i.Id)).ToList();
+
+    // Net per account currency, as shown in the rows; transfers move money between accounts, so they are left out.
+    private IEnumerable<(string Currency, decimal Sum)> SelectedSums => SelectedItems
+        .Where(i => i.Type != RecordType.Transfer)
+        .Select(View)
+        .GroupBy(v => v.Currency)
+        .Select(g => (g.Key, g.Sum(v => v.Sign == AmountSign.Minus ? -v.Amount : v.Amount)));
+
+    private void ToggleSelected(Guid id)
+    {
+        if (!_selected.Remove(id))
+        {
+            _selected.Add(id);
+        }
+    }
+
+    private async Task DeleteSelectedAsync()
+    {
+        _confirmBulk = false;
+        var items = SelectedItems.Where(CanWrite).ToList();
+        var failed = 0;
+        foreach (var item in items)
+        {
+            var result = await Api.DeleteAsync($"api/wallets/{Wallet.Id}/records/{item.Id}");
+            failed += result.Ok ? 0 : 1;
+        }
+
+        _selected.Clear();
+        Toasts.Show(failed == 0 ? $"{items.Count} records deleted." : $"{items.Count - failed} deleted, {failed} failed.",
+            failed == 0 ? ToastKind.Success : ToastKind.Error);
+        WalletState.ForgetSuggestions();
+        await WalletState.RefreshAsync();
+    }
 
     [Parameter, EditorRequired] public IReadOnlyList<RecordItem> Items { get; set; } = [];
 

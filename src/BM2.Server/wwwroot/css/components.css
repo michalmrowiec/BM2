@@ -1545,3 +1545,79 @@ button.list-row:hover { background: var(--wash); }
     flex: 1;
     margin: 0;
 }
+
+/* Extra side-rail links, shown only on large screens */
+.bottom-nav__item--rail { display: none; }
+
+@media (min-width: 64rem) {
+    .bottom-nav__item--rail { display: flex; }
+}
+
+/* Records: select by tapping the icon */
+.record-row__select {
+    display: grid;
+    flex: none;
+    place-items: center;
+    min-width: var(--tap);
+    min-height: var(--tap);
+    margin-left: var(--space-2);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.record-row__main--after-select { padding-left: var(--space-1); }
+
+.record-row.is-selected { background: var(--wash); }
+
+.avatar--selected {
+    background: var(--ink);
+    color: var(--paper);
+}
+
+.avatar--selected .icon { color: var(--paper); }
+
+.selection-bar {
+    position: fixed;
+    z-index: 20;
+    left: 50%;
+    bottom: calc(var(--nav-h) + var(--space-4) + env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: min(calc(100% - 2 * var(--space-4)), 40rem);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-l);
+    background: var(--sheet);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+    transform: translateX(-50%);
+}
+
+.selection-bar__info {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.selection-bar__sums {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.selection-bar__note {
+    font-size: var(--text-s);
+    color: var(--ink-muted);
+}
+
+@media (min-width: 64rem) {
+    .selection-bar {
+        bottom: var(--space-5);
+        left: calc(50% + var(--rail-w) / 2);
+    }
+}
