@@ -37,8 +37,19 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Licencje:** tylko biblioteki darmowe także do użytku komercyjnego (MIT, Apache-2.0, BSD itp.) – możliwy jest
   przyszły model subskrypcyjny. Przed dodaniem paczki sprawdź licencję. Nie używamy m.in. MediatR, AutoMapper,
   FluentAssertions (nowe wersje są komercyjne).
-- Struktura projektów i konwencje serwera: [spec podprojektu 0](docs/specs/2026-10-24-podprojekt-0-fundamenty.md)
-  (po jego wdrożeniu przenieś tu skrót). `legacy/` – stary kod, tylko do odczytu jako źródło do przenoszenia.
+- **Projekty** (`BM2.slnx`): `BM2.Domain` (czysty C#, z BM2 zna tylko Contracts), `BM2.Contracts` (DTO/requesty,
+  bez referencji do BM2), `BM2.Server` (host: Minimal API, EF Core, Identity, strony konta SSR), `BM2.Client`
+  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`.
+- **Serwer:** foldery per funkcja `Features/<Obszar>/<Akcja>.cs` z `Map<Obszar>Endpoints(this RouteGroupBuilder)`;
+  bez MediatR i repozytoriów (endpoint używa `AppDbContext`); `TypedResults`; błędy API jako ProblemDetails;
+  bieżący użytkownik przez `ICurrentUser`; wszystko pod `/api` wymaga logowania (wyjątki jawnie `AllowAnonymous()`).
+- **Konfiguracja:** `ConnectionStrings:BM2`; `Database:PrepareOnStartup` (tylko dev/testy) tworzy i migruje bazę.
+  Paczki w `Directory.Packages.props` (centralnie, z pinowaniem zależności przechodnich), źródło tylko nuget.org.
+- **Testy:** xUnit v3 na Microsoft.Testing.Platform (`dotnet test --project …`, filtry `-- --filter-class …`).
+  Integracyjne w kolekcji `Integration` (sekwencyjnie), baza tymczasowa na serwerze z `BM2_TEST_SQL`
+  (domyślnie `localhost\SQLEXPRESS`), Respawn czyści dane między testami.
+- Narzędzia lokalne: `dotnet tool restore`. Uruchomienie lokalne: [docs/dev-setup.md](docs/dev-setup.md).
+- `legacy/` – stary kod, tylko do odczytu jako źródło do przenoszenia.
 
 ## Bezpieczeństwo (punkt odniesienia: OWASP ASVS poziom 2)
 
