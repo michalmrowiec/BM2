@@ -178,8 +178,8 @@ Indeksy: `Record (AccountId, OccurredOn)`, `Record (TransferAccountId, OccurredO
 
 ### Zaproszenia
 
-1. Owner tworzy zaproszenie (rola, opcjonalnie konto) → API zwraca link `https://<host>/invite/{token}` i datę ważności.
-   W bazie tylko skrót tokenu.
+1. Owner tworzy zaproszenie (rola, opcjonalnie konto) → API zwraca token i datę ważności, klient składa link
+   `https://<host>/invite/{token}` (bez zależności od nagłówka Host). W bazie tylko skrót tokenu.
 2. `/invite/{token}` (strona WASM):
    - niezalogowany: informacja o zaproszeniu bez szczegółów, „Log in” (`/Account/Login?ReturnUrl=/invite/{token}`)
      i „Create account” (`/Account/Register?invite={token}`);
@@ -234,8 +234,9 @@ oraz nazwę konta docelowego transferu (może być niedostępne w migawce).
 - **Records:** nawigacja miesiącami i zakres „All time”; grupy dzienne ze sticky nagłówkami i sumą dnia; kwota ze znakiem
   `+`/`−` i kolorem, transfer z ikoną strzałki; status `Planned`/`Pending` oznaczony etykietą (nie tylko kolorem);
   filtry w arkuszu (konto, kategoria, tag, typ, status, szukaj) z aktywnymi filtrami jako chipy; pasek podsumowania
-  filtrowanej listy; doładowanie kolejnych stron przy przewijaniu. Tap → arkusz edycji (zapis, usuń, „Copy”).
-- **Szybkie dodawanie (FAB, `/add`):** przełącznik Expense / Income / Transfer; duże pole kwoty (Fraunces, klawiatura
+  filtrowanej listy; doładowanie kolejnych stron przy przewijaniu. Tap → edycja `records/{id}` w wyglądzie wysuwanego
+  arkusza (zapis, usuń, „Copy”).
+- **Szybkie dodawanie (FAB, `records/new`):** przełącznik Expense / Income / Transfer; duże pole kwoty (Fraunces, klawiatura
   numeryczna, autofocus) jako pierwsze; kategorie danego typu jako chipy; konto (domyślnie ostatnio używane); data
   (domyślnie dzisiaj, skróty Today/Yesterday); „More” rozwija nazwę, tagi, status i walutę. Waluta inna niż konta
   odsłania kurs ↔ kwotę w walucie konta (przeliczane w obie strony). Transfer: konto docelowe i – przy różnych walutach –
