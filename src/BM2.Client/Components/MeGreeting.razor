@@ -1,0 +1,19 @@
+@inject HttpClient Http
+
+@if (_me is null)
+{
+    <p>Loading…</p>
+}
+else
+{
+    <p>Welcome, <strong>@_me.Email</strong></p>
+}
+
+@code {
+    private MeResponse? _me;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _me = await Http.GetFromJsonAsync<MeResponse>("api/me");
+    }
+}

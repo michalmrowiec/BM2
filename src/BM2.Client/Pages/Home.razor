@@ -1,7 +1,22 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>BM2</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>BM2</h1>
 
-Welcome to your new app.
+<AuthorizeView>
+    <Authorized>
+        @* Data comes from the API only once WebAssembly runs; prerendering shows the placeholder. *@
+        @if (RendererInfo.IsInteractive)
+        {
+            <MeGreeting />
+        }
+        else
+        {
+            <p>Loading…</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p><a href="Account/Login">Log in</a></p>
+    </NotAuthorized>
+</AuthorizeView>
