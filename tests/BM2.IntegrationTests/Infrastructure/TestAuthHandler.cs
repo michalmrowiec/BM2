@@ -16,8 +16,16 @@ public sealed class TestAuthHandler(
     public const string SchemeName = "Test";
     public const string UserIdHeader = "X-Test-UserId";
 
+    // Simulates authentication failing (e.g. the database is down during cookie validation).
+    public const string ThrowHeader = "X-Test-Throw";
+
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        if (Request.Headers.ContainsKey(ThrowHeader))
+        {
+            throw new InvalidOperationException("Simulated authentication failure.");
+        }
+
         if (!Request.Headers.TryGetValue(UserIdHeader, out var userId))
         {
             return Task.FromResult(AuthenticateResult.NoResult());

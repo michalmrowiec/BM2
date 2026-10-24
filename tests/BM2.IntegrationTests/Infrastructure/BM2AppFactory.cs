@@ -31,6 +31,7 @@ public sealed class BM2AppFactory(string connectionString) : WebApplicationFacto
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { })
                 .AddPolicyScheme(TestOrIdentityScheme, null, options => options.ForwardDefaultSelector = context =>
                     context.Request.Headers.ContainsKey(TestAuthHandler.UserIdHeader)
+                    || context.Request.Headers.ContainsKey(TestAuthHandler.ThrowHeader)
                         ? TestAuthHandler.SchemeName
                         : IdentityConstants.ApplicationScheme);
 

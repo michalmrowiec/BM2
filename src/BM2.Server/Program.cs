@@ -48,6 +48,9 @@ else
 app.UseBm2ErrorHandling();
 app.UseHttpsRedirection();
 
+// Explicit, so auth runs inside error handling (otherwise WebApplication adds it at the very start).
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 app.UseRegistrationOnlyInDevelopment();
 

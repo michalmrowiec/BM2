@@ -16,6 +16,7 @@ public class MeTests(IntegrationFixture fixture) : IntegrationTest(fixture)
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
         response.Headers.Location.ShouldBeNull();
+        response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
     }
 
     [Fact]
