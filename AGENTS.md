@@ -24,14 +24,19 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 ## Stack i architektura
 
 - .NET: najnowsza wersja wspierana przez Webio (obecnie .NET 10).
-- Front: Blazor WebAssembly (PWA) + MudBlazor. Tylko online.
+- Front: Blazor WebAssembly (PWA) na własnym design systemie – bez biblioteki komponentów. Do list/tabel `QuickGrid`
+  i `Virtualize`, wykresy Apache ECharts. Tylko online.
 - Backend: ASP.NET Core API w tym samym hoście (same-origin), uwierzytelnianie cookie (ASP.NET Core Identity).
 - Baza: SQL Server przez EF Core z `UseCompatibilityLevel(110)` – produkcja to **MSSQL 2012**. Nie używaj funkcji
   SQL Server 2016+ (OPENJSON / kolumny JSON, `STRING_AGG`, temporal tables itp.).
 - Brak zależności od WebSocketów i od ciągłego działania procesu (pula IIS może usypiać). Zadania cykliczne jako
   idempotentny catch-up.
 - Paczki NuGet tylko w wersjach stabilnych (bez preview/beta).
-- Struktura projektów i wzorzec handlerów: ustalane w specu podprojektu 1 – po decyzji uzupełnij tę sekcję.
+- **Licencje:** tylko biblioteki darmowe także do użytku komercyjnego (MIT, Apache-2.0, BSD itp.) – możliwy jest
+  przyszły model subskrypcyjny. Przed dodaniem paczki sprawdź licencję. Nie używamy m.in. MediatR, AutoMapper,
+  FluentAssertions (nowe wersje są komercyjne).
+- Struktura projektów i konwencje serwera: [spec podprojektu 0](docs/specs/2026-10-24-podprojekt-0-fundamenty.md)
+  (po jego wdrożeniu przenieś tu skrót). `legacy/` – stary kod, tylko do odczytu jako źródło do przenoszenia.
 
 ## Bezpieczeństwo (punkt odniesienia: OWASP ASVS poziom 2)
 
@@ -52,6 +57,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 ## UI, dostępność, i18n
 
 - Mobile-first. Dodanie rekordu ma zajmować < 5 s.
+- Wygląd ma być unikalny i dopracowany – nie generyczny „kolejny panel”. Spójność z design systemem (tokeny CSS,
+  komponenty bazowe); bez doklejania gotowych bibliotek UI.
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
 - Wszystkie teksty UI w zasobach (EN domyślnie, PL). Daty i kwoty formatowane wg kultury użytkownika.
