@@ -822,3 +822,41 @@ button.list-row:hover { background: var(--wash); }
     font-size: var(--text-l);
     font-weight: 600;
 }
+
+/* Segmented control (radio group) */
+.segmented {
+    display: inline-flex;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border-radius: var(--radius-pill);
+    background: var(--wash);
+}
+
+.segmented--block {
+    display: flex;
+    margin-bottom: var(--space-4);
+}
+
+.segmented--block .segmented__option { flex: 1; }
+
+.segmented__option {
+    min-height: calc(var(--tap) - var(--space-2));
+    padding: 0 var(--space-4);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--ink-muted);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.segmented__option:hover { color: var(--ink); }
+
+.segmented__option[aria-checked="true"] {
+    background: var(--sheet-raised);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+}

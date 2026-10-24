@@ -1,0 +1,138 @@
+@page "/tags"
+@attribute [Authorize]
+@using BM2.Contracts.Tags
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>Tags · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Tags</h1>
+    @if (CanManage)
+    {
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> New</button>
+    }
+</header>
+
+<p class="muted">Use tags for projects that cut across categories, like a house build or one of your cars.</p>
+
+@if (Wallet is null)
+{
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+}
+else
+{
+    var active = Wallet.Tags.Where(t => !t.IsArchived).ToList();
+    var archived = Wallet.Tags.Where(t => t.IsArchived).ToList();
+
+    @if (active.Count == 0)
+    {
+        <EmptyState IconName="tag" Title="No tags yet">Add one for a project you want to see as a whole.</EmptyState>
+    }
+    else
+    {
+        <ul class="list stagger">
+            @foreach (var tag in active)
+            {
+                <li>@Row(tag)</li>
+            }
+        </ul>
+    }
+
+    @if (archived.Count > 0)
+    {
+        <details class="disclosure">
+            <summary class="section-title">Archived</summary>
+            <ul class="list">
+                @foreach (var tag in archived)
+                {
+                    <li>@Row(tag)</li>
+                }
+            </ul>
+        </details>
+    }
+
+    <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v" Title="@(_editing?.Name ?? "New tag")">
+        @if (_editing is null)
+        {
+            <NameForm SubmitLabel="Add tag" Validator="CreateValidator" ToRequest="m => new CreateTagRequest(m.Name ?? string.Empty)"
+                      Save="m => CreateAsync(m)" OnSaved="OnSavedAsync" />
+        }
+        else
+        {
+            <NameForm @key="_editing.Id" Name="@_editing.Name" IsArchived="_editing.IsArchived" ShowArchived="true"
+                      ArchivedHint="the project is finished, keep its history" Validator="UpdateValidator"
+                      ToRequest="m => new UpdateTagRequest(m.Name ?? string.Empty, m.IsArchived)"
+                      Save="m => UpdateAsync(m)" OnSaved="OnSavedAsync" />
+            <button type="button" class="btn btn-ghost btn-block danger-text" @onclick="() => _confirmDelete = true">
+                <Icon Name="trash" /> Delete tag
+            </button>
+        }
+    </Sheet>
+
+    <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@($"Delete {_editing?.Name}?")"
+                   ConfirmLabel="Delete tag" Danger="true" OnConfirm="DeleteAsync">
+        <p>The tag is removed from all its records. The records stay.</p>
+    </ConfirmDialog>
+}
+
+@code {
+    private static readonly CreateTagRequestValidator CreateValidator = new();
+    private static readonly UpdateTagRequestValidator UpdateValidator = new();
+
+    private bool _editorOpen;
+    private bool _confirmDelete;
+    private TagItem? _editing;
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool CanManage => Wallet?.Permissions.ManageCategories == true;
+
+    private RenderFragment Row(TagItem tag) =>
+        @<ListRow Title="@tag.Name" OnClick="@(CanManage ? EventCallback.Factory.Create(this, () => OpenEditor(tag)) : default)">
+            <Leading><Icon Name="tag" /></Leading>
+            <Trailing>
+                @if (CanManage)
+                {
+                    <Icon Name="chevron-right" />
+                }
+            </Trailing>
+        </ListRow>;
+
+    private void OpenEditor(TagItem? tag)
+    {
+        _editing = tag;
+        _editorOpen = true;
+    }
+
+    private async Task<ApiResult> CreateAsync(NameFormModel model) =>
+        await Api.PostAsync<TagItem>($"api/wallets/{Wallet!.Id}/tags", new CreateTagRequest(model.Name ?? ""));
+
+    private Task<ApiResult> UpdateAsync(NameFormModel model) =>
+        Api.PutAsync($"api/wallets/{Wallet!.Id}/tags/{_editing!.Id}", new UpdateTagRequest(model.Name ?? "", model.IsArchived));
+
+    private async Task OnSavedAsync()
+    {
+        _editorOpen = false;
+        await WalletState.RefreshAsync();
+        Toasts.Show("Tag saved.", ToastKind.Success);
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/tags/{_editing!.Id}");
+        _confirmDelete = false;
+        _editorOpen = false;
+        if (result.Ok)
+        {
+            await WalletState.RefreshAsync();
+            Toasts.Show("Tag deleted.");
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

@@ -1,0 +1,62 @@
+@using FluentValidation
+@inject ToastService Toasts
+
+@* Name (+ archived flag when editing): shared by categories and tags. *@
+<EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
+    <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ToRequest((NameFormModel)m)" />
+    <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
+    @if (ShowArchived)
+    {
+        <label class="check">
+            <InputCheckbox @bind-Value="_model.IsArchived" />
+            <span>Archived <span class="muted">· @ArchivedHint</span></span>
+        </label>
+    }
+    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@SubmitLabel</button>
+</EditForm>
+
+@code {
+    private NameFormModel _model = new();
+    private FluentValidator? _validator;
+    private bool _busy;
+
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public bool IsArchived { get; set; }
+
+    [Parameter] public bool ShowArchived { get; set; }
+
+    [Parameter] public string ArchivedHint { get; set; } = "hidden when adding records";
+
+    [Parameter] public string SubmitLabel { get; set; } = "Save";
+
+    [Parameter, EditorRequired] public IValidator Validator { get; set; } = null!;
+
+    [Parameter, EditorRequired] public Func<NameFormModel, object> ToRequest { get; set; } = null!;
+
+    [Parameter, EditorRequired] public Func<NameFormModel, Task<ApiResult>> Save { get; set; } = null!;
+
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    protected override void OnInitialized() => _model = new NameFormModel { Name = Name, IsArchived = IsArchived };
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        var result = await Save(_model);
+        _busy = false;
+
+        if (result.Ok)
+        {
+            await OnSaved.InvokeAsync();
+        }
+        else if (result.Problem!.HasFieldErrors)
+        {
+            _validator?.ShowServerErrors(result.Problem);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

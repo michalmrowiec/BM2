@@ -1,0 +1,64 @@
+@typeparam TValue
+
+<div class="segmented @Class" role="radiogroup" aria-label="@Label">
+    @for (var i = 0; i < Options.Count; i++)
+    {
+        var index = i;
+        var selected = EqualityComparer<TValue>.Default.Equals(Options[i].Value, Value);
+        <button type="button" role="radio" class="segmented__option" aria-checked="@(selected ? "true" : "false")"
+                tabindex="@(selected ? 0 : -1)" @ref="_buttons[index]"
+                @onclick="() => SelectAsync(index, focus: false)" @onkeydown="e => OnKeyDownAsync(e, index)">
+            @Options[i].Label
+        </button>
+    }
+</div>
+
+@code {
+    private ElementReference[] _buttons = [];
+    private int? _focusIndex;
+
+    [Parameter, EditorRequired] public IReadOnlyList<(TValue Value, string Label)> Options { get; set; } = [];
+
+    [Parameter] public TValue Value { get; set; } = default!;
+
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+
+    [Parameter] public string? Class { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (_buttons.Length != Options.Count)
+        {
+            _buttons = new ElementReference[Options.Count];
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusIndex is { } index)
+        {
+            _focusIndex = null;
+            await _buttons[index].FocusAsync();
+        }
+    }
+
+    // Radio group keyboard pattern: arrows move the selection and the focus, wrapping around.
+    private Task OnKeyDownAsync(KeyboardEventArgs e, int index) => e.Key switch
+    {
+        "ArrowRight" or "ArrowDown" => SelectAsync((index + 1) % Options.Count, focus: true),
+        "ArrowLeft" or "ArrowUp" => SelectAsync((index - 1 + Options.Count) % Options.Count, focus: true),
+        _ => Task.CompletedTask,
+    };
+
+    private Task SelectAsync(int index, bool focus)
+    {
+        if (focus)
+        {
+            _focusIndex = index;
+        }
+
+        return ValueChanged.InvokeAsync(Options[index].Value);
+    }
+}
