@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.RegularExpressions;
 using BM2.IntegrationTests.Infrastructure;
 using BM2.Server.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace BM2.IntegrationTests.Features;
 
-public partial class AuthenticationTests(IntegrationFixture fixture) : IntegrationTest(fixture)
+public class AuthenticationTests(IntegrationFixture fixture) : IntegrationTest(fixture)
 {
     [Fact]
     public void Identity_options_match_security_policy()
@@ -78,23 +77,12 @@ public partial class AuthenticationTests(IntegrationFixture fixture) : Integrati
 
     private static async Task PostLoginAsync(HttpClient client, string email, string password)
     {
-        var ct = TestContext.Current.CancellationToken;
-        var page = await client.GetStringAsync("/Account/Login", ct);
-        var token = AntiforgeryToken().Match(page).Groups[1].Value;
-        token.ShouldNotBeNullOrEmpty();
-
-        using var form = new FormUrlEncodedContent(new Dictionary<string, string>
+        using var response = await FormPost.SubmitAsync(client, "/Account/Login", "login", new Dictionary<string, string>
         {
-            ["_handler"] = "login",
-            ["__RequestVerificationToken"] = token,
             ["Input.Email"] = email,
             ["Input.Password"] = password,
             ["Input.RememberMe"] = "false",
-        });
-        using var response = await client.PostAsync("/Account/Login", form, ct);
+        }, TestContext.Current.CancellationToken);
         ((int)response.StatusCode).ShouldBeLessThan(500);
     }
-
-    [GeneratedRegex("__RequestVerificationToken[^>]*value=\"([^\"]+)\"")]
-    private static partial Regex AntiforgeryToken();
 }

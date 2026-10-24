@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using BM2.Server.Data
+@using BM2.Server.Features.Invitations
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
@@ -15,10 +16,16 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 @inject IWebHostEnvironment Environment
+@inject AppDbContext Db
+@inject TimeProvider Time
 
 <PageTitle>Register</PageTitle>
 
 <h1>Register</h1>
+@if (Invite is not null)
+{
+    <p class="lead">Create your account to join the shared wallet you were invited to.</p>
+}
 
 <div class="row">
     <div class="col-lg-6">
@@ -57,6 +64,9 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
+    [SupplyParameterFromQuery]
+    private string? Invite { get; set; }
+
     private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
     protected override void OnInitialized()
@@ -66,8 +76,10 @@
 
     public async Task RegisterUser(EditContext editContext)
     {
-        // Defense in depth: RegistrationGate already blocks this page outside Development.
-        if (!Environment.IsDevelopment())
+        // Defense in depth: RegistrationGate already blocks this page outside Development without a valid invitation.
+        var invitation = Invite is null ? null : await InvitationLookup.FindAsync(Db, Invite, CancellationToken.None);
+        var invited = invitation?.IsPending(Time.GetUtcNow()) == true;
+        if (!Environment.IsDevelopment() && !invited)
         {
             return;
         }
@@ -86,6 +98,16 @@
         }
 
         Logger.LogInformation("User created a new account with password.");
+
+        if (invited)
+        {
+            // No email is sent here: the invitation link from the owner stands in for confirming the address.
+            var confirmation = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+            await UserManager.ConfirmEmailAsync(user, confirmation);
+            await SignInManager.SignInAsync(user, isPersistent: true);
+            RedirectManager.RedirectTo($"invite/{Invite}");
+            return;
+        }
 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
