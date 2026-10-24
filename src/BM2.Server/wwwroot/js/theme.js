@@ -31,11 +31,26 @@
 
     systemDark.addEventListener("change", () => apply(root.dataset.themeMode));
 
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
     document.addEventListener("click", event => {
-        if (!(event.target instanceof Element) || !event.target.closest("[data-theme-toggle]")) return;
+        const toggle = event.target instanceof Element ? event.target.closest("[data-theme-toggle]") : null;
+        if (!toggle) return;
         const next = modes[(modes.indexOf(root.dataset.themeMode) + 1) % modes.length];
         write(next);
-        apply(next);
+
+        if (!document.startViewTransition || reducedMotion.matches) {
+            apply(next);
+            return;
+        }
+
+        // Reveal the new theme from the button (see motion.css).
+        const box = toggle.getBoundingClientRect();
+        root.style.setProperty("--reveal-x", `${box.left + box.width / 2}px`);
+        root.style.setProperty("--reveal-y", `${box.top + box.height / 2}px`);
+        root.classList.add("theme-switching");
+        document.startViewTransition(() => apply(next)).finished
+            .finally(() => root.classList.remove("theme-switching"));
     });
 
     // Enhanced navigation can patch <html> attributes; restore the theme afterwards.

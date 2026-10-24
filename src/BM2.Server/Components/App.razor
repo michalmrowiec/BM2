@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="@(PageRenderMode is null ? "static-page" : null)">
 
 <head>
     <meta charset="utf-8" />
@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="@Assets["css/base.css"]" />
     <link rel="stylesheet" href="@Assets["css/components.css"]" />
     <link rel="stylesheet" href="@Assets["css/account.css"]" />
+    <link rel="stylesheet" href="@Assets["css/motion.css"]" />
     <link rel="stylesheet" href="@Assets["BM2.Server.styles.css"]" />
     <ImportMap />
     <HeadOutlet @rendermode="PageRenderMode" />
