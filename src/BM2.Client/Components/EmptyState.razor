@@ -2,6 +2,10 @@
     <span class="empty-state__icon"><Icon Name="@IconName" /></span>
     <h2 class="empty-state__title">@Title</h2>
     <p class="empty-state__text">@ChildContent</p>
+    @if (Actions is not null)
+    {
+        <div class="empty-state__actions">@Actions</div>
+    }
 </section>
 
 @code {
@@ -10,4 +14,6 @@
     [Parameter, EditorRequired] public string Title { get; set; } = "";
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public RenderFragment? Actions { get; set; }
 }

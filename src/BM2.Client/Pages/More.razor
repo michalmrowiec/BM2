@@ -5,7 +5,19 @@
 
 <h1 class="page-title">More</h1>
 
+@if (RendererInfo.IsInteractive)
+{
+    <MeGreeting />
+}
+
 <ul class="menu-list">
+    <li>
+        <a href="wallets">
+            <Icon Name="wallet" />
+            <span>Wallets</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
     <li>
         <a href="Account/Manage">
             <Icon Name="user" />

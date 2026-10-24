@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bm2",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/BM2.Server", "--launch-profile", "https"],
+      "port": 7237,
+      "url": "https://localhost:7237"
+    }
+  ]
+}

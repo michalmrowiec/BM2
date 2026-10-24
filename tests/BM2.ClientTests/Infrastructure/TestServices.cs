@@ -1,5 +1,5 @@
 using BM2.Client.Services;
-using BM2.Client.State;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BM2.ClientTests.Infrastructure;
@@ -11,8 +11,10 @@ public static class TestServices
     {
         api ??= new StubApi();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.JSInterop.SetupModule("./Components/Sheet.razor.js").Mode = JSRuntimeMode.Loose;
         context.Services.AddSingleton(api.CreateClient());
         context.Services.AddBm2Client();
+        context.SetRendererInfo(new RendererInfo("WebAssembly", isInteractive: true));
         return api;
     }
 }

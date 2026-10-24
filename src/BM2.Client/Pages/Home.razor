@@ -1,24 +1,50 @@
 ﻿@page "/"
+@using BM2.Client.Components.Wallets
+@inherits WalletComponentBase
 
 <PageTitle>BM2</PageTitle>
 
 <AuthorizeView>
     <Authorized>
-        <p class="eyebrow">@DateTime.Now.ToString("dddd, d MMMM")</p>
-        <h1 class="page-title">Welcome back</h1>
-        @* Data comes from the API only once WebAssembly runs; prerendering shows the placeholder. *@
-        @if (RendererInfo.IsInteractive)
+        @if (!WalletState.IsLoaded)
         {
-            <MeGreeting />
+            <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+        }
+        else if (WalletState.Wallets.Count == 0)
+        {
+            <section class="onboarding">
+                <p class="eyebrow">Welcome to BM2</p>
+                <h1 class="page-title">Start with a wallet</h1>
+                <p class="lead">A wallet holds your accounts and records. You can share it with family later.</p>
+                <div class="card">
+                    <WalletForm OnSaved="WalletState.SelectAsync" />
+                </div>
+            </section>
+        }
+        else if (WalletState.Current is { } wallet)
+        {
+            <p class="eyebrow">@DateTime.Now.ToString("dddd, d MMMM")</p>
+            <h1 class="page-title">@wallet.Name</h1>
+
+            <EmptyState IconName="wallet" Title="Add your first account">
+                <ChildContent>Accounts are where your money lives: cash, a bank account, savings.</ChildContent>
+                <Actions>
+                    @if (wallet.Permissions.ManageAccounts)
+                    {
+                        <a class="btn btn-primary" href="accounts">Add account</a>
+                    }
+                </Actions>
+            </EmptyState>
         }
         else
         {
-            <p class="muted">Loading…</p>
+            <EmptyState IconName="wallet" Title="Couldn't load your wallet">
+                <ChildContent>Check your connection and try again.</ChildContent>
+                <Actions>
+                    <button type="button" class="btn btn-secondary" @onclick="WalletState.RefreshAsync">Try again</button>
+                </Actions>
+            </EmptyState>
         }
-
-        <EmptyState IconName="wallet" Title="Your wallets will live here">
-            Balances, upcoming payments and pinned records will show up on this page.
-        </EmptyState>
     </Authorized>
     <NotAuthorized>
         <section class="hero">
