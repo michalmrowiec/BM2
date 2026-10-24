@@ -49,7 +49,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   Paczki w `Directory.Packages.props` (centralnie, z pinowaniem zależności przechodnich), źródło tylko nuget.org.
 - **Testy:** xUnit v3 na Microsoft.Testing.Platform (`dotnet test --project …`, filtry `-- --filter-class …`).
   Integracyjne w kolekcji `Integration` (sekwencyjnie), baza tymczasowa na serwerze z `BM2_TEST_SQL`
-  (domyślnie `localhost\SQLEXPRESS`), Respawn czyści dane między testami.
+  (domyślnie `localhost\SQLEXPRESS`), Respawn czyści dane między testami. Komponenty klienta testujemy bUnit
+  w `BM2.ClientTests` (HTTP przez stub `HttpMessageHandler`, bez bibliotek do mocków).
 - Narzędzia lokalne: `dotnet tool restore`. Uruchomienie lokalne: [docs/dev-setup.md](docs/dev-setup.md).
 - `legacy/` – stary kod, tylko do odczytu jako źródło do przenoszenia.
 
