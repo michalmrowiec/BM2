@@ -3,6 +3,7 @@
 @attribute [Authorize]
 @using BM2.Client.Components.Records
 @using BM2.Contracts.Records
+@using BM2.Contracts.Templates
 @using BM2.Contracts.Wallets
 @using BM2.Client.Components.Wallets
 @inherits WalletComponentBase
@@ -60,7 +61,8 @@
     else
     {
         <RecordForm @ref="_form" @key="_formKey" Wallet="Wallet" Initial="_record" IsCopy="@(CopyId is not null && Id is null)"
-                    DefaultAccountId="_lastAccount" Busy="_busy" OnSubmit="SaveAsync" />
+                    Template="_template" Suggestions="_suggestions" DefaultAccountId="_lastAccount" Busy="_busy" OnSubmit="SaveAsync"
+                    OnSaveTemplate="SaveTemplateAsync" />
     }
 </section>
 
@@ -72,6 +74,8 @@
 @code {
     private RecordForm? _form;
     private RecordItem? _record;
+    private TemplateItem? _template;
+    private RecordSuggestions? _suggestions;
     private Guid? _lastAccount;
     private string _formKey = "";
     private bool _loading = true;
@@ -82,6 +86,8 @@
     [Parameter] public Guid? Id { get; set; }
 
     [SupplyParameterFromQuery(Name = "copy")] public Guid? CopyId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "template")] public Guid? TemplateId { get; set; }
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
@@ -112,15 +118,23 @@
         _loading = true;
         _missing = false;
         _record = null;
+        _template = null;
+        var suggestions = WalletState.GetSuggestionsAsync();
         if ((Id ?? CopyId) is { } sourceId)
         {
             var result = await Api.GetAsync<RecordItem>($"api/wallets/{Wallet.Id}/records/{sourceId}");
             _record = result.Value;
             _missing = !result.Ok;
         }
+        else if (TemplateId is { } templateId)
+        {
+            var templates = await Api.GetAsync<List<TemplateItem>>($"api/wallets/{Wallet.Id}/templates");
+            _template = templates.Value?.Find(t => t.Id == templateId);
+        }
 
+        _suggestions = await suggestions;
         _lastAccount = await WalletState.GetLastAccountAsync();
-        _formKey = $"{Wallet.Id}/{Id}/{CopyId}";
+        _formKey = $"{Wallet.Id}/{Id}/{CopyId}/{TemplateId}";
         _loading = false;
     }
 
@@ -134,6 +148,7 @@
         if (result.Ok)
         {
             await WalletState.SetLastAccountAsync(request.AccountId);
+            WalletState.ForgetSuggestions();
             Toasts.Show("Saved.", ToastKind.Success);
             await WalletState.RefreshAsync();
             await GoBackAsync();
@@ -149,6 +164,19 @@
         else
         {
             Toasts.ShowError();
+        }
+    }
+
+    private async Task SaveTemplateAsync(SaveTemplateRequest request)
+    {
+        var result = await Api.PostAsync<TemplateItem>($"api/wallets/{Wallet!.Id}/templates", request);
+        if (result.Ok)
+        {
+            Toasts.Show("Saved as template. It's pinned on Home.", ToastKind.Success);
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
         }
     }
 
@@ -171,6 +199,7 @@
         _confirmDelete = false;
         if (result.Ok)
         {
+            WalletState.ForgetSuggestions();
             Toasts.Show("Record deleted.");
             await WalletState.RefreshAsync();
             await GoBackAsync();

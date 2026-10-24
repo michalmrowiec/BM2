@@ -1,6 +1,11 @@
 @using System.Globalization
+@using BM2.Contracts.Categories
 @using BM2.Contracts.Records
+@using BM2.Contracts.Templates
 @using BM2.Contracts.Wallets
+@inject ApiClient Api
+@inject ToastService Toasts
+@inject WalletState WalletState
 
 @foreach (var day in RecordGrouping.ByDay(Items, CurrencyOf))
 {
@@ -18,12 +23,19 @@
             @foreach (var item in day.Items)
             {
                 var view = View(item);
-                <li @key="item.Id">
-                    <a class="record-row" href="@($"records/{item.Id}")">
-                        <span class="record-row__icon record-row__icon--@view.Kind" aria-hidden="true"><Icon Name="@view.Icon" /></span>
+                @* Right click and Android long press open the same menu as the dots button. *@
+                <li @key="item.Id" class="record-row" @oncontextmenu="() => _menuFor = item" @oncontextmenu:preventDefault="true">
+                    <a class="record-row__main" href="@($"records/{item.Id}")">
+                        <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
                         <span class="record-row__text">
                             <span class="record-row__title">@view.Title</span>
-                            <span class="record-row__meta">@view.Meta</span>
+                            <span class="record-row__meta">
+                                <span class="record-row__where">@view.Meta</span>
+                                @foreach (var tag in view.Tags)
+                                {
+                                    <span class="record-row__tag">#@tag</span>
+                                }
+                            </span>
                         </span>
                         <span class="record-row__end">
                             <Amount Value="view.Amount" Currency="@view.Currency" Sign="view.Sign" />
@@ -33,13 +45,48 @@
                             }
                         </span>
                     </a>
+                    <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {view.Title}")"
+                            @onclick="() => _menuFor = item">
+                        <Icon Name="dots" />
+                    </button>
                 </li>
             }
         </ul>
     </section>
 }
 
+<Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuFor is null ? "Record" : View(_menuFor).Title)">
+    @if (_menuFor is { } record)
+    {
+        <ul class="menu-list">
+            <li>
+                <a href="@($"records/{record.Id}")"><Icon Name="edit" /><span>@(CanWrite(record) ? "Edit" : "Open")</span></a>
+            </li>
+            @if (CanWrite(record))
+            {
+                <li>
+                    <a href="@($"records/new?copy={record.Id}")"><Icon Name="copy" /><span>Copy</span></a>
+                </li>
+                <li>
+                    <button type="button" @onclick="() => SaveTemplateAsync(record)"><Icon Name="bolt" /><span>Save as template</span></button>
+                </li>
+                <li>
+                    <button type="button" class="danger-text" @onclick="AskDelete"><Icon Name="trash" /><span>Delete</span></button>
+                </li>
+            }
+        </ul>
+    }
+</Sheet>
+
+<ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="Delete record?" ConfirmLabel="Delete"
+               Danger="true" OnConfirm="DeleteAsync">
+    <p>This can't be undone.</p>
+</ConfirmDialog>
+
 @code {
+    private RecordItem? _menuFor;
+    private RecordItem? _deleting;
+
     [Parameter, EditorRequired] public IReadOnlyList<RecordItem> Items { get; set; } = [];
 
     [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
@@ -49,33 +96,76 @@
 
     private string? CurrencyOf(Guid accountId) => Wallet.Accounts.FirstOrDefault(a => a.Id == accountId)?.Currency;
 
+    private bool CanWrite(RecordItem item) =>
+        Wallet.Accounts.Any(a => a.Id == item.AccountId && a.CanWrite)
+        && (item.TransferAccountId is not { } target || Wallet.Accounts.Any(a => a.Id == target && a.CanWrite));
+
+    // Line 1 says what (name, else category); line 2 says from where: category when named, account, tags.
     private RowView View(RecordItem item)
     {
-        var tags = item.TagIds.Select(id => Wallet.Tags.FirstOrDefault(t => t.Id == id)?.Name).OfType<string>();
+        var tags = item.TagIds.Select(id => Wallet.Tags.FirstOrDefault(t => t.Id == id)?.Name).OfType<string>().ToList();
         if (item.Type == RecordType.Transfer)
         {
             // A transfer reads as incoming when the list is about its target, or the source account is not visible.
             var incoming = AccountId == item.TransferAccountId || CurrencyOf(item.AccountId) is null;
+            var route = $"{item.AccountName} → {item.TransferAccountName}";
             return incoming
-                ? new RowView(item.Name ?? $"Transfer from {item.AccountName}", Meta(item.TransferAccountName ?? "", tags), "transfer",
-                    "transfer", item.TransferAmount ?? item.Amount, CurrencyOf(item.TransferAccountId!.Value) ?? item.Currency, AmountSign.Plus)
-                : new RowView(item.Name ?? $"Transfer to {item.TransferAccountName}", Meta(item.AccountName, tags), "transfer",
-                    "transfer", item.AccountAmount, CurrencyOf(item.AccountId) ?? item.Currency, AmountSign.Minus);
+                ? new RowView(item.Name ?? "Transfer", route, tags, null, item.TransferAmount ?? item.Amount,
+                    CurrencyOf(item.TransferAccountId!.Value) ?? item.Currency, AmountSign.Plus)
+                : new RowView(item.Name ?? "Transfer", route, tags, null, item.AccountAmount,
+                    CurrencyOf(item.AccountId) ?? item.Currency, AmountSign.Minus);
         }
 
-        var category = Wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name;
+        var category = Wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId);
         var income = item.Type == RecordType.Income;
         return new RowView(
-            item.Name ?? category ?? (income ? "Income" : "Expense"),
-            Meta(item.AccountName, item.Name is not null && category is not null ? tags.Prepend(category) : tags),
-            income ? "income" : "expense",
-            income ? "in" : "out",
+            item.Name ?? category?.Name ?? (income ? "Income" : "Expense"),
+            item.Name is not null && category is not null ? $"{category.Name} · {item.AccountName}" : item.AccountName,
+            tags,
+            category,
             item.AccountAmount,
             CurrencyOf(item.AccountId) ?? item.Currency,
             income ? AmountSign.Plus : AmountSign.Minus);
     }
 
-    private static string Meta(string account, IEnumerable<string> extras) => string.Join(" · ", extras.Prepend(account));
+    private async Task SaveTemplateAsync(RecordItem record)
+    {
+        _menuFor = null;
+        var result = await Api.PostAsync<TemplateItem>($"api/wallets/{Wallet.Id}/templates", TemplateText.FromRecord(record));
+        if (result.Ok)
+        {
+            Toasts.Show("Saved as template. It's pinned on Home.", ToastKind.Success);
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+        }
+    }
 
-    private sealed record RowView(string Title, string Meta, string Kind, string Icon, decimal Amount, string Currency, AmountSign Sign);
+    private void AskDelete()
+    {
+        _deleting = _menuFor;
+        _menuFor = null;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet.Id}/records/{_deleting!.Id}");
+        _deleting = null;
+        if (result.Ok)
+        {
+            Toasts.Show("Record deleted.");
+            WalletState.ForgetSuggestions();
+
+            // A new snapshot makes the pages reload their records and balances.
+            await WalletState.RefreshAsync();
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private sealed record RowView(
+        string Title, string Meta, IReadOnlyList<string> Tags, CategoryItem? Category, decimal Amount, string Currency, AmountSign Sign);
 }

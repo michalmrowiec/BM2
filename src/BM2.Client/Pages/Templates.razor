@@ -1,0 +1,171 @@
+@page "/templates"
+@attribute [Authorize]
+@using BM2.Client.Components.Records
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Templates
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>Templates · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Templates</h1>
+</header>
+
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else if (_templates is null)
+{
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+}
+else if (_templates.Count == 0)
+{
+    <EmptyState IconName="list" Title="No templates yet">
+        Open a record's menu (⋯) or the record form and choose Save as template. Pinned templates show on Home.
+    </EmptyState>
+}
+else
+{
+    <ul class="list stagger">
+        @foreach (var template in _templates)
+        {
+            var label = TemplateText.Label(template, Wallet);
+            <li class="template-row" @key="template.Id">
+                <ListRow Title="@label" Subtitle="@Subtitle(template)"
+                         OnClick="@(CanWrite ? EventCallback.Factory.Create(this, () => OpenEditor(template)) : default)">
+                    <Leading>
+                        <RecordAvatar Category="TemplateText.CategoryOf(template, Wallet)" Type="template.Type" Fallback="@label" />
+                    </Leading>
+                    <Trailing>
+                        @if (template.Amount is { } amount)
+                        {
+                            <Amount Value="amount" Currency="@TemplateText.Currency(template, Wallet)" Sign="TemplateText.Sign(template.Type)" />
+                        }
+                    </Trailing>
+                </ListRow>
+                @if (CanWrite)
+                {
+                    <button type="button" class="icon-button pin-toggle" aria-pressed="@(template.IsPinned ? "true" : "false")"
+                            aria-label="@($"Pin {label} on Home")" @onclick="() => SaveAsync(template, template.Name, !template.IsPinned)">
+                        <Icon Name="pin" />
+                    </button>
+                }
+            </li>
+        }
+    </ul>
+
+    <Sheet Open="_editing is not null" OpenChanged="v => { if (!v) _editing = null; }" Title="Edit template">
+        @if (_editing is { } editing)
+        {
+            <div class="form-stack">
+                <div class="field">
+                    <label class="field__label" for="template-name">Name</label>
+                    <input id="template-name" class="field__control" value="@_name" maxlength="100" autocomplete="off"
+                           placeholder="@(TemplateText.CategoryOf(editing, Wallet)?.Name ?? "Optional")"
+                           @oninput="e => _name = e.Value?.ToString()" />
+                </div>
+                <label class="check">
+                    <input type="checkbox" checked="@_pinned" @onchange="e => _pinned = e.Value is true" />
+                    <span>Pinned on Home</span>
+                </label>
+                <button type="button" class="btn btn-primary btn-block" disabled="@_busy" @onclick="() => SaveAsync(editing, _name, _pinned)">
+                    Save
+                </button>
+                <a class="btn btn-secondary btn-block" href="@($"records/new?template={editing.Id}")">Use template</a>
+                <button type="button" class="btn btn-ghost btn-block danger-text" disabled="@_busy" @onclick="DeleteAsync">
+                    <Icon Name="trash" /> Delete template
+                </button>
+            </div>
+        }
+    </Sheet>
+}
+
+@code {
+    private List<TemplateItem>? _templates;
+    private WalletSnapshot? _loadedFor;
+    private TemplateItem? _editing;
+    private string? _name;
+    private bool _pinned;
+    private bool _busy;
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool CanWrite => Wallet?.Accounts.Any(a => a.CanWrite) == true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync(bool force = false)
+    {
+        var wallet = Wallet;
+        if (wallet is null || (!force && ReferenceEquals(wallet, _loadedFor)))
+        {
+            return;
+        }
+
+        _loadedFor = wallet;
+        var result = await Api.GetAsync<List<TemplateItem>>($"api/wallets/{wallet.Id}/templates");
+        _templates = result.Value ?? [];
+    }
+
+    private string Subtitle(TemplateItem template)
+    {
+        var account = Wallet!.Accounts.FirstOrDefault(a => a.Id == template.AccountId)?.Name;
+        var parts = new[] { template.Type.ToString(), account, template.IsPinned ? "Pinned" : null };
+        return string.Join(" · ", parts.OfType<string>());
+    }
+
+    private void OpenEditor(TemplateItem template)
+    {
+        _editing = template;
+        _name = template.Name;
+        _pinned = template.IsPinned;
+    }
+
+    private async Task SaveAsync(TemplateItem template, string? name, bool pinned)
+    {
+        _busy = true;
+        var request = new SaveTemplateRequest(
+            template.Type, template.AccountId, template.CategoryId, template.TransferAccountId, template.Amount, template.Currency,
+            string.IsNullOrWhiteSpace(name) ? null : name.Trim(), template.TagIds, pinned);
+        var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/templates/{template.Id}", request);
+        _busy = false;
+        if (result.Ok)
+        {
+            _editing = null;
+            await LoadAsync(force: true);
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/templates/{_editing!.Id}");
+        _busy = false;
+        if (result.Ok)
+        {
+            _editing = null;
+            Toasts.Show("Template deleted.");
+            await LoadAsync(force: true);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

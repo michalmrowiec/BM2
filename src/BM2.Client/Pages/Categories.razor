@@ -60,14 +60,15 @@ else
     <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v" Title="@(_editing?.Name ?? (_type == CategoryType.Expense ? "New expense category" : "New income category"))">
         @if (_editing is null)
         {
-            <NameForm SubmitLabel="Add category" Validator="CreateValidator"
-                      ToRequest="m => new CreateCategoryRequest(m.Name ?? string.Empty, _type)"
+            <NameForm SubmitLabel="Add category" Validator="CreateValidator" ShowEmoji="true"
+                      ToRequest="m => new CreateCategoryRequest(m.Name ?? string.Empty, _type, m.Emoji)"
                       Save="m => CreateAsync(m)" OnSaved="OnSavedAsync" />
         }
         else
         {
             <NameForm @key="_editing.Id" Name="@_editing.Name" IsArchived="_editing.IsArchived" ShowArchived="true"
-                      Validator="UpdateValidator" ToRequest="m => new UpdateCategoryRequest(m.Name ?? string.Empty, m.IsArchived)"
+                      Emoji="@_editing.Emoji" ShowEmoji="true"
+                      Validator="UpdateValidator" ToRequest="m => new UpdateCategoryRequest(m.Name ?? string.Empty, m.IsArchived, m.Emoji)"
                       Save="m => UpdateAsync(m)" OnSaved="OnSavedAsync" />
             <button type="button" class="btn btn-ghost btn-block danger-text" @onclick="DeleteAsync">
                 <Icon Name="trash" /> Delete category
@@ -94,7 +95,16 @@ else
     private RenderFragment Row(CategoryItem category) =>
         @<ListRow Title="@category.Name"
                   OnClick="@(CanManage ? EventCallback.Factory.Create(this, () => OpenEditor(category)) : default)">
-            <Leading><Icon Name="category" /></Leading>
+            <Leading>
+                @if (category.Emoji is { } emoji)
+                {
+                    <span class="avatar" aria-hidden="true">@emoji</span>
+                }
+                else
+                {
+                    <Icon Name="category" />
+                }
+            </Leading>
             <Trailing>
                 @if (CanManage)
                 {
@@ -110,10 +120,10 @@ else
     }
 
     private async Task<ApiResult> CreateAsync(NameFormModel model) =>
-        await Api.PostAsync<CategoryItem>($"api/wallets/{Wallet!.Id}/categories", new CreateCategoryRequest(model.Name ?? "", _type));
+        await Api.PostAsync<CategoryItem>($"api/wallets/{Wallet!.Id}/categories", new CreateCategoryRequest(model.Name ?? "", _type, model.Emoji));
 
     private Task<ApiResult> UpdateAsync(NameFormModel model) =>
-        Api.PutAsync($"api/wallets/{Wallet!.Id}/categories/{_editing!.Id}", new UpdateCategoryRequest(model.Name ?? "", model.IsArchived));
+        Api.PutAsync($"api/wallets/{Wallet!.Id}/categories/{_editing!.Id}", new UpdateCategoryRequest(model.Name ?? "", model.IsArchived, model.Emoji));
 
     private async Task OnSavedAsync()
     {

@@ -1,4 +1,5 @@
 using BM2.Client.Services;
+using BM2.Contracts.Records;
 using BM2.Contracts.Wallets;
 
 namespace BM2.Client.State;
@@ -8,6 +9,7 @@ public sealed class WalletState(ApiClient api, BrowserStorage storage)
 {
     private const string WalletKey = "bm2-wallet";
     private Task? _initialization;
+    private (Guid WalletId, Task<RecordSuggestions?> Load)? _suggestions;
 
     public event Action? Changed;
 
@@ -39,6 +41,36 @@ public sealed class WalletState(ApiClient api, BrowserStorage storage)
         {
             await storage.SetAsync(LastAccountKey(Current.Id), accountId.ToString());
         }
+    }
+
+    /// <summary>Name, category and tag suggestions for the record form, loaded once per wallet.</summary>
+    public Task<RecordSuggestions?> GetSuggestionsAsync()
+    {
+        if (Current is not { } wallet)
+        {
+            return Task.FromResult<RecordSuggestions?>(null);
+        }
+
+        if (_suggestions is not { } cached || cached.WalletId != wallet.Id)
+        {
+            _suggestions = (wallet.Id, LoadSuggestionsAsync(wallet.Id));
+        }
+
+        return _suggestions.Value.Load;
+    }
+
+    /// <summary>Call after records change, so the next form sees new names.</summary>
+    public void ForgetSuggestions() => _suggestions = null;
+
+    private async Task<RecordSuggestions?> LoadSuggestionsAsync(Guid walletId)
+    {
+        var result = await api.GetAsync<RecordSuggestions>($"api/wallets/{walletId}/records/suggestions");
+        if (!result.Ok)
+        {
+            ForgetSuggestions();
+        }
+
+        return result.Value;
     }
 
     private async Task InitializeCoreAsync()

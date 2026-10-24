@@ -1,10 +1,14 @@
 @using FluentValidation
 @inject ToastService Toasts
 
-@* Name (+ archived flag when editing): shared by categories and tags. *@
+@* Name (+ emoji for categories, + archived flag when editing): shared by categories and tags. *@
 <EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ToRequest((NameFormModel)m)" />
     <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
+    @if (ShowEmoji)
+    {
+        <TextField Label="Emoji" @bind-Value="_model.Emoji" autocomplete="off" placeholder="Optional, e.g. 🛒" />
+    }
     @if (ShowArchived)
     {
         <label class="check">
@@ -26,6 +30,10 @@
 
     [Parameter] public bool ShowArchived { get; set; }
 
+    [Parameter] public string? Emoji { get; set; }
+
+    [Parameter] public bool ShowEmoji { get; set; }
+
     [Parameter] public string ArchivedHint { get; set; } = "hidden when adding records";
 
     [Parameter] public string SubmitLabel { get; set; } = "Save";
@@ -38,7 +46,7 @@
 
     [Parameter] public EventCallback OnSaved { get; set; }
 
-    protected override void OnInitialized() => _model = new NameFormModel { Name = Name, IsArchived = IsArchived };
+    protected override void OnInitialized() => _model = new NameFormModel { Name = Name, IsArchived = IsArchived, Emoji = Emoji };
 
     private async Task SubmitAsync()
     {

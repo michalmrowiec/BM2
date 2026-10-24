@@ -1,17 +1,48 @@
 @using BM2.Contracts.Accounts
 @using BM2.Contracts.Categories
 @using BM2.Contracts.Records
+@using BM2.Contracts.Tags
+@using BM2.Contracts.Templates
 @using BM2.Contracts.Wallets
+@inject ApiClient Api
+@inject ToastService Toasts
 
-@* Quick add, edit and copy: amount first, one tap for the category, the rest folded under "More". *@
+@* Quick add, edit and copy: amount, name with suggestions, then one tap per choice; status and currency under "More". *@
 <EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync" class="record-form">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="_ => BuildRequest()" />
 
     <SegmentedControl TValue="RecordType" Options="TypeOptions" Value="_model.Type" ValueChanged="OnTypeChanged" Label="Record type"
                       Class="segmented--block" />
 
-    <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null)"
+    <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null || Template?.Amount is not null)"
                 Currency="@AccountCurrency" @bind-Value="_model.Amount" @bind-Value:after="Recalculate" />
+
+    <div class="field name-field">
+        <label class="field__label" for="record-name">Name</label>
+        <input id="record-name" class="field__control" value="@_model.Name" placeholder="Where or what, e.g. Lidl" autocomplete="off"
+               maxlength="100" aria-invalid="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "true")"
+               aria-describedby="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "record-name-error")"
+               @oninput="OnNameInput" @onfocus="() => _nameFocused = true" @onblur="() => _nameFocused = false" />
+        @if (_nameFocused && NameMatches.Count > 0)
+        {
+            <ul class="suggestions" aria-label="Suggestions">
+                @foreach (var suggestion in NameMatches)
+                {
+                    <li>
+                        @* Mousedown keeps focus in the input, so the list stays until the click lands. *@
+                        <button type="button" class="suggestions__item" @onmousedown:preventDefault="true" @onclick="() => PickName(suggestion)">
+                            <span>@suggestion.Name</span>
+                            @if (FindCategory(suggestion.CategoryId) is { } category)
+                            {
+                                <span class="suggestions__meta">@CategoryLabel(category)</span>
+                            }
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+        <FieldMessages Error="@ErrorFor(nameof(FormModel.Name))" ErrorId="record-name-error" HintId="record-name-hint" />
+    </div>
 
     @if (_model.Type == RecordType.Transfer)
     {
@@ -38,18 +69,44 @@
 
     <DateField id="record-date" Label="Date" @bind-Value="_model.OccurredOn" />
 
+    @if (TagOptions.Count > 0 || CanCreateTags)
+    {
+        <div class="field">
+            <span class="field__label" id="record-tags-label">Tags</span>
+            <div class="chip-group" role="group" aria-labelledby="record-tags-label">
+                @foreach (var tag in TagOptions)
+                {
+                    var on = _model.TagIds.Contains(tag.Id);
+                    <button type="button" class="chip chip--sm" aria-pressed="@(on ? "true" : "false")" @onclick="() => ToggleTag(tag.Id)">
+                        #@tag.Name
+                    </button>
+                }
+                @if (CanCreateTags)
+                {
+                    @if (_newTag is null)
+                    {
+                        <button type="button" class="chip chip--sm chip--add" @onclick="OpenNewTag">
+                            <Icon Name="plus" /> New tag
+                        </button>
+                    }
+                    else
+                    {
+                        @* form="" detaches the input from the record form, so Enter adds the tag instead of saving. *@
+                        <span class="new-tag">
+                            <input class="field__control new-tag__input" form="record-new-tag" value="@_newTag" placeholder="Tag name"
+                                   aria-label="New tag name" maxlength="30" autocomplete="off" @ref="_newTagInput"
+                                   @oninput="e => _newTag = e.Value?.ToString()" @onkeydown="OnNewTagKeyDown" />
+                            <button type="button" class="btn btn-secondary btn-sm" disabled="@_creatingTag" @onclick="CreateTagAsync">Add</button>
+                        </span>
+                    }
+                }
+            </div>
+        </div>
+    }
+
     <details class="record-form__more" open="@_moreOpen">
         <summary>More</summary>
         <div class="form-stack">
-            <TextField id="record-name" Label="Name" @bind-Value="_model.Name" autocomplete="off" placeholder="Optional" />
-            @if (Wallet.Tags.Any(t => !t.IsArchived || _model.TagIds.Contains(t.Id)))
-            {
-                <div class="field">
-                    <span class="field__label">Tags</span>
-                    <ChipGroup TValue="Guid" Options="TagOptions" Selected="_model.TagIds" SelectedChanged="ids => _model.TagIds = ids.ToList()"
-                               Multiple="true" Label="Tags" />
-                </div>
-            }
             <SelectField id="record-status" Label="Status" Options="StatusOptions" @bind-Value="_model.Status" />
             @if (_model.Type != RecordType.Transfer)
             {
@@ -69,10 +126,19 @@
         </div>
     }
 
+    @if (OnSaveTemplate.HasDelegate)
+    {
+        <button type="button" class="btn btn-ghost btn-block" disabled="@Busy" @onclick="SaveTemplateAsync">
+            <Icon Name="bolt" /> Save as template
+        </button>
+    }
+
     <button type="submit" class="btn btn-primary btn-block record-form__submit" disabled="@Busy">Save</button>
 </EditForm>
 
 @code {
+    private const int MaxNameMatches = 5;
+
     private static readonly SaveRecordRequestValidator Validator = new();
 
     private static readonly IReadOnlyList<(RecordType Value, string Label)> TypeOptions =
@@ -81,10 +147,16 @@
     private static readonly IReadOnlyList<(RecordStatus Value, string Label)> StatusOptions =
         [(RecordStatus.Completed, "Completed"), (RecordStatus.Pending, "Pending"), (RecordStatus.Planned, "Planned")];
 
+    private readonly List<TagItem> _createdTags = [];
     private FormModel _model = new();
     private EditContext _editContext = null!;
     private FluentValidator? _validator;
     private bool _moreOpen;
+    private bool _nameFocused;
+    private string? _newTag;
+    private bool _creatingTag;
+    private bool _focusNewTag;
+    private ElementReference _newTagInput;
 
     [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
 
@@ -93,11 +165,18 @@
 
     [Parameter] public bool IsCopy { get; set; }
 
+    /// <summary>Prefills a new record; empty template fields keep the defaults.</summary>
+    [Parameter] public TemplateItem? Template { get; set; }
+
+    [Parameter] public RecordSuggestions? Suggestions { get; set; }
+
     [Parameter] public Guid? DefaultAccountId { get; set; }
 
     [Parameter] public bool Busy { get; set; }
 
     [Parameter] public EventCallback<SaveRecordRequest> OnSubmit { get; set; }
+
+    [Parameter] public EventCallback<SaveTemplateRequest> OnSaveTemplate { get; set; }
 
     public void ShowServerErrors(ApiProblem problem) => _validator?.ShowServerErrors(problem);
 
@@ -109,6 +188,8 @@
 
     private bool NeedsTransferAmount => TargetCurrency is not null && TargetCurrency != AccountCurrency;
 
+    private bool CanCreateTags => Wallet.Permissions.ManageCategories;
+
     private IReadOnlyList<(Guid Value, string Label)> AccountOptions => Wallet.Accounts
         .Where(a => a.CanWrite && (!a.IsArchived || a.Id == Initial?.AccountId))
         .Select(a => (a.Id, a.Name))
@@ -119,18 +200,45 @@
         .Select(a => ((Guid?)a.Id, a.Name))
         .ToList();
 
+    // Most used in the wallet first, then by name.
     private IReadOnlyList<(Guid Value, string Label)> CategoryOptions => Wallet.Categories
         .Where(c => c.Type == (_model.Type == RecordType.Income ? CategoryType.Income : CategoryType.Expense)
             && (!c.IsArchived || c.Id == Initial?.CategoryId))
-        .Select(c => (c.Id, c.Name))
+        .OrderBy(c => Rank(Suggestions?.CategoryIds, c.Id)).ThenBy(c => c.Name)
+        .Select(c => (c.Id, CategoryLabel(c)))
         .ToList();
 
-    private IReadOnlyList<(Guid Value, string Label)> TagOptions => Wallet.Tags
+    private IReadOnlyList<TagItem> TagOptions => Wallet.Tags
+        .Concat(_createdTags.Where(c => Wallet.Tags.All(t => t.Id != c.Id)))
         .Where(t => !t.IsArchived || _model.TagIds.Contains(t.Id))
-        .Select(t => (t.Id, t.Name))
+        .OrderBy(t => Rank(Suggestions?.TagIds, t.Id)).ThenBy(t => t.Name)
         .ToList();
 
     private IReadOnlyCollection<Guid> SelectedCategory => _model.CategoryId is { } id ? [id] : [];
+
+    private IReadOnlyList<NameSuggestion> NameMatches
+    {
+        get
+        {
+            var term = _model.Name?.Trim();
+            if (string.IsNullOrEmpty(term) || Suggestions is null)
+            {
+                return [];
+            }
+
+            var sameType = Suggestions.Names.Where(n => n.Type == _model.Type).ToList();
+            if (sameType.Exists(n => string.Equals(n.Name, term, StringComparison.OrdinalIgnoreCase)))
+            {
+                return [];
+            }
+
+            return sameType
+                .Where(n => n.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(n => n.Name.StartsWith(term, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .Take(MaxNameMatches)
+                .ToList();
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -156,26 +264,66 @@
             {
                 _model.Rate = ExchangeMath.RateOf(record.Amount, record.AccountAmount);
             }
-
-            _moreOpen = record.Name is not null || record.TagIds.Count > 0 || _model.Status != RecordStatus.Completed || IsForeign;
         }
         else
         {
-            var account = AccountOptions.FirstOrDefault(a => a.Value == DefaultAccountId);
-            var accountId = account.Value != Guid.Empty ? account.Value : AccountOptions.FirstOrDefault().Value;
+            var template = Template;
+            var accountId = AccountOptions.Any(a => a.Value == template?.AccountId) ? template!.AccountId!.Value : DefaultAccount();
+            var accountCurrency = FindAccount(accountId)?.Currency ?? Wallet.BaseCurrency;
             _model = new FormModel
             {
+                Type = template?.Type ?? RecordType.Expense,
                 OccurredOn = today,
                 AccountId = accountId,
-                Currency = FindAccount(accountId)?.Currency ?? Wallet.BaseCurrency,
+                Amount = template?.Amount,
+                Currency = template is { Amount: not null, Currency: { } currency } ? currency : accountCurrency,
+                CategoryId = template?.CategoryId,
+                TransferAccountId = template?.TransferAccountId,
+                Name = template?.Name,
+                TagIds = template?.TagIds.ToList() ?? [],
             };
+
+            if (CategoryOptions.All(c => c.Value != _model.CategoryId))
+            {
+                _model.CategoryId = null;
+            }
+
+            if (_model.Type == RecordType.Transfer && TargetOptions.All(t => t.Value != _model.TransferAccountId))
+            {
+                _model.TransferAccountId = TargetOptions.FirstOrDefault().Value;
+            }
         }
 
+        _moreOpen = _model.Status != RecordStatus.Completed || IsForeign;
         _model.PreviousAccountCurrency = AccountCurrency;
         _editContext = new EditContext(_model);
     }
 
+    private static int Rank(IReadOnlyList<Guid>? order, Guid id)
+    {
+        for (var i = 0; i < (order?.Count ?? 0); i++)
+        {
+            if (order![i] == id)
+            {
+                return i;
+            }
+        }
+
+        return int.MaxValue;
+    }
+
+    private static string CategoryLabel(CategoryItem category) =>
+        category.Emoji is { } emoji ? $"{emoji} {category.Name}" : category.Name;
+
+    private Guid DefaultAccount()
+    {
+        var account = AccountOptions.FirstOrDefault(a => a.Value == DefaultAccountId);
+        return account.Value != Guid.Empty ? account.Value : AccountOptions.FirstOrDefault().Value;
+    }
+
     private AccountItem? FindAccount(Guid? id) => Wallet.Accounts.FirstOrDefault(a => a.Id == id);
+
+    private CategoryItem? FindCategory(Guid? id) => id is null ? null : Wallet.Categories.FirstOrDefault(c => c.Id == id);
 
     private string? ErrorFor(string field)
     {
@@ -201,10 +349,120 @@
         _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
     }
 
+    private void OnNameInput(ChangeEventArgs e)
+    {
+        _model.Name = e.Value?.ToString();
+        _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.Name)));
+
+        // Typing a known name in full works like picking it, unless a category is already chosen.
+        var term = _model.Name?.Trim();
+        var exact = Suggestions?.Names.FirstOrDefault(n =>
+            n.Type == _model.Type && string.Equals(n.Name, term, StringComparison.OrdinalIgnoreCase));
+        if (exact is not null && _model.CategoryId is null)
+        {
+            ApplySuggestion(exact);
+        }
+    }
+
+    private void PickName(NameSuggestion suggestion)
+    {
+        _model.Name = suggestion.Name;
+        ApplySuggestion(suggestion);
+        _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.Name)));
+    }
+
+    // The category and tags of the last record with this name, when they can still be chosen.
+    private void ApplySuggestion(NameSuggestion suggestion)
+    {
+        if (CategoryOptions.Any(c => c.Value == suggestion.CategoryId))
+        {
+            _model.CategoryId = suggestion.CategoryId;
+            _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
+        }
+
+        var tags = TagOptions.Where(t => !t.IsArchived).Select(t => t.Id).ToHashSet();
+        _model.TagIds = suggestion.TagIds.Where(tags.Contains).ToList();
+    }
+
     private void OnCategoryChanged(IReadOnlyCollection<Guid> selected)
     {
         _model.CategoryId = selected.FirstOrDefault();
         _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
+    }
+
+    private void ToggleTag(Guid id)
+    {
+        if (!_model.TagIds.Remove(id))
+        {
+            _model.TagIds.Add(id);
+        }
+    }
+
+    private void OpenNewTag()
+    {
+        _newTag = string.Empty;
+        _focusNewTag = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusNewTag && _newTag is not null)
+        {
+            _focusNewTag = false;
+            await _newTagInput.FocusAsync();
+        }
+    }
+
+    private async Task OnNewTagKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await CreateTagAsync();
+        }
+        else if (e.Key == "Escape")
+        {
+            _newTag = null;
+        }
+    }
+
+    private async Task CreateTagAsync()
+    {
+        var name = _newTag?.Trim();
+        if (string.IsNullOrEmpty(name) || _creatingTag)
+        {
+            _newTag = null;
+            return;
+        }
+
+        var existing = TagOptions.FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            Select(existing.Id);
+            return;
+        }
+
+        _creatingTag = true;
+        var result = await Api.PostAsync<TagItem>($"api/wallets/{Wallet.Id}/tags", new CreateTagRequest(name));
+        _creatingTag = false;
+        if (result.Ok)
+        {
+            _createdTags.Add(result.Value!);
+            Select(result.Value!.Id);
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't add the tag.", ToastKind.Error);
+        }
+    }
+
+    private void Select(Guid tagId)
+    {
+        if (!_model.TagIds.Contains(tagId))
+        {
+            _model.TagIds.Add(tagId);
+        }
+
+        _newTag = null;
     }
 
     private void OnAccountChanged()
@@ -260,6 +518,22 @@
     }
 
     private Task SubmitAsync() => OnSubmit.InvokeAsync(BuildRequest());
+
+    private Task SaveTemplateAsync()
+    {
+        var request = BuildRequest();
+        var hasAmount = request.Amount > 0;
+        return OnSaveTemplate.InvokeAsync(new SaveTemplateRequest(
+            request.Type,
+            request.AccountId == Guid.Empty ? null : request.AccountId,
+            request.CategoryId,
+            request.TransferAccountId,
+            hasAmount ? request.Amount : null,
+            hasAmount ? request.Currency : null,
+            request.Name,
+            request.TagIds,
+            IsPinned: true));
+    }
 
     // Property names match SaveRecordRequest so validation messages land on the right fields.
     private sealed class FormModel
