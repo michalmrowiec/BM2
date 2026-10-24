@@ -1,3 +1,4 @@
+using BM2.Client.Services;
 using BM2.Server.Components;
 using BM2.Server.Components.Account;
 using BM2.Server.Data;
@@ -22,6 +23,10 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddBm2Authentication();
+
+// Client services for prerendering; components call the API only once WebAssembly runs.
+builder.Services.AddBm2Client();
+builder.Services.AddScoped(_ => new HttpClient());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddBm2Features();

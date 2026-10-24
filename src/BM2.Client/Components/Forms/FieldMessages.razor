@@ -1,0 +1,18 @@
+@if (Error is not null)
+{
+    <p class="field__error" id="@ErrorId">@Error</p>
+}
+else if (Hint is not null)
+{
+    <p class="field__hint" id="@HintId">@Hint</p>
+}
+
+@code {
+    [Parameter] public string? Error { get; set; }
+
+    [Parameter] public string? Hint { get; set; }
+
+    [Parameter, EditorRequired] public string ErrorId { get; set; } = "";
+
+    [Parameter, EditorRequired] public string HintId { get; set; } = "";
+}

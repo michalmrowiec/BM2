@@ -153,3 +153,35 @@ html.theme-switching::view-transition-new(root) {
 .skeleton--line {
     width: min(14rem, 70%);
 }
+
+/* Sheets slide up on phones and settle in on wider screens. */
+.sheet[open] { animation: sheet-up 340ms var(--ease-out); }
+.sheet[open]::backdrop { animation: fade-in 240ms ease-out; }
+
+@media (min-width: 48rem) {
+    .sheet[open] { animation-name: sheet-pop; }
+}
+
+@keyframes sheet-up {
+    from { transform: translateY(100%); }
+}
+
+@keyframes sheet-pop {
+    from {
+        opacity: 0;
+        transform: translateY(1rem) scale(0.98);
+    }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+}
+
+.toast { animation: toast-in 300ms var(--ease-spring); }
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.75rem) scale(0.96);
+    }
+}

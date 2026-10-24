@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using BM2.Client.Components;
+using BM2.ClientTests.Infrastructure;
 using BM2.Contracts.Profile;
 using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components;
@@ -55,11 +56,5 @@ public class MeGreetingTests : BunitContext
     }
 
     private void UseApi(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
-        Services.AddSingleton(new HttpClient(new StubHandler(respond)) { BaseAddress = new Uri("http://localhost/") });
-
-    private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(respond(request));
-    }
+        Services.AddSingleton(new StubApi().On(HttpMethod.Get, "api/me", respond).CreateClient());
 }
