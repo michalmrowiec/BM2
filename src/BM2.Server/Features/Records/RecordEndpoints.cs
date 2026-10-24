@@ -10,6 +10,8 @@ public static class RecordEndpoints
     public static RouteGroupBuilder MapRecordEndpoints(this RouteGroupBuilder wallet)
     {
         var records = wallet.MapGroup("/records");
+        ListRecords.Map(records);
+        GetRecordSummary.Map(records);
         GetRecord.Map(records);
         CreateRecord.Map(records);
         UpdateRecord.Map(records);

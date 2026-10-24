@@ -26,6 +26,8 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         new("POST", "/api/wallets/{w}/tags", _ => new CreateTagRequest("New"), MemberRole.Editor),
         new("PUT", "/api/wallets/{w}/tags/{t}", _ => new UpdateTagRequest("Renamed", false), MemberRole.Editor),
         new("DELETE", "/api/wallets/{w}/tags/{t}", null, MemberRole.Editor),
+        new("GET", "/api/wallets/{w}/records", null, MemberRole.Viewer),
+        new("GET", "/api/wallets/{w}/records/summary", null, MemberRole.Viewer),
         new("GET", "/api/wallets/{w}/records/{r}", null, MemberRole.Viewer),
         new("POST", "/api/wallets/{w}/records", ValidRecord, MemberRole.Editor),
         new("PUT", "/api/wallets/{w}/records/{r}", ValidRecord, MemberRole.Editor),
