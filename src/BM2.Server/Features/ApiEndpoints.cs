@@ -1,3 +1,4 @@
+using BM2.Server.Features.Accounts;
 using BM2.Server.Features.Profile;
 using BM2.Server.Features.Wallets;
 using BM2.Server.Infrastructure;
@@ -10,7 +11,8 @@ public static class ApiEndpoints
     {
         var api = app.MapGroup(ApiPaths.Prefix).RequireAuthorization();
         api.MapProfileEndpoints();
-        api.MapWalletEndpoints();
+        var wallet = api.MapWalletEndpoints();
+        wallet.MapAccountEndpoints();
 
         // Unknown API routes must not fall through to the Blazor not-found page.
         app.MapFallback($"{ApiPaths.Prefix}/{{**path}}", () => TypedResults.NotFound());

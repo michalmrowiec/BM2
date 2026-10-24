@@ -12,4 +12,9 @@ public static class RuleExtensions
 
     public static IRuleBuilderOptions<T, string> Currency<T>(this IRuleBuilder<T, string> rule) =>
         rule.Must(Currencies.IsSupported).WithMessage("Choose a supported currency.");
+
+    /// <summary>Signed amount (e.g. an opening balance) within the money limits.</summary>
+    public static IRuleBuilderOptions<T, decimal> Balance<T>(this IRuleBuilder<T, decimal> rule) =>
+        rule.Must(value => Math.Abs(value) <= MoneyRules.MaxAmount && MoneyRules.HasAtMostTwoDecimals(value))
+            .WithMessage("Enter an amount with at most 2 decimal places.");
 }

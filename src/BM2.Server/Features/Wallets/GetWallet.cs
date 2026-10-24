@@ -2,6 +2,7 @@ using BM2.Contracts.Accounts;
 using BM2.Contracts.Wallets;
 using BM2.Domain.Access;
 using BM2.Server.Data;
+using BM2.Server.Features.Accounts;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,7 @@ internal static class GetWallet
             .OrderBy(a => a.IsArchived).ThenBy(a => a.Name)
             .Select(a => new { a.Id, a.Name, a.Currency, a.OpeningBalance, a.IsArchived })
             .ToListAsync(ct);
+        var balances = await AccountBalances.GetAsync(db, readable, ct);
 
         return TypedResults.Ok(new WalletSnapshot(
             access.WalletId,
@@ -41,7 +43,7 @@ internal static class GetWallet
                 access.Can(WalletPermission.ManageMembers)),
             accounts
                 .Select(a => new AccountItem(
-                    a.Id, a.Name, a.Currency, a.OpeningBalance, a.OpeningBalance, a.IsArchived, access.CanWriteAccount(a.Id)))
+                    a.Id, a.Name, a.Currency, a.OpeningBalance, balances[a.Id], a.IsArchived, access.CanWriteAccount(a.Id)))
                 .ToList()));
     }
 }
