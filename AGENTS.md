@@ -61,8 +61,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   `DateOnly` (`date`), momenty `DateTimeOffset` UTC z wstrzykiwanego `TimeProvider`; saldo = saldo otwarcia + rekordy
   `Completed`; sumy zawsze per waluta konta.
 - **Szablony i podpowiedzi:** `Template` (portfel, pola opcjonalne, bez FK do kont/kategorii – zarchiwizowane
-  lub usunięte `ListTemplates` zwraca jako puste; etykieta = nazwa albo kategoria). Emoji kategorii (`Category.Emoji`)
-  pokazuje `RecordAvatar`. Podpowiedzi formularza z `GET records/suggestions`, cache w `WalletState`.
+  lub usunięte `ListTemplates` zwraca jako puste; etykieta = nazwa albo kategoria). Ikona kategorii to klucz z
+  `CategoryIcons` (SVG w `Icon`), kolor tagu to klucz z `TagColors` (tokeny `--tag-*`, klasa `tag-color--*`); ikonę
+  kategorii pokazuje `RecordAvatar`. Podpowiedzi formularza z `GET records/suggestions`, cache w `WalletState`.
 - **Klient:** strony korzystające z portfela dziedziczą `WalletComponentBase` (`WalletState` z migawką portfela,
   ostatni wybór w `localStorage`); API przez `ApiClient` (`ApiResult`/`ApiProblem`, 401 → logowanie); formularze to
   `EditForm` na modyfikowalnym modelu z nazwami pól jak w requeście + `FluentValidator` (ten sam walidator co serwer,

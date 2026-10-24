@@ -32,7 +32,7 @@ internal static class UpdateTag
             return TagNames.TakenError.ToProblem();
         }
 
-        tag.Update(request.Name, request.IsArchived);
+        tag.Update(request.Name, request.IsArchived, request.Color);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }

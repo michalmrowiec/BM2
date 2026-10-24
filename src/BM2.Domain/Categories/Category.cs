@@ -19,17 +19,16 @@ public sealed class Category
 
     public bool IsArchived { get; private set; }
 
-    public string? Emoji { get; private set; }
+    /// <summary>Key from <see cref="CategoryIcons"/>; null shows the first letter.</summary>
+    public string? Icon { get; private set; }
 
-    public static Category Create(Guid walletId, string name, CategoryType type, string? emoji = null) =>
-        new() { WalletId = walletId, Name = name.Trim(), Type = type, Emoji = Clean(emoji) };
+    public static Category Create(Guid walletId, string name, CategoryType type, string? icon = null) =>
+        new() { WalletId = walletId, Name = name.Trim(), Type = type, Icon = icon };
 
-    public void Update(string name, bool isArchived, string? emoji)
+    public void Update(string name, bool isArchived, string? icon)
     {
         Name = name.Trim();
         IsArchived = isArchived;
-        Emoji = Clean(emoji);
+        Icon = icon;
     }
-
-    private static string? Clean(string? emoji) => string.IsNullOrWhiteSpace(emoji) ? null : emoji.Trim();
 }

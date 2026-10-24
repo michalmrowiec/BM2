@@ -6,35 +6,34 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BM2.Server.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddTemplatesAndCategoryEmoji : Migration
+    public partial class AddTemplatesCategoryIconsTagColors : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "Emoji",
-                table: "Categories",
+                name: "Color",
+                table: "Tags",
                 type: "nvarchar(16)",
                 maxLength: 16,
                 nullable: true);
 
-            // Existing starter categories get the same emoji as new wallets.
-            foreach (var (name, emoji) in new[]
+            migrationBuilder.AddColumn<string>(
+                name: "Icon",
+                table: "Categories",
+                type: "nvarchar(32)",
+                maxLength: 32,
+                nullable: true);
+
+            // Existing starter categories get the same icons as new wallets.
+            foreach (var (name, icon) in new[]
             {
-                ("Groceries", "🛒"),
-                ("Eating out", "🍽️"),
-                ("Transport", "🚗"),
-                ("Home", "🏠"),
-                ("Bills", "🧾"),
-                ("Health", "💊"),
-                ("Shopping", "🛍️"),
-                ("Entertainment", "🎬"),
-                ("Other", "📦"),
-                ("Salary", "💼"),
-                ("Other income", "💰"),
+                ("Groceries", "basket"), ("Eating out", "food"), ("Transport", "car"), ("Home", "home"), ("Bills", "receipt"),
+                ("Health", "pill"), ("Shopping", "cart"), ("Entertainment", "film"), ("Other", "dots"), ("Salary", "briefcase"),
+                ("Other income", "piggy"),
             })
             {
-                migrationBuilder.Sql($"UPDATE [Categories] SET [Emoji] = N'{emoji}' WHERE [Name] = N'{name}' AND [Emoji] IS NULL");
+                migrationBuilder.Sql($"UPDATE [Categories] SET [Icon] = N'{icon}' WHERE [Name] = N'{name}' AND [Icon] IS NULL");
             }
 
             migrationBuilder.CreateTable(
@@ -108,7 +107,11 @@ namespace BM2.Server.Data.Migrations
                 name: "Templates");
 
             migrationBuilder.DropColumn(
-                name: "Emoji",
+                name: "Color",
+                table: "Tags");
+
+            migrationBuilder.DropColumn(
+                name: "Icon",
                 table: "Categories");
         }
     }

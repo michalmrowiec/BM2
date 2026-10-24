@@ -33,7 +33,7 @@ internal static class UpdateCategory
             return CategoryNames.TakenError.ToProblem();
         }
 
-        category.Update(request.Name, request.IsArchived, request.Emoji);
+        category.Update(request.Name, request.IsArchived, request.Icon);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }

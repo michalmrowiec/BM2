@@ -6,5 +6,7 @@ public sealed class NameFormModel
 
     public bool IsArchived { get; set; }
 
-    public string? Emoji { get; set; }
+    public string? Icon { get; set; }
+
+    public string? Color { get; set; }
 }

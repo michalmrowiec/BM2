@@ -1,11 +1,11 @@
 @using BM2.Contracts.Categories
 @using BM2.Contracts.Records
 
-@* Round badge: the category emoji, else its first letter; transfers show an arrow. *@
+@* Round badge: the category icon, else its first letter; transfers show an arrow. *@
 <span class="avatar avatar--@Kind" aria-hidden="true">
-    @if (Category?.Emoji is { } emoji)
+    @if (Category?.Icon is { } icon)
     {
-        @emoji
+        <Icon Name="@icon" />
     }
     else if (Type == RecordType.Transfer)
     {

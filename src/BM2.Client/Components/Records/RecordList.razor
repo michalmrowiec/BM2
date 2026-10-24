@@ -1,6 +1,7 @@
 @using System.Globalization
 @using BM2.Contracts.Categories
 @using BM2.Contracts.Records
+@using BM2.Contracts.Tags
 @using BM2.Contracts.Templates
 @using BM2.Contracts.Wallets
 @inject ApiClient Api
@@ -33,7 +34,7 @@
                                 <span class="record-row__where">@view.Meta</span>
                                 @foreach (var tag in view.Tags)
                                 {
-                                    <span class="record-row__tag">#@tag</span>
+                                    <span class="tag-pill @TagPalette.ClassFor(tag.Color)">#@tag.Name</span>
                                 }
                             </span>
                         </span>
@@ -103,7 +104,7 @@
     // Line 1 says what (name, else category); line 2 says from where: category when named, account, tags.
     private RowView View(RecordItem item)
     {
-        var tags = item.TagIds.Select(id => Wallet.Tags.FirstOrDefault(t => t.Id == id)?.Name).OfType<string>().ToList();
+        var tags = item.TagIds.Select(id => Wallet.Tags.FirstOrDefault(t => t.Id == id)).OfType<TagItem>().ToList();
         if (item.Type == RecordType.Transfer)
         {
             // A transfer reads as incoming when the list is about its target, or the source account is not visible.
@@ -167,5 +168,5 @@
     }
 
     private sealed record RowView(
-        string Title, string Meta, IReadOnlyList<string> Tags, CategoryItem? Category, decimal Amount, string Currency, AmountSign Sign);
+        string Title, string Meta, IReadOnlyList<TagItem> Tags, CategoryItem? Category, decimal Amount, string Currency, AmountSign Sign);
 }

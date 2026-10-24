@@ -1,13 +1,35 @@
+@using BM2.Contracts.Categories
 @using FluentValidation
 @inject ToastService Toasts
 
-@* Name (+ emoji for categories, + archived flag when editing): shared by categories and tags. *@
+@* Name (+ icon for categories or color for tags, + archived flag when editing): shared by categories and tags. *@
 <EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ToRequest((NameFormModel)m)" />
     <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
-    @if (ShowEmoji)
+    @if (ShowIcon)
     {
-        <TextField Label="Emoji" @bind-Value="_model.Emoji" autocomplete="off" placeholder="Optional, e.g. 🛒" />
+        <div class="field">
+            <span class="field__label" id="@($"{_id}-icon")">Icon</span>
+            <div class="icon-picker" role="group" aria-labelledby="@($"{_id}-icon")">
+                <button type="button" class="icon-picker__item" aria-pressed="@Pressed(_model.Icon is null)" @onclick="() => _model.Icon = null">
+                    None
+                </button>
+                @foreach (var key in CategoryIcons.All)
+                {
+                    <button type="button" class="icon-picker__item" aria-label="@key" aria-pressed="@Pressed(_model.Icon == key)"
+                            @onclick="() => _model.Icon = key">
+                        <Icon Name="@key" />
+                    </button>
+                }
+            </div>
+        </div>
+    }
+    @if (ShowColor)
+    {
+        <div class="field">
+            <span class="field__label">Color</span>
+            <TagColorPicker Value="@_model.Color" ValueChanged="c => _model.Color = c" />
+        </div>
     }
     @if (ShowArchived)
     {
@@ -20,6 +42,7 @@
 </EditForm>
 
 @code {
+    private readonly string _id = "name-form-" + Guid.NewGuid().ToString("N")[..8];
     private NameFormModel _model = new();
     private FluentValidator? _validator;
     private bool _busy;
@@ -30,9 +53,13 @@
 
     [Parameter] public bool ShowArchived { get; set; }
 
-    [Parameter] public string? Emoji { get; set; }
+    [Parameter] public string? CategoryIcon { get; set; }
 
-    [Parameter] public bool ShowEmoji { get; set; }
+    [Parameter] public bool ShowIcon { get; set; }
+
+    [Parameter] public string? TagColor { get; set; }
+
+    [Parameter] public bool ShowColor { get; set; }
 
     [Parameter] public string ArchivedHint { get; set; } = "hidden when adding records";
 
@@ -46,7 +73,9 @@
 
     [Parameter] public EventCallback OnSaved { get; set; }
 
-    protected override void OnInitialized() => _model = new NameFormModel { Name = Name, IsArchived = IsArchived, Emoji = Emoji };
+    protected override void OnInitialized() => _model = new NameFormModel { Name = Name, IsArchived = IsArchived, Icon = CategoryIcon, Color = TagColor };
+
+    private static string Pressed(bool on) => on ? "true" : "false";
 
     private async Task SubmitAsync()
     {

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BM2.Server.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261024195745_AddTemplatesAndCategoryEmoji")]
-    partial class AddTemplatesAndCategoryEmoji
+    [Migration("20261024201203_AddTemplatesCategoryIconsTagColors")]
+    partial class AddTemplatesCategoryIconsTagColors
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -91,9 +91,9 @@ namespace BM2.Server.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Emoji")
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
+                    b.Property<string>("Icon")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
@@ -256,6 +256,10 @@ namespace BM2.Server.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");

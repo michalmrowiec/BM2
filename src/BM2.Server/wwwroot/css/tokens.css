@@ -84,6 +84,16 @@
     --positive: #4f7a28;
     --focus: #b9411f;
     --shadow: 0 1px 0 rgb(27 26 23 / 0.04), 0 10px 28px -14px rgb(27 26 23 / 0.22);
+
+    /* Tag palette: text color on a ~15% tint of itself */
+    --tag-red: #b3261e;
+    --tag-orange: #b54708;
+    --tag-amber: #8a6100;
+    --tag-green: #2e7d32;
+    --tag-teal: #0f766e;
+    --tag-blue: #1d5fbf;
+    --tag-violet: #6d3fc0;
+    --tag-pink: #b0306a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -103,6 +113,14 @@
         --positive: #a6cc73;
         --focus: #ff8a66;
         --shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.7);
+        --tag-red: #ff8a80;
+        --tag-orange: #ffab70;
+        --tag-amber: #f5c451;
+        --tag-green: #7fd18b;
+        --tag-teal: #5fd4c4;
+        --tag-blue: #8ab4ff;
+        --tag-violet: #c4a5ff;
+        --tag-pink: #ff8ac0;
     }
 }
 
@@ -122,4 +140,12 @@
     --positive: #a6cc73;
     --focus: #ff8a66;
     --shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.7);
+    --tag-red: #ff8a80;
+    --tag-orange: #ffab70;
+    --tag-amber: #f5c451;
+    --tag-green: #7fd18b;
+    --tag-teal: #5fd4c4;
+    --tag-blue: #8ab4ff;
+    --tag-violet: #c4a5ff;
+    --tag-pink: #ff8ac0;
 }

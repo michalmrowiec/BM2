@@ -26,11 +26,11 @@ internal static class CreateTag
             return TagNames.TakenError.ToProblem();
         }
 
-        var tag = Tag.Create(current.Id, request.Name);
+        var tag = Tag.Create(current.Id, request.Name, request.Color);
         db.Tags.Add(tag);
         await db.SaveChangesAsync(ct);
 
         return TypedResults.Created(
-            $"{ApiPaths.Prefix}/wallets/{current.Id}/tags/{tag.Id}", new TagItem(tag.Id, tag.Name, false));
+            $"{ApiPaths.Prefix}/wallets/{current.Id}/tags/{tag.Id}", new TagItem(tag.Id, tag.Name, false, tag.Color));
     }
 }

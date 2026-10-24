@@ -5,6 +5,10 @@
     {
         var pressed = Selected.Contains(option.Value);
         <button type="button" class="chip" aria-pressed="@(pressed ? "true" : "false")" @onclick="() => ToggleAsync(option.Value)">
+            @if (IconOf?.Invoke(option.Value) is { } icon)
+            {
+                <Icon Name="@icon" />
+            }
             @option.Label
         </button>
     }
@@ -23,6 +27,9 @@
     [Parameter, EditorRequired] public string Label { get; set; } = "";
 
     [Parameter] public string? Class { get; set; }
+
+    /// <summary>Optional icon key shown before an option's label.</summary>
+    [Parameter] public Func<TValue, string?>? IconOf { get; set; }
 
     /// <summary>Id of the message (e.g. a validation error) that describes the group.</summary>
     [Parameter] public string? DescribedBy { get; set; }

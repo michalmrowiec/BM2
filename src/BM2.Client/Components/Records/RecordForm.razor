@@ -34,7 +34,13 @@
                             <span>@suggestion.Name</span>
                             @if (FindCategory(suggestion.CategoryId) is { } category)
                             {
-                                <span class="suggestions__meta">@CategoryLabel(category)</span>
+                                <span class="suggestions__meta">
+                                    @if (category.Icon is { } icon)
+                                    {
+                                        <Icon Name="@icon" />
+                                    }
+                                    @category.Name
+                                </span>
                             }
                         </button>
                     </li>
@@ -58,7 +64,7 @@
         <div class="field record-form__categories">
             <span class="field__label" id="record-category-label">Category</span>
             <ChipGroup TValue="Guid" Options="CategoryOptions" Selected="SelectedCategory" SelectedChanged="OnCategoryChanged"
-                       Label="Category" Class="chip-group--categories"
+                       Label="Category" Class="chip-group--categories" IconOf="id => FindCategory(id)?.Icon"
                        DescribedBy="@(ErrorFor(nameof(FormModel.CategoryId)) is null ? null : "record-category-error")" />
             <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint" />
         </div>
@@ -77,7 +83,8 @@
                 @foreach (var tag in TagOptions)
                 {
                     var on = _model.TagIds.Contains(tag.Id);
-                    <button type="button" class="chip chip--sm" aria-pressed="@(on ? "true" : "false")" @onclick="() => ToggleTag(tag.Id)">
+                    <button type="button" class="chip chip--sm @TagPalette.ClassFor(tag.Color)" aria-pressed="@(on ? "true" : "false")"
+                            @onclick="() => ToggleTag(tag.Id)">
                         #@tag.Name
                     </button>
                 }
@@ -97,6 +104,7 @@
                                    aria-label="New tag name" maxlength="30" autocomplete="off" @ref="_newTagInput"
                                    @oninput="e => _newTag = e.Value?.ToString()" @onkeydown="OnNewTagKeyDown" />
                             <button type="button" class="btn btn-secondary btn-sm" disabled="@_creatingTag" @onclick="CreateTagAsync">Add</button>
+                            <TagColorPicker Small="true" Value="@_newTagColor" ValueChanged="c => _newTagColor = c" />
                         </span>
                     }
                 }
@@ -154,6 +162,7 @@
     private bool _moreOpen;
     private bool _nameFocused;
     private string? _newTag;
+    private string? _newTagColor;
     private bool _creatingTag;
     private bool _focusNewTag;
     private ElementReference _newTagInput;
@@ -205,7 +214,7 @@
         .Where(c => c.Type == (_model.Type == RecordType.Income ? CategoryType.Income : CategoryType.Expense)
             && (!c.IsArchived || c.Id == Initial?.CategoryId))
         .OrderBy(c => Rank(Suggestions?.CategoryIds, c.Id)).ThenBy(c => c.Name)
-        .Select(c => (c.Id, CategoryLabel(c)))
+        .Select(c => (c.Id, c.Name))
         .ToList();
 
     private IReadOnlyList<TagItem> TagOptions => Wallet.Tags
@@ -312,9 +321,6 @@
         return int.MaxValue;
     }
 
-    private static string CategoryLabel(CategoryItem category) =>
-        category.Emoji is { } emoji ? $"{emoji} {category.Name}" : category.Name;
-
     private Guid DefaultAccount()
     {
         var account = AccountOptions.FirstOrDefault(a => a.Value == DefaultAccountId);
@@ -401,6 +407,7 @@
     private void OpenNewTag()
     {
         _newTag = string.Empty;
+        _newTagColor = null;
         _focusNewTag = true;
     }
 
@@ -442,7 +449,7 @@
         }
 
         _creatingTag = true;
-        var result = await Api.PostAsync<TagItem>($"api/wallets/{Wallet.Id}/tags", new CreateTagRequest(name));
+        var result = await Api.PostAsync<TagItem>($"api/wallets/{Wallet.Id}/tags", new CreateTagRequest(name, _newTagColor));
         _creatingTag = false;
         if (result.Ok)
         {
