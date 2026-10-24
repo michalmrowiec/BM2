@@ -32,11 +32,9 @@ public sealed class IntegrationFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        // Starting the app creates and migrates the database (Database:PrepareOnStartup).
         _factory = CreateFactory();
-        await using (var db = CreateDbContext())
-        {
-            await DatabaseSetup.PrepareAsync(db);
-        }
+        _ = _factory.Services;
 
         await using var connection = new SqlConnection(ConnectionString);
         await connection.OpenAsync();
@@ -54,25 +52,19 @@ public sealed class IntegrationFixture : IAsyncLifetime
         await _respawner!.ResetAsync(connection);
     }
 
-    // The app's service provider is required: the Identity model (schema v3, passkeys) depends on IdentityOptions.
     public AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>()
         .UseSqlServer(ConnectionString, sql => sql.UseCompatibilityLevel(DatabaseSetup.CompatibilityLevel))
-        .UseApplicationServiceProvider(Factory.Services)
         .Options);
 
     public async ValueTask DisposeAsync()
     {
-        if (_factory is null)
+        if (_factory is not null)
         {
-            return;
+            await _factory.DisposeAsync();
         }
 
         SqlConnection.ClearAllPools();
-        await using (var db = CreateDbContext())
-        {
-            await db.Database.EnsureDeletedAsync();
-        }
-
-        await _factory.DisposeAsync();
+        await using var db = CreateDbContext();
+        await db.Database.EnsureDeletedAsync();
     }
 }

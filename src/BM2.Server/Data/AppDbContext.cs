@@ -10,6 +10,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 {
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
+    // Pinned so the model does not depend on IdentityOptions from DI (schema v3 adds passkeys).
+    protected override Version SchemaVersion => IdentitySchemaVersions.Version3;
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Properties<decimal>().HavePrecision(19, 4);

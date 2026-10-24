@@ -24,6 +24,7 @@ public sealed class BM2AppFactory(string connectionString) : WebApplicationFacto
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:BM2", connectionString);
+        builder.UseSetting("Database:PrepareOnStartup", "true");
         builder.ConfigureTestServices(services =>
         {
             services.AddAuthentication()

@@ -1,4 +1,4 @@
-﻿@page "/Account/Register"
+@page "/Account/Register"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -14,6 +14,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IWebHostEnvironment Environment
 
 <PageTitle>Register</PageTitle>
 
@@ -72,6 +73,12 @@
 
     public async Task RegisterUser(EditContext editContext)
     {
+        // Defense in depth: RegistrationGate already blocks this page outside Development.
+        if (!Environment.IsDevelopment())
+        {
+            return;
+        }
+
         var user = CreateUser();
 
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
