@@ -1,3 +1,6 @@
 [*.cs]
 # Test names use underscores for readability.
 dotnet_diagnostic.CA1707.severity = none
+# xUnit conventions: *Collection fixtures, IAsyncLifetime without finalizers.
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1816.severity = none
