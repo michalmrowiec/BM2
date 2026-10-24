@@ -16,7 +16,10 @@
         </select>
     </div>
 
-    <SegmentedControl TValue="RecurrenceEnd" Options="EndOptions" Value="Model.End" ValueChanged="v => Model.End = v" Label="Ends" />
+    <div class="field">
+        <span class="field__label" aria-hidden="true">Ends</span>
+        <SegmentedControl TValue="RecurrenceEnd" Options="EndOptions" Value="Model.End" ValueChanged="v => Model.End = v" Label="Ends" />
+    </div>
 
     @if (Model.End == RecurrenceEnd.OnDate)
     {

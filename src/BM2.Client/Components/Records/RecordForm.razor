@@ -154,7 +154,7 @@
         </div>
     }
 
-    @if (OnSaveTemplate.HasDelegate)
+    @if (OnSaveTemplate.HasDelegate && !_repeatOn)
     {
         <button type="button" class="btn btn-ghost btn-block" disabled="@Busy" @onclick="SaveTemplateAsync">
             <Icon Name="bolt" /> Save as template
