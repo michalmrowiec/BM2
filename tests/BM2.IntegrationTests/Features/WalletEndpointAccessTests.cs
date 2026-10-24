@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using BM2.Contracts.Accounts;
+using BM2.Contracts.Categories;
+using BM2.Contracts.Tags;
 using BM2.Contracts.Wallets;
 using BM2.IntegrationTests.Infrastructure;
 
@@ -17,6 +19,12 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         new("POST", "/api/wallets/{w}/accounts", _ => new CreateAccountRequest("New", "PLN", 0), MemberRole.Owner),
         new("PUT", "/api/wallets/{w}/accounts/{a}", _ => new UpdateAccountRequest("Renamed", "PLN", 0, false), MemberRole.Owner),
         new("DELETE", "/api/wallets/{w}/accounts/{a}", null, MemberRole.Owner),
+        new("POST", "/api/wallets/{w}/categories", _ => new CreateCategoryRequest("New", CategoryType.Expense), MemberRole.Editor),
+        new("PUT", "/api/wallets/{w}/categories/{c}", _ => new UpdateCategoryRequest("Renamed", false), MemberRole.Editor),
+        new("DELETE", "/api/wallets/{w}/categories/{c}", null, MemberRole.Editor),
+        new("POST", "/api/wallets/{w}/tags", _ => new CreateTagRequest("New"), MemberRole.Editor),
+        new("PUT", "/api/wallets/{w}/tags/{t}", _ => new UpdateTagRequest("Renamed", false), MemberRole.Editor),
+        new("DELETE", "/api/wallets/{w}/tags/{t}", null, MemberRole.Editor),
     ];
 
     public static TheoryData<string> Cases => new(All.Select(c => c.Name));
@@ -58,7 +66,9 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         var wallet = await Data.WalletAsync(owner.Id);
         await Data.MemberAsync(wallet.Id, other.Id, MemberRole.Editor);
         var account = await Data.AccountAsync(wallet.Id);
-        return new CaseIds(wallet.Id, account.Id, other.Id);
+        var category = await Data.CategoryAsync(wallet.Id);
+        var tag = await Data.TagAsync(wallet.Id);
+        return new CaseIds(wallet.Id, account.Id, other.Id, category.Id, tag.Id);
     }
 
     private async Task<HttpResponseMessage> SendAsync(EndpointCase endpoint, CaseIds ids, Guid userId)
@@ -78,11 +88,13 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         public string Name => $"{Method} {Path}";
     }
 
-    public sealed record CaseIds(Guid WalletId, Guid AccountId, Guid OtherMemberId)
+    public sealed record CaseIds(Guid WalletId, Guid AccountId, Guid OtherMemberId, Guid CategoryId, Guid TagId)
     {
         public string Fill(string path) => path
             .Replace("{w}", WalletId.ToString(), StringComparison.Ordinal)
             .Replace("{a}", AccountId.ToString(), StringComparison.Ordinal)
-            .Replace("{u}", OtherMemberId.ToString(), StringComparison.Ordinal);
+            .Replace("{u}", OtherMemberId.ToString(), StringComparison.Ordinal)
+            .Replace("{c}", CategoryId.ToString(), StringComparison.Ordinal)
+            .Replace("{t}", TagId.ToString(), StringComparison.Ordinal);
     }
 }

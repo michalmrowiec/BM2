@@ -8,7 +8,7 @@ public static class Snapshots
     public static readonly WalletPermissions OwnerPermissions = new(true, true, true, true, true);
 
     public static WalletSnapshot Owner(Guid id, string name = "Home", IReadOnlyList<AccountItem>? accounts = null) =>
-        new(id, name, "PLN", MemberRole.Owner, OwnerPermissions, accounts ?? []);
+        new(id, name, "PLN", MemberRole.Owner, OwnerPermissions, accounts ?? [], [], []);
 
     /// <summary>Wallet list plus the snapshot of each wallet.</summary>
     public static StubApi WithWallets(this StubApi api, params WalletSnapshot[] snapshots)

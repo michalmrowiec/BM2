@@ -1,4 +1,6 @@
 using BM2.Contracts.Accounts;
+using BM2.Contracts.Categories;
+using BM2.Contracts.Tags;
 using BM2.Contracts.Wallets;
 using BM2.Domain.Access;
 using BM2.Server.Data;
@@ -29,6 +31,18 @@ internal static class GetWallet
             .Select(a => new { a.Id, a.Name, a.Currency, a.OpeningBalance, a.IsArchived })
             .ToListAsync(ct);
         var balances = await AccountBalances.GetAsync(db, readable, ct);
+        var categories = await db.Categories
+            .AsNoTracking()
+            .Where(c => c.WalletId == access.WalletId)
+            .OrderBy(c => c.IsArchived).ThenBy(c => c.Type).ThenBy(c => c.Name)
+            .Select(c => new CategoryItem(c.Id, c.Name, c.Type, c.IsArchived))
+            .ToListAsync(ct);
+        var tags = await db.Tags
+            .AsNoTracking()
+            .Where(t => t.WalletId == access.WalletId)
+            .OrderBy(t => t.IsArchived).ThenBy(t => t.Name)
+            .Select(t => new TagItem(t.Id, t.Name, t.IsArchived))
+            .ToListAsync(ct);
 
         return TypedResults.Ok(new WalletSnapshot(
             access.WalletId,
@@ -44,6 +58,8 @@ internal static class GetWallet
             accounts
                 .Select(a => new AccountItem(
                     a.Id, a.Name, a.Currency, a.OpeningBalance, balances[a.Id], a.IsArchived, access.CanWriteAccount(a.Id)))
-                .ToList()));
+                .ToList(),
+            categories,
+            tags));
     }
 }

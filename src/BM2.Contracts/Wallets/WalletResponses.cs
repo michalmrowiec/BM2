@@ -1,4 +1,6 @@
 using BM2.Contracts.Accounts;
+using BM2.Contracts.Categories;
+using BM2.Contracts.Tags;
 
 namespace BM2.Contracts.Wallets;
 
@@ -15,4 +17,6 @@ public sealed record WalletSnapshot(
     string BaseCurrency,
     MemberRole? Role,
     WalletPermissions Permissions,
-    IReadOnlyList<AccountItem> Accounts);
+    IReadOnlyList<AccountItem> Accounts,
+    IReadOnlyList<CategoryItem> Categories,
+    IReadOnlyList<TagItem> Tags);

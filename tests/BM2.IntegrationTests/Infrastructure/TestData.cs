@@ -1,5 +1,8 @@
+using BM2.Contracts.Categories;
 using BM2.Contracts.Wallets;
 using BM2.Domain.Accounts;
+using BM2.Domain.Categories;
+using BM2.Domain.Tags;
 using BM2.Domain.Wallets;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,5 +43,23 @@ public sealed class TestData(IntegrationFixture fixture)
         var account = await db.Accounts.Include(a => a.Members).SingleAsync(a => a.Id == accountId);
         account.Grant(userId, role, DateTimeOffset.UtcNow).IsSuccess.ShouldBeTrue();
         await db.SaveChangesAsync();
+    }
+
+    public async Task<Category> CategoryAsync(Guid walletId, string name = "Groceries", CategoryType type = CategoryType.Expense)
+    {
+        await using var db = fixture.CreateDbContext();
+        var category = Category.Create(walletId, name, type);
+        db.Categories.Add(category);
+        await db.SaveChangesAsync();
+        return category;
+    }
+
+    public async Task<Tag> TagAsync(Guid walletId, string name = "House")
+    {
+        await using var db = fixture.CreateDbContext();
+        var tag = Tag.Create(walletId, name);
+        db.Tags.Add(tag);
+        await db.SaveChangesAsync();
+        return tag;
     }
 }

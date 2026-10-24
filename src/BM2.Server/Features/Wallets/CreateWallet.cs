@@ -15,6 +15,7 @@ internal static class CreateWallet
     {
         var wallet = Wallet.Create(request.Name, request.BaseCurrency, currentUser.UserId, time.GetUtcNow());
         db.Wallets.Add(wallet);
+        db.Categories.AddRange(DefaultCategories.For(wallet.Id));
         await db.SaveChangesAsync(ct);
 
         return TypedResults.Created(
