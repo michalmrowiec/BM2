@@ -13,6 +13,8 @@ public sealed class BM2AppFactory(string connectionString) : WebApplicationFacto
 {
     private const string TestOrIdentityScheme = "TestOrIdentity";
 
+    public TestTimeProvider Time { get; } = new();
+
     public HttpClient CreateAnonymousClient() => CreateClient(CreateClientOptions());
 
     public HttpClient CreateClientAs(Guid userId)
@@ -30,6 +32,7 @@ public sealed class BM2AppFactory(string connectionString) : WebApplicationFacto
         builder.ConfigureTestServices(services =>
         {
             services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(new SqlServer2012Guard()));
+            services.AddSingleton<TimeProvider>(Time);
 
             services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { })

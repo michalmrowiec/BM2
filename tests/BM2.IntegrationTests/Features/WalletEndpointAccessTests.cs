@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using BM2.Contracts.Accounts;
 using BM2.Contracts.Categories;
+using BM2.Contracts.Invitations;
 using BM2.Contracts.Members;
 using BM2.Contracts.Records;
 using BM2.Contracts.Tags;
@@ -36,6 +37,8 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         new("GET", "/api/wallets/{w}/members", null, MemberRole.Viewer),
         new("PUT", "/api/wallets/{w}/members/{u}", _ => new UpdateRoleRequest(MemberRole.Viewer), MemberRole.Owner),
         new("PUT", "/api/wallets/{w}/accounts/{a}/members/{u}", _ => new UpdateRoleRequest(MemberRole.Viewer), MemberRole.Owner),
+        new("POST", "/api/wallets/{w}/invitations", _ => new CreateInvitationRequest(MemberRole.Viewer, null), MemberRole.Owner),
+        new("DELETE", "/api/wallets/{w}/invitations/{i}", null, MemberRole.Owner),
     ];
 
     public static TheoryData<string> Cases => new(All.Select(c => c.Name));
@@ -84,7 +87,8 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         var category = await Data.CategoryAsync(wallet.Id);
         var tag = await Data.TagAsync(wallet.Id);
         var record = await Data.RecordAsync(account.Id, 10m, categoryId: category.Id);
-        return new CaseIds(wallet.Id, account.Id, other.Id, category.Id, tag.Id, record.Id);
+        var (invitation, _) = await Data.InvitationAsync(wallet.Id, owner.Id);
+        return new CaseIds(wallet.Id, account.Id, other.Id, category.Id, tag.Id, record.Id, invitation.Id);
     }
 
     private async Task<HttpResponseMessage> SendAsync(EndpointCase endpoint, CaseIds ids, Guid userId)
@@ -104,7 +108,8 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         public string Name => $"{Method} {Path}";
     }
 
-    public sealed record CaseIds(Guid WalletId, Guid AccountId, Guid OtherMemberId, Guid CategoryId, Guid TagId, Guid RecordId)
+    public sealed record CaseIds(
+        Guid WalletId, Guid AccountId, Guid OtherMemberId, Guid CategoryId, Guid TagId, Guid RecordId, Guid InvitationId)
     {
         public string Fill(string path) => path
             .Replace("{w}", WalletId.ToString(), StringComparison.Ordinal)
@@ -112,6 +117,7 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
             .Replace("{u}", OtherMemberId.ToString(), StringComparison.Ordinal)
             .Replace("{c}", CategoryId.ToString(), StringComparison.Ordinal)
             .Replace("{t}", TagId.ToString(), StringComparison.Ordinal)
-            .Replace("{r}", RecordId.ToString(), StringComparison.Ordinal);
+            .Replace("{r}", RecordId.ToString(), StringComparison.Ordinal)
+            .Replace("{i}", InvitationId.ToString(), StringComparison.Ordinal);
     }
 }

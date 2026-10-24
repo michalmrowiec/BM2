@@ -15,7 +15,7 @@ internal static class ListMembers
     public static void Map(RouteGroupBuilder wallet) => wallet.MapGet("/members", HandleAsync);
 
     private static async Task<Results<Ok<MembersResponse>, ProblemHttpResult>> HandleAsync(
-        CurrentWallet current, ICurrentUser currentUser, AppDbContext db, CancellationToken ct)
+        CurrentWallet current, ICurrentUser currentUser, AppDbContext db, TimeProvider time, CancellationToken ct)
     {
         if (!current.Access.Can(WalletPermission.ViewMembers))
         {
@@ -41,6 +41,22 @@ internal static class ListMembers
             .ToListAsync(ct);
 
         IReadOnlyList<InvitationItem> invitations = [];
+        if (current.Access.Can(WalletPermission.ManageMembers))
+        {
+            var now = time.GetUtcNow();
+            invitations = await db.Invitations
+                .AsNoTracking()
+                .Where(i => i.WalletId == walletId && i.AcceptedAt == null && i.RevokedAt == null && i.ExpiresAt > now)
+                .OrderBy(i => i.ExpiresAt)
+                .Select(i => new InvitationItem(
+                    i.Id,
+                    i.Role,
+                    i.AccountId,
+                    db.Accounts.Where(a => a.Id == i.AccountId).Select(a => a.Name).FirstOrDefault(),
+                    i.ExpiresAt))
+                .ToListAsync(ct);
+        }
+
         return TypedResults.Ok(new MembersResponse(members, shares, invitations));
     }
 }

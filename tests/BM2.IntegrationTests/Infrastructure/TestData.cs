@@ -3,6 +3,7 @@ using BM2.Contracts.Records;
 using BM2.Contracts.Wallets;
 using BM2.Domain.Accounts;
 using BM2.Domain.Categories;
+using BM2.Domain.Invitations;
 using BM2.Domain.Records;
 using Record = BM2.Domain.Records.Record;
 using BM2.Domain.Tags;
@@ -105,5 +106,15 @@ public sealed class TestData(IntegrationFixture fixture)
         db.Records.Add(record);
         await db.SaveChangesAsync();
         return record;
+    }
+
+    public async Task<(Invitation Invitation, string Token)> InvitationAsync(
+        Guid walletId, Guid createdBy, MemberRole role = MemberRole.Viewer, Guid? accountId = null)
+    {
+        await using var db = fixture.CreateDbContext();
+        var created = Invitation.Create(walletId, accountId, role, createdBy, DateTimeOffset.UtcNow);
+        db.Invitations.Add(created.Invitation);
+        await db.SaveChangesAsync();
+        return created;
     }
 }

@@ -1,5 +1,6 @@
 using BM2.Server.Features.Accounts;
 using BM2.Server.Features.Categories;
+using BM2.Server.Features.Invitations;
 using BM2.Server.Features.Members;
 using BM2.Server.Features.Profile;
 using BM2.Server.Features.Records;
@@ -21,6 +22,8 @@ public static class ApiEndpoints
         wallet.MapTagEndpoints();
         wallet.MapRecordEndpoints();
         wallet.MapMemberEndpoints();
+        wallet.MapInvitationManagementEndpoints();
+        api.MapInvitationEndpoints();
 
         // Unknown API routes must not fall through to the Blazor not-found page.
         app.MapFallback($"{ApiPaths.Prefix}/{{**path}}", () => TypedResults.NotFound());

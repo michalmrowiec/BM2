@@ -1,5 +1,6 @@
 using BM2.Domain.Accounts;
 using BM2.Domain.Categories;
+using BM2.Domain.Invitations;
 using BM2.Domain.Records;
 using BM2.Domain.Tags;
 using BM2.Domain.Wallets;
@@ -28,6 +29,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Tag> Tags => Set<Tag>();
 
     public DbSet<Record> Records => Set<Record>();
+
+    public DbSet<Invitation> Invitations => Set<Invitation>();
 
     // Pinned so the model does not depend on IdentityOptions from DI (schema v3 adds passkeys).
     protected override Version SchemaVersion => IdentitySchemaVersions.Version3;

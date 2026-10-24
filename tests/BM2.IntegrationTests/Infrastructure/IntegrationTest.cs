@@ -17,7 +17,11 @@ public abstract class IntegrationTest(IntegrationFixture fixture) : IAsyncLifeti
 
     protected static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => await Fixture.ResetDatabaseAsync();
+    public async ValueTask InitializeAsync()
+    {
+        Factory.Time.Reset();
+        await Fixture.ResetDatabaseAsync();
+    }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 

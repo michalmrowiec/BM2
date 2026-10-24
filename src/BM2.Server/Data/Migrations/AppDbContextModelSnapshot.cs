@@ -110,6 +110,57 @@ namespace BM2.Server.Data.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("BM2.Domain.Invitations.Invitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("AcceptedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("AcceptedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("binary(32)")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("Invitations");
+                });
+
             modelBuilder.Entity("BM2.Domain.Records.Record", b =>
                 {
                     b.Property<Guid>("Id")
@@ -532,6 +583,20 @@ namespace BM2.Server.Data.Migrations
                         .WithMany()
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BM2.Domain.Invitations.Invitation", b =>
+                {
+                    b.HasOne("BM2.Domain.Accounts.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("BM2.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
