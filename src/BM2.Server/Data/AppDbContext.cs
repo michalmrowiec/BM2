@@ -1,3 +1,5 @@
+using BM2.Domain.Accounts;
+using BM2.Domain.Wallets;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -10,8 +12,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 {
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
+    public DbSet<Wallet> Wallets => Set<Wallet>();
+
+    public DbSet<WalletMember> WalletMembers => Set<WalletMember>();
+
+    public DbSet<Account> Accounts => Set<Account>();
+
+    public DbSet<AccountMember> AccountMembers => Set<AccountMember>();
+
     // Pinned so the model does not depend on IdentityOptions from DI (schema v3 adds passkeys).
     protected override Version SchemaVersion => IdentitySchemaVersions.Version3;
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
