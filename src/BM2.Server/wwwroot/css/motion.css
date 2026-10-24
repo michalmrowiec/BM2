@@ -203,3 +203,11 @@ html.theme-switching::view-transition-new(root) {
 .stagger > :nth-child(4) { animation-delay: 120ms; }
 .stagger > :nth-child(5) { animation-delay: 160ms; }
 .stagger > :nth-child(n + 6) { animation-delay: 200ms; }
+
+/* The record editor rises like a sheet; a chosen chip pops. */
+.editor-sheet { animation: ink-rise 420ms var(--ease-out) both; }
+.chip[aria-pressed="true"] { animation: chip-pop 240ms var(--ease-spring); }
+
+@keyframes chip-pop {
+    from { transform: scale(0.92); }
+}

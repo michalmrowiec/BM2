@@ -1,0 +1,163 @@
+@page "/records/new"
+@page "/records/{Id:guid}"
+@attribute [Authorize]
+@using BM2.Client.Components.Records
+@using BM2.Contracts.Records
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+@inject NavigationManager Navigation
+
+<PageTitle>@Title · BM2</PageTitle>
+
+<section class="editor-sheet" aria-labelledby="editor-title">
+    <header class="editor-sheet__header">
+        <a class="icon-button" href="records" aria-label="Close"><Icon Name="close" /></a>
+        <h1 id="editor-title" class="editor-sheet__title" tabindex="-1">@Title</h1>
+        <div class="editor-sheet__actions">
+            @if (Id is not null && _record is not null && CanWriteRecord)
+            {
+                <a class="icon-button" href="@($"records/new?copy={Id}")" aria-label="Copy record"><Icon Name="copy" /></a>
+                <button type="button" class="icon-button" aria-label="Delete record" @onclick="() => _confirmDelete = true">
+                    <Icon Name="trash" />
+                </button>
+            }
+        </div>
+    </header>
+
+    @if (Wallet is null || _loading)
+    {
+        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    }
+    else if (_missing)
+    {
+        <EmptyState IconName="list" Title="This record doesn't exist">It may have been deleted.</EmptyState>
+    }
+    else if ((_record is null || CopyId is not null) && !Wallet.Accounts.Any(a => a.CanWrite && !a.IsArchived))
+    {
+        <EmptyState IconName="bank" Title="You can't add records here">
+            <ChildContent>Add an account first, or ask the wallet owner for edit access.</ChildContent>
+            <Actions>
+                @if (Wallet.Permissions.ManageAccounts)
+                {
+                    <a class="btn btn-primary" href="accounts">Add account</a>
+                }
+            </Actions>
+        </EmptyState>
+    }
+    else if (Id is not null && !CanWriteRecord)
+    {
+        <EmptyState IconName="list" Title="View only">You can see this record but not change it.</EmptyState>
+    }
+    else
+    {
+        <RecordForm @ref="_form" @key="_formKey" Wallet="Wallet" Initial="_record" IsCopy="@(CopyId is not null && Id is null)"
+                    DefaultAccountId="_lastAccount" Busy="_busy" OnSubmit="SaveAsync" />
+    }
+</section>
+
+<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete record?" ConfirmLabel="Delete"
+               Danger="true" OnConfirm="DeleteAsync">
+    <p>This can't be undone.</p>
+</ConfirmDialog>
+
+@code {
+    private RecordForm? _form;
+    private RecordItem? _record;
+    private Guid? _lastAccount;
+    private string _formKey = "";
+    private bool _loading = true;
+    private bool _missing;
+    private bool _busy;
+    private bool _confirmDelete;
+
+    [Parameter] public Guid? Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "copy")] public Guid? CopyId { get; set; }
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private string Title => Id is not null ? "Edit record" : CopyId is not null ? "Copy record" : "New record";
+
+    private bool CanWriteRecord => _record is not null && Wallet is not null
+        && CanWrite(_record.AccountId) && (_record.TransferAccountId is not { } target || CanWrite(target));
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private bool CanWrite(Guid accountId) => Wallet!.Accounts.Any(a => a.Id == accountId && a.CanWrite);
+
+    private async Task LoadAsync()
+    {
+        if (Wallet is null)
+        {
+            return;
+        }
+
+        _loading = true;
+        _missing = false;
+        _record = null;
+        if ((Id ?? CopyId) is { } sourceId)
+        {
+            var result = await Api.GetAsync<RecordItem>($"api/wallets/{Wallet.Id}/records/{sourceId}");
+            _record = result.Value;
+            _missing = !result.Ok;
+        }
+
+        _lastAccount = await WalletState.GetLastAccountAsync();
+        _formKey = $"{Wallet.Id}/{Id}/{CopyId}";
+        _loading = false;
+    }
+
+    private async Task SaveAsync(SaveRecordRequest request)
+    {
+        _busy = true;
+        var url = $"api/wallets/{Wallet!.Id}/records";
+        var result = Id is { } id ? await Api.PutAsync($"{url}/{id}", request) : await Api.PostAsync<RecordItem>(url, request);
+        _busy = false;
+
+        if (result.Ok)
+        {
+            await WalletState.SetLastAccountAsync(request.AccountId);
+            Toasts.Show("Saved.", ToastKind.Success);
+            await WalletState.RefreshAsync();
+            Navigation.NavigateTo("records");
+        }
+        else if (result.Problem!.HasFieldErrors)
+        {
+            _form?.ShowServerErrors(result.Problem);
+        }
+        else if (result.Problem.IsNotFoundOrForbidden)
+        {
+            Toasts.Show("You can't save this record here.", ToastKind.Error);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/records/{Id}");
+        _confirmDelete = false;
+        if (result.Ok)
+        {
+            Toasts.Show("Record deleted.");
+            await WalletState.RefreshAsync();
+            Navigation.NavigateTo("records");
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

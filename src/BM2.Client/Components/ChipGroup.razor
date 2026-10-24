@@ -1,0 +1,34 @@
+@typeparam TValue
+
+<div class="chip-group @Class" role="group" aria-label="@Label">
+    @foreach (var option in Options)
+    {
+        var pressed = Selected.Contains(option.Value);
+        <button type="button" class="chip" aria-pressed="@(pressed ? "true" : "false")" @onclick="() => ToggleAsync(option.Value)">
+            @option.Label
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<(TValue Value, string Label)> Options { get; set; } = [];
+
+    [Parameter] public IReadOnlyCollection<TValue> Selected { get; set; } = [];
+
+    [Parameter] public EventCallback<IReadOnlyCollection<TValue>> SelectedChanged { get; set; }
+
+    /// <summary>Many chips can be on at once; otherwise a tap picks exactly one.</summary>
+    [Parameter] public bool Multiple { get; set; }
+
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+
+    [Parameter] public string? Class { get; set; }
+
+    private Task ToggleAsync(TValue value)
+    {
+        IReadOnlyCollection<TValue> next = !Multiple
+            ? [value]
+            : Selected.Contains(value) ? Selected.Where(v => !EqualityComparer<TValue>.Default.Equals(v, value)).ToList() : [.. Selected, value];
+        return SelectedChanged.InvokeAsync(next);
+    }
+}

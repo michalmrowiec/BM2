@@ -860,3 +860,131 @@ button.list-row:hover { background: var(--wash); }
     font-weight: 600;
     box-shadow: var(--shadow);
 }
+
+/* Chips */
+.chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-pill);
+    background: var(--sheet);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+        transform var(--dur) var(--ease);
+}
+
+.chip:hover { border-color: var(--ink-muted); }
+.chip:active { transform: scale(0.96); }
+
+.chip[aria-pressed="true"] {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+}
+
+.chip--sm {
+    min-height: 2rem;
+    padding: 0 var(--space-3);
+    font-size: var(--text-s);
+}
+
+/* Date field with shortcuts */
+.date-field {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.date-field__shortcuts {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* Record editor: a sheet-like page on phones, a card on wider screens */
+.editor-sheet {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.editor-sheet__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.editor-sheet__title {
+    flex: 1;
+    font-size: var(--text-xl);
+}
+
+.editor-sheet__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+@media (min-width: 48rem) {
+    .editor-sheet {
+        max-width: 34rem;
+        margin: 0 auto;
+        padding: var(--space-5) var(--space-6) var(--space-6);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius-l);
+        background: var(--sheet);
+        box-shadow: var(--shadow);
+    }
+}
+
+/* Record form */
+.record-form {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.record-form__more > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap);
+    color: var(--ink-muted);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.record-form__more > summary::-webkit-details-marker { display: none; }
+.record-form__more > summary::after { content: "+"; }
+.record-form__more[open] > summary::after { content: "\2212"; }
+.record-form__more[open] > .form-stack { padding-top: var(--space-2); }
+
+.record-form__fx {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius);
+    background: var(--wash);
+}
+
+/* Save stays reachable above the bottom navigation on phones. */
+.record-form__submit {
+    position: sticky;
+    bottom: calc(var(--nav-h) + var(--space-4) + env(safe-area-inset-bottom));
+    box-shadow: var(--shadow);
+}
+
+@media (min-width: 48rem) {
+    .record-form__submit {
+        position: static;
+        box-shadow: none;
+    }
+}

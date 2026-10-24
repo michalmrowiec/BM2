@@ -1,0 +1,294 @@
+@using BM2.Contracts.Accounts
+@using BM2.Contracts.Categories
+@using BM2.Contracts.Records
+@using BM2.Contracts.Wallets
+
+@* Quick add, edit and copy: amount first, one tap for the category, the rest folded under "More". *@
+<EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync" class="record-form">
+    <FluentValidator @ref="_validator" Validator="Validator" ToRequest="_ => BuildRequest()" />
+
+    <SegmentedControl TValue="RecordType" Options="TypeOptions" Value="_model.Type" ValueChanged="OnTypeChanged" Label="Record type"
+                      Class="segmented--block" />
+
+    <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null)"
+                Currency="@AccountCurrency" @bind-Value="_model.Amount" @bind-Value:after="Recalculate" />
+
+    @if (_model.Type == RecordType.Transfer)
+    {
+        <SelectField id="record-target" Label="To account" Options="TargetOptions" @bind-Value="_model.TransferAccountId" />
+        @if (NeedsTransferAmount)
+        {
+            <MoneyInput id="record-transfer-amount" Label="@($"Amount received in {TargetCurrency}")" Currency="@TargetCurrency"
+                        @bind-Value="_model.TransferAmount" />
+        }
+    }
+    else
+    {
+        <div class="field record-form__categories">
+            <span class="field__label" id="record-category-label">Category</span>
+            <ChipGroup TValue="Guid" Options="CategoryOptions" Selected="SelectedCategory" SelectedChanged="OnCategoryChanged"
+                       Label="Category" Class="chip-group--categories" />
+            <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint" />
+        </div>
+    }
+
+    <SelectField id="record-account" Label="@(_model.Type == RecordType.Income ? "To account" : "From account")"
+                 Options="AccountOptions" @bind-Value="_model.AccountId" @bind-Value:after="OnAccountChanged" />
+
+    <DateField id="record-date" Label="Date" @bind-Value="_model.OccurredOn" />
+
+    <details class="record-form__more" open="@_moreOpen">
+        <summary>More</summary>
+        <div class="form-stack">
+            <TextField id="record-name" Label="Name" @bind-Value="_model.Name" autocomplete="off" placeholder="Optional" />
+            @if (Wallet.Tags.Any(t => !t.IsArchived || _model.TagIds.Contains(t.Id)))
+            {
+                <div class="field">
+                    <span class="field__label">Tags</span>
+                    <ChipGroup TValue="Guid" Options="TagOptions" Selected="_model.TagIds" SelectedChanged="ids => _model.TagIds = ids.ToList()"
+                               Multiple="true" Label="Tags" />
+                </div>
+            }
+            <SelectField id="record-status" Label="Status" Options="StatusOptions" @bind-Value="_model.Status" />
+            @if (_model.Type != RecordType.Transfer)
+            {
+                <SelectField id="record-currency" Label="Currency" Options="Options.Currencies" @bind-Value="_model.Currency"
+                             @bind-Value:after="Recalculate" />
+            }
+        </div>
+    </details>
+
+    @if (IsForeign)
+    {
+        <div class="record-form__fx">
+            <MoneyInput id="record-rate" Label="@($"Rate {_model.Currency} → {AccountCurrency}")" Decimals="6"
+                        @bind-Value="_model.Rate" @bind-Value:after="Recalculate" />
+            <MoneyInput id="record-account-amount" Label="@($"Amount in {AccountCurrency}")" Currency="@AccountCurrency"
+                        @bind-Value="_model.AccountAmount" @bind-Value:after="OnAccountAmountChanged" />
+        </div>
+    }
+
+    <button type="submit" class="btn btn-primary btn-block record-form__submit" disabled="@Busy">Save</button>
+</EditForm>
+
+@code {
+    private static readonly SaveRecordRequestValidator Validator = new();
+
+    private static readonly IReadOnlyList<(RecordType Value, string Label)> TypeOptions =
+        [(RecordType.Expense, "Expense"), (RecordType.Income, "Income"), (RecordType.Transfer, "Transfer")];
+
+    private static readonly IReadOnlyList<(RecordStatus Value, string Label)> StatusOptions =
+        [(RecordStatus.Completed, "Completed"), (RecordStatus.Pending, "Pending"), (RecordStatus.Planned, "Planned")];
+
+    private FormModel _model = new();
+    private EditContext _editContext = null!;
+    private FluentValidator? _validator;
+    private bool _moreOpen;
+
+    [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
+
+    /// <summary>The record being edited or copied; null for a new record.</summary>
+    [Parameter] public RecordItem? Initial { get; set; }
+
+    [Parameter] public bool IsCopy { get; set; }
+
+    [Parameter] public Guid? DefaultAccountId { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public EventCallback<SaveRecordRequest> OnSubmit { get; set; }
+
+    public void ShowServerErrors(ApiProblem problem) => _validator?.ShowServerErrors(problem);
+
+    private string? AccountCurrency => FindAccount(_model.AccountId)?.Currency;
+
+    private string? TargetCurrency => FindAccount(_model.TransferAccountId)?.Currency;
+
+    private bool IsForeign => _model.Type != RecordType.Transfer && AccountCurrency is not null && _model.Currency != AccountCurrency;
+
+    private bool NeedsTransferAmount => TargetCurrency is not null && TargetCurrency != AccountCurrency;
+
+    private IReadOnlyList<(Guid Value, string Label)> AccountOptions => Wallet.Accounts
+        .Where(a => a.CanWrite && (!a.IsArchived || a.Id == Initial?.AccountId))
+        .Select(a => (a.Id, a.Name))
+        .ToList();
+
+    private IReadOnlyList<(Guid? Value, string Label)> TargetOptions => Wallet.Accounts
+        .Where(a => a.CanWrite && a.Id != _model.AccountId && (!a.IsArchived || a.Id == Initial?.TransferAccountId))
+        .Select(a => ((Guid?)a.Id, a.Name))
+        .ToList();
+
+    private IReadOnlyList<(Guid Value, string Label)> CategoryOptions => Wallet.Categories
+        .Where(c => c.Type == (_model.Type == RecordType.Income ? CategoryType.Income : CategoryType.Expense)
+            && (!c.IsArchived || c.Id == Initial?.CategoryId))
+        .Select(c => (c.Id, c.Name))
+        .ToList();
+
+    private IReadOnlyList<(Guid Value, string Label)> TagOptions => Wallet.Tags
+        .Where(t => !t.IsArchived || _model.TagIds.Contains(t.Id))
+        .Select(t => (t.Id, t.Name))
+        .ToList();
+
+    private IReadOnlyCollection<Guid> SelectedCategory => _model.CategoryId is { } id ? [id] : [];
+
+    protected override void OnInitialized()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        if (Initial is { } record)
+        {
+            _model = new FormModel
+            {
+                Type = record.Type,
+                Status = IsCopy ? RecordStatus.Completed : record.Status,
+                OccurredOn = IsCopy ? today : record.OccurredOn,
+                AccountId = record.AccountId,
+                Amount = record.Amount,
+                Currency = record.Currency,
+                AccountAmount = record.AccountAmount,
+                CategoryId = record.CategoryId,
+                TransferAccountId = record.TransferAccountId,
+                TransferAmount = record.TransferAmount,
+                Name = record.Name,
+                TagIds = record.TagIds.ToList(),
+            };
+            if (IsForeign)
+            {
+                _model.Rate = ExchangeMath.RateOf(record.Amount, record.AccountAmount);
+            }
+
+            _moreOpen = record.Name is not null || record.TagIds.Count > 0 || _model.Status != RecordStatus.Completed || IsForeign;
+        }
+        else
+        {
+            var account = AccountOptions.FirstOrDefault(a => a.Value == DefaultAccountId);
+            var accountId = account.Value != Guid.Empty ? account.Value : AccountOptions.FirstOrDefault().Value;
+            _model = new FormModel
+            {
+                OccurredOn = today,
+                AccountId = accountId,
+                Currency = FindAccount(accountId)?.Currency ?? Wallet.BaseCurrency,
+            };
+        }
+
+        _model.PreviousAccountCurrency = AccountCurrency;
+        _editContext = new EditContext(_model);
+    }
+
+    private AccountItem? FindAccount(Guid? id) => Wallet.Accounts.FirstOrDefault(a => a.Id == id);
+
+    private string? ErrorFor(string field)
+    {
+        var messages = _editContext.GetValidationMessages(_editContext.Field(field)).ToList();
+        return messages.Count == 0 ? null : string.Join(" ", messages);
+    }
+
+    private void OnTypeChanged(RecordType type)
+    {
+        _model.Type = type;
+        _model.CategoryId = null;
+        if (type == RecordType.Transfer)
+        {
+            _model.Currency = AccountCurrency ?? _model.Currency;
+            _model.TransferAccountId = TargetOptions.FirstOrDefault().Value;
+        }
+        else
+        {
+            _model.TransferAccountId = null;
+            _model.TransferAmount = null;
+        }
+
+        _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
+    }
+
+    private void OnCategoryChanged(IReadOnlyCollection<Guid> selected)
+    {
+        _model.CategoryId = selected.FirstOrDefault();
+        _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
+    }
+
+    private void OnAccountChanged()
+    {
+        // The transaction currency follows the account unless the user picked a foreign one.
+        if (_model.Currency == _model.PreviousAccountCurrency || _model.Type == RecordType.Transfer)
+        {
+            _model.Currency = AccountCurrency ?? _model.Currency;
+        }
+
+        if (_model.TransferAccountId == _model.AccountId)
+        {
+            _model.TransferAccountId = TargetOptions.FirstOrDefault().Value;
+        }
+
+        _model.PreviousAccountCurrency = AccountCurrency;
+        Recalculate();
+    }
+
+    private void Recalculate()
+    {
+        if (IsForeign && _model.Amount is { } amount && _model.Rate is { } rate)
+        {
+            _model.AccountAmount = ExchangeMath.ToAccountAmount(amount, rate);
+        }
+    }
+
+    private void OnAccountAmountChanged()
+    {
+        if (_model.Amount is > 0 and var amount && _model.AccountAmount is { } accountAmount)
+        {
+            _model.Rate = ExchangeMath.RateOf(amount, accountAmount);
+        }
+    }
+
+    private SaveRecordRequest BuildRequest()
+    {
+        var amount = _model.Amount ?? 0;
+        var isTransfer = _model.Type == RecordType.Transfer;
+        return new SaveRecordRequest(
+            _model.Type,
+            _model.Status,
+            _model.OccurredOn,
+            _model.AccountId,
+            amount,
+            isTransfer ? AccountCurrency ?? _model.Currency : _model.Currency,
+            IsForeign ? _model.AccountAmount ?? 0 : amount,
+            isTransfer ? null : _model.CategoryId,
+            isTransfer ? _model.TransferAccountId : null,
+            isTransfer && NeedsTransferAmount ? _model.TransferAmount : null,
+            string.IsNullOrWhiteSpace(_model.Name) ? null : _model.Name.Trim(),
+            _model.TagIds.ToList());
+    }
+
+    private Task SubmitAsync() => OnSubmit.InvokeAsync(BuildRequest());
+
+    // Property names match SaveRecordRequest so validation messages land on the right fields.
+    private sealed class FormModel
+    {
+        public RecordType Type { get; set; } = RecordType.Expense;
+
+        public RecordStatus Status { get; set; } = RecordStatus.Completed;
+
+        public DateOnly OccurredOn { get; set; }
+
+        public Guid AccountId { get; set; }
+
+        public decimal? Amount { get; set; }
+
+        public string Currency { get; set; } = "";
+
+        public decimal? AccountAmount { get; set; }
+
+        public decimal? Rate { get; set; }
+
+        public Guid? CategoryId { get; set; }
+
+        public Guid? TransferAccountId { get; set; }
+
+        public decimal? TransferAmount { get; set; }
+
+        public string? Name { get; set; }
+
+        public List<Guid> TagIds { get; set; } = [];
+
+        public string? PreviousAccountCurrency { get; set; }
+    }
+}

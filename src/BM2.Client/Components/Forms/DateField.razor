@@ -1,0 +1,39 @@
+@using System.Diagnostics.CodeAnalysis
+@using System.Globalization
+@inherits FieldBase<DateOnly>
+
+<div class="field">
+    <label class="field__label" for="@FieldId">@Label</label>
+    <div class="date-field">
+        <input @attributes="AdditionalAttributes" id="@FieldId" class="field__control" type="date" value="@CurrentValueAsString"
+               @onchange="e => CurrentValueAsString = e.Value?.ToString()"
+               aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
+        <div class="date-field__shortcuts">
+            <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">Today</button>
+            <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">Yesterday</button>
+        </div>
+    </div>
+    <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
+</div>
+
+@code {
+    // The user's calendar day, from the device clock.
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
+
+    private string Pressed(DateOnly day) => CurrentValue == day ? "true" : "false";
+
+    protected override string FormatValueAsString(DateOnly value) => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    protected override bool TryParseValueFromString(
+        string? value, out DateOnly result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
+        {
+            validationErrorMessage = null;
+            return true;
+        }
+
+        validationErrorMessage = "Choose a date.";
+        return false;
+    }
+}

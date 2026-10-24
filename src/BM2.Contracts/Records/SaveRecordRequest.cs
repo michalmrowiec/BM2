@@ -32,6 +32,12 @@ public sealed class SaveRecordRequestValidator : AbstractValidator<SaveRecordReq
         RuleFor(x => x.TransferAmount)
             .Must(amount => amount is null || MoneyRules.IsValidAmount(amount.Value)).WithMessage(AmountMessage);
         RuleFor(x => x.Currency).Currency();
+        RuleFor(x => x.CategoryId)
+            .NotNull().When(x => x.Type != RecordType.Transfer).WithMessage("Choose a category.");
+        RuleFor(x => x.TransferAccountId)
+            .Must((request, target) => target is not null && target != request.AccountId)
+            .When(x => x.Type == RecordType.Transfer)
+            .WithMessage("Choose another account to move the money to.");
         RuleFor(x => x.Name)
             .Must(name => name is null || name.Trim().Length <= Limits.RecordName)
             .WithMessage($"Use at most {Limits.RecordName} characters.");
