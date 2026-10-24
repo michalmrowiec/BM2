@@ -1,24 +1,28 @@
 ﻿@inherits LayoutComponentBase
 
+<a class="skip-link" href="#main">Skip to content</a>
+
 <header class="app-header">
-    <a class="app-name" href="">BM2</a>
-    <AuthorizeView>
-        <Authorized>
-            <nav class="app-nav" aria-label="Account">
-                <a href="Account/Manage">Account</a>
-                <form action="Account/Logout" method="post">
-                    <AntiforgeryToken />
-                    <input type="hidden" name="ReturnUrl" value="" />
-                    <button type="submit" class="btn btn-link">Log out</button>
-                </form>
-            </nav>
-        </Authorized>
-    </AuthorizeView>
+    <a class="app-brand" href="">BM2<span class="app-brand__dot" aria-hidden="true"></span></a>
+    <div class="app-header__actions">
+        <ThemeToggle />
+        <AuthorizeView>
+            <NotAuthorized>
+                <a class="btn btn-secondary btn-sm" href="Account/Login">Log in</a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
 </header>
 
-<main class="app-main">
+<main id="main" class="app-main">
     @Body
 </main>
+
+<AuthorizeView>
+    <Authorized>
+        <BottomNav />
+    </Authorized>
+</AuthorizeView>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

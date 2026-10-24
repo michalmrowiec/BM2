@@ -1,0 +1,13 @@
+<section class="empty-state">
+    <span class="empty-state__icon"><Icon Name="@IconName" /></span>
+    <h2 class="empty-state__title">@Title</h2>
+    <p class="empty-state__text">@ChildContent</p>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string IconName { get; set; } = "";
+
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

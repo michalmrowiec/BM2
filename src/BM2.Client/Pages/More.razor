@@ -1,0 +1,33 @@
+@page "/more"
+@attribute [Authorize]
+
+<PageTitle>More · BM2</PageTitle>
+
+<h1 class="page-title">More</h1>
+
+<ul class="menu-list">
+    <li>
+        <a href="Account/Manage">
+            <Icon Name="user" />
+            <span>Account and security</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <button type="button" data-theme-toggle>
+            <Icon Name="contrast" />
+            <span>Switch theme</span>
+            <span class="menu-list__trail">System · Light · Dark</span>
+        </button>
+    </li>
+    <li>
+        <form action="Account/Logout" method="post">
+            <AntiforgeryToken />
+            <input type="hidden" name="ReturnUrl" value="" />
+            <button type="submit">
+                <Icon Name="logout" />
+                <span>Log out</span>
+            </button>
+        </form>
+    </li>
+</ul>

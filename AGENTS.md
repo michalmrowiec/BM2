@@ -75,6 +75,13 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - Mobile-first. Dodanie rekordu ma zajmować < 5 s.
 - Wygląd ma być unikalny i dopracowany – nie generyczny „kolejny panel”. Spójność z design systemem (tokeny CSS,
   komponenty bazowe); bez doklejania gotowych bibliotek UI.
+- **Design system „Paper and ink”** ([spec](docs/specs/2026-10-24-podprojekt-1a-design-system.md)): style globalne
+  w `BM2.Server/wwwroot/css` (`tokens.css` → `base.css` → `components.css`, `account.css` tylko dla stron Identity),
+  kolory i odstępy wyłącznie przez tokeny (`--paper`, `--sheet`, `--ink`, `--ink-muted`, `--rule`, `--wash`,
+  `--vivid`, `--link`, `--positive`, `--negative`, `--space-*`, `--radius*`). Fonty: Inter (UI), Fraunces (nagłówki,
+  kwoty – klasa `.num`). Ikony przez komponent `Icon` (własne SVG). Kwoty zawsze ze znakiem `+`/`−`.
+- Motyw jasny/ciemny/systemowy obsługuje `wwwroot/js/theme.js` (przycisk z atrybutem `data-theme-toggle`). Bez skryptów
+  inline (przyszły CSP).
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
 - Wszystkie teksty UI w zasobach (EN domyślnie, PL). Daty i kwoty formatowane wg kultury użytkownika.

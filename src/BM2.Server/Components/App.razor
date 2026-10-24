@@ -3,10 +3,19 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f3efe6" />
     <base href="/" />
+    @* Before the stylesheets so the saved theme applies on first paint. *@
+    <script src="@Assets["js/theme.js"]"></script>
+    <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
     <ResourcePreloader />
-    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["css/tokens.css"]" />
+    <link rel="stylesheet" href="@Assets["css/base.css"]" />
+    <link rel="stylesheet" href="@Assets["css/components.css"]" />
+    <link rel="stylesheet" href="@Assets["css/account.css"]" />
     <link rel="stylesheet" href="@Assets["BM2.Server.styles.css"]" />
     <ImportMap />
     <HeadOutlet @rendermode="PageRenderMode" />

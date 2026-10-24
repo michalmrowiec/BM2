@@ -2,10 +2,10 @@
 
 <PageTitle>BM2</PageTitle>
 
-<h1>BM2</h1>
-
 <AuthorizeView>
     <Authorized>
+        <p class="eyebrow">@DateTime.Now.ToString("dddd, d MMMM")</p>
+        <h1 class="page-title">Welcome back</h1>
         @* Data comes from the API only once WebAssembly runs; prerendering shows the placeholder. *@
         @if (RendererInfo.IsInteractive)
         {
@@ -13,10 +13,19 @@
         }
         else
         {
-            <p>Loading…</p>
+            <p class="muted">Loading…</p>
         }
+
+        <EmptyState IconName="wallet" Title="Your wallets will live here">
+            Balances, upcoming payments and pinned records will show up on this page.
+        </EmptyState>
     </Authorized>
     <NotAuthorized>
-        <p><a href="Account/Login">Log in</a></p>
+        <section class="hero">
+            <p class="eyebrow">Personal finance</p>
+            <h1 class="display">Your money, <span class="accent">in ink.</span></h1>
+            <p class="lead">A calm, fast ledger for everyday spending, shared wallets and what's coming next.</p>
+            <a class="btn btn-primary" href="Account/Login">Log in</a>
+        </section>
     </NotAuthorized>
 </AuthorizeView>

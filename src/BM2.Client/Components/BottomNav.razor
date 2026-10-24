@@ -1,0 +1,45 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+<nav class="bottom-nav" aria-label="Main">
+    <a href="" class="bottom-nav__item" aria-current="@Current("")">
+        <Icon Name="home" /><span>Home</span>
+    </a>
+    <a href="records" class="bottom-nav__item" aria-current="@Current("records")">
+        <Icon Name="list" /><span>Records</span>
+    </a>
+    <a href="records/new" class="bottom-nav__fab" aria-label="Add record">
+        <Icon Name="plus" />
+    </a>
+    <a href="stats" class="bottom-nav__item" aria-current="@Current("stats")">
+        <Icon Name="chart" /><span>Stats</span>
+    </a>
+    <a href="more" class="bottom-nav__item" aria-current="@Current("more")">
+        <Icon Name="dots" /><span>More</span>
+    </a>
+</nav>
+
+@code {
+    private const string QuickAddPath = "records/new";
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    private string? Current(string section) => IsActive(section) ? "page" : null;
+
+    private bool IsActive(string section)
+    {
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
+        if (section.Length == 0)
+        {
+            return path.Length == 0;
+        }
+
+        // Quick add is the FAB, not part of the Records section.
+        return path != QuickAddPath
+            && (path == section || path.StartsWith(section + "/", StringComparison.Ordinal));
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}
