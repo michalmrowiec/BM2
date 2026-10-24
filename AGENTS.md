@@ -14,7 +14,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 
 - **Oszczędzaj tokeny:** bez zbędnych buildów, uruchomień testów i szerokiego czytania plików. Droższy krok (pełny build,
   cała suita testów, duże przeszukiwanie, subagent) – zaproponuj i poczekaj na zgodę.
-- **Dopytuj aż do pewności** – przy niejasnościach nie zgaduj.
+- **Decyzje:** proste decyzje i wątpliwości rozstrzygaj sam, wybierając najbardziej optymalny darmowy wariant
+  (i krótko je odnotuj). Dopytuj tylko przy istotnych decyzjach produktowych/architektonicznych.
+- Gdy powstaje działające demo – uruchom je lokalnie i podaj link do przetestowania.
 - Każdy podprojekt: spec → plan → implementacja. Bez kodu produkcyjnego przed zatwierdzeniem speca.
 - Commity na `dev` są dozwolone bez pytania (gałąź robocza `dev`, główna `master`). Push, merge do `master`
   i operacje nieodwracalne – tylko na wyraźną prośbę.

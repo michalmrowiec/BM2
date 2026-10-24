@@ -84,6 +84,8 @@ Klient nigdy nie referencjonuje `BM2.Domain` ani `BM2.Server` – nie zna encji.
 - **Bieżący użytkownik:** serwis `ICurrentUser` (Id i e-mail z claimów).
 - **Grupa API:** `app.MapGroup("/api").RequireAuthorization()`; publiczne endpointy jawnie przez `AllowAnonymous()`.
 - **OpenAPI:** wbudowane `Microsoft.AspNetCore.OpenApi` + Scalar UI, tylko w Development.
+- `ValidationFilter<T>`, FluentValidation i typ `Result` wchodzą razem z pierwszym endpointem przyjmującym dane
+  (podprojekt 1) – w szkielecie nie mają czego walidować.
 
 ## Uwierzytelnianie
 
@@ -123,10 +125,13 @@ Klient nigdy nie referencjonuje `BM2.Domain` ani `BM2.Server` – nie zna encji.
 
 ## Klient (szkielet)
 
-- Minimalny layout i strona startowa `/`: dla zalogowanego „Witaj, {e-mail}” na podstawie `GET /api/me`,
-  dla niezalogowanego link do logowania.
+- Minimalny layout (z wylogowaniem) i strona startowa `/`: dla zalogowanego „Welcome, {email}” na podstawie
+  `GET /api/me`, dla niezalogowanego link do logowania. Teksty po angielsku (język domyślny; i18n w podprojekcie 1).
+- Prerendering zostaje włączony (domyślne ustawienie szablonu); dane z API pobierane tylko w trybie interaktywnym
+  (`RendererInfo.IsInteractive`).
 - Strony wymagające logowania przez `[Authorize]`; niezalogowany trafia na `/Account/Login`.
-- Plik `wwwroot/css/app.css` jako zaczątek tokenów CSS (pełny design system w podprojekcie 1).
+- Plik `BM2.Server/wwwroot/app.css` (ładowany przez `App.razor`, więc działa też na stronach konta) jako zaczątek
+  tokenów CSS (pełny design system w podprojekcie 1).
 
 ## Testy
 
