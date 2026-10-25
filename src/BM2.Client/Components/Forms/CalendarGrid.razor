@@ -17,7 +17,8 @@
     @switch (_view)
     {
         case View.Days:
-            <div class="calendar__grid">
+            @* A new key per page re-inserts the grid, so it animates in from the side it came from. *@
+            <div class="calendar__grid @Motion" @key="@($"d{_month}")">
                 @foreach (var name in DayNames)
                 {
                     <span class="calendar__weekday" aria-hidden="true">@name</span>
@@ -33,25 +34,25 @@
             </div>
             break;
         case View.Months:
-            <div class="calendar__grid calendar__grid--wide">
+            <div class="calendar__grid calendar__grid--wide @Motion" @key="@($"m{_month.Year}")">
                 @for (var m = 1; m <= 12; m++)
                 {
                     var month = new DateOnly(_month.Year, m, 1);
                     <button type="button" class="calendar__cell" aria-pressed="@(Value.Year == month.Year && Value.Month == m ? "true" : "false")"
                             aria-current="@(Today.Year == month.Year && Today.Month == m ? "date" : null)"
-                            @onclick="() => { _month = month; _view = View.Days; }">
+                            @onclick="() => { _month = month; _view = View.Days; _motion = null; }">
                         @month.ToString("MMM", Culture)
                     </button>
                 }
             </div>
             break;
         default:
-            <div class="calendar__grid calendar__grid--wide">
+            <div class="calendar__grid calendar__grid--wide @Motion" @key="@($"y{FirstYear}")">
                 @foreach (var year in Enumerable.Range(FirstYear, 12))
                 {
                     <button type="button" class="calendar__cell" aria-pressed="@(Value.Year == year ? "true" : "false")"
                             aria-current="@(Today.Year == year ? "date" : null)"
-                            @onclick="() => { _month = new DateOnly(year, _month.Month, 1); _view = View.Months; }">
+                            @onclick="() => { _month = new DateOnly(year, _month.Month, 1); _view = View.Months; _motion = null; }">
                         @year
                     </button>
                 }
@@ -110,12 +111,25 @@
 
     protected override void OnInitialized() => _month = new DateOnly(Value.Year, Value.Month, 1);
 
-    private void Move(int step) => _month = _view switch
-    {
-        View.Days => _month.AddMonths(step),
-        View.Months => _month.AddYears(step),
-        _ => _month.AddYears(12 * step),
-    };
+    // Animation of the next grid: slides from the arrow's side, or zooms when the view changes.
+    private string? _motion = "is-still";
 
-    private void ZoomOut() => _view = _view == View.Days ? View.Months : View.Years;
+    private string? Motion => _motion ?? "is-zoom";
+
+    private void Move(int step)
+    {
+        _motion = step > 0 ? "is-next" : "is-prev";
+        _month = _view switch
+        {
+            View.Days => _month.AddMonths(step),
+            View.Months => _month.AddYears(step),
+            _ => _month.AddYears(12 * step),
+        };
+    }
+
+    private void ZoomOut()
+    {
+        _motion = null;
+        _view = _view == View.Days ? View.Months : View.Years;
+    }
 }
