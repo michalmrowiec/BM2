@@ -49,6 +49,12 @@ internal static class ListRecords
     public static async Task<List<RecordItem>> LatestAsync(AppDbContext db, IQueryable<Domain.Records.Record> query, int count, CancellationToken ct) =>
         await ItemsAsync(db, await Latest(query).Take(count).ToListAsync(ct), ct);
 
+    public static async Task<List<RecordItem>> EarliestAsync(AppDbContext db, IQueryable<Domain.Records.Record> query, int count, CancellationToken ct) =>
+        await ItemsAsync(db, await query
+            .OrderBy(r => r.OccurredOn).ThenBy(r => r.CreatedAt).ThenBy(r => r.Id)
+            .Select(r => new RecordCursor(r.OccurredOn, r.CreatedAt, r.Id))
+            .Take(count).ToListAsync(ct), ct);
+
     private static IQueryable<RecordCursor> Latest(IQueryable<Domain.Records.Record> query) => query
         .OrderByDescending(r => r.OccurredOn).ThenByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id)
         .Select(r => new RecordCursor(r.OccurredOn, r.CreatedAt, r.Id));

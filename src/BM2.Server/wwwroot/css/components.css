@@ -1253,7 +1253,7 @@ button.list-row:hover { background: var(--wash); }
 .record-row__menu { flex: none; color: var(--ink-muted); }
 
 /* Pending and planned records: accent edge, status chip with icon, muted amount until completed */
-.record-row--pending { box-shadow: inset 3px 0 0 var(--vivid); }
+.record-row--pending { box-shadow: inset 3px 0 0 var(--attention); }
 .record-row--planned { box-shadow: inset 3px 0 0 var(--ink-muted); }
 .record-row--pending .num,
 .record-row--planned .num { opacity: 0.7; }
@@ -1261,9 +1261,9 @@ button.list-row:hover { background: var(--wash); }
 
 .record-status { gap: var(--space-1); font-size: 0.75rem; }
 .record-status .icon { width: 0.9em; height: 0.9em; }
-.record-row--pending .record-status { color: var(--vivid); }
+.record-row--pending .record-status { color: var(--attention); }
 
-.record-row__confirm { flex: none; color: var(--vivid); }
+.record-row__confirm { flex: none; color: var(--attention); }
 
 .section-header__actions {
     display: flex;

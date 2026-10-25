@@ -29,11 +29,12 @@ internal static class GetDashboard
         var month = await GetRecordSummary.SummarizeAsync(
             RecordQueries.Filtered(db, current, new RecordFilter { From = start, To = start.AddMonths(1), Status = RecordStatus.Completed })!, ct);
         var pending = await ListRecords.LatestAsync(db, RecordQueries.Filtered(db, current, new RecordFilter { Status = RecordStatus.Pending })!, 10, ct);
-        var templates = (await ListTemplates.LoadAsync(current, db, ct)).Where(t => t.IsPinned).ToList();
+        var planned = await ListRecords.EarliestAsync(db, RecordQueries.Filtered(db, current, new RecordFilter { Status = RecordStatus.Planned })!, 10, ct);
+        var templates =(await ListTemplates.LoadAsync(current, db, ct)).Where(t => t.IsPinned).ToList();
         var budgets = await BudgetEndpoints.LoadAsync(current, db, day, ct);
         var recurring = await RecurringEndpoints.LoadAsync(current, db, ct);
         var recent = await ListRecords.LatestAsync(db, RecordQueries.Filtered(db, current, new RecordFilter())!, 5, ct);
 
-        return TypedResults.Ok(new DashboardData(month, pending, templates, budgets, recurring, recent));
+        return TypedResults.Ok(new DashboardData(month, pending, planned, templates, budgets, recurring, recent));
     }
 }

@@ -94,6 +94,9 @@
     --tag-blue: #1d5fbf;
     --tag-violet: #6d3fc0;
     --tag-pink: #b0306a;
+
+    /* Calm accent for records waiting for a ✓; follows the theme through --tag-blue */
+    --attention: var(--tag-blue);
 }
 
 @media (prefers-color-scheme: dark) {

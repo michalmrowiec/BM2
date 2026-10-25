@@ -95,27 +95,16 @@
                             <a class="link" href="records?status=Pending&all=true">All</a>
                         </span>
                     </div>
-                    <ul class="list">
-                        @foreach (var record in _pending)
-                        {
-                            var label = record.Name ?? wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)?.Name ?? record.Type.ToString();
-                            <li class="template-row" @key="record.Id">
-                                <ListRow Title="@label" Subtitle="@record.OccurredOn.ToString("d MMM")" Href="@($"records/{record.Id}")">
-                                    <Leading>
-                                        <RecordAvatar Category="wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)" Type="record.Type"
-                                                      Fallback="@label" />
-                                    </Leading>
-                                    <Trailing>
-                                        <Amount Value="record.Amount" Currency="@record.Currency" Sign="TemplateText.Sign(record.Type)" />
-                                    </Trailing>
-                                </ListRow>
-                                <button type="button" class="icon-button pin-toggle" aria-label="@($"Confirm {label}")" disabled="@_busy"
-                                        @onclick="() => ConfirmAsync(record)">
-                                    <Icon Name="check" />
-                                </button>
-                            </li>
-                        }
-                    </ul>
+                    @OpenRecords(_pending, wallet)
+                }
+
+                @if (_planned.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Planned</h2>
+                        <a class="link" href="records?status=Planned&all=true">All</a>
+                    </div>
+                    @OpenRecords(_planned, wallet)
                 }
 
                 @if (_templates.Count > 0)
@@ -236,6 +225,31 @@
 
 @code {
     private bool _confirmAll;
+    private IReadOnlyList<RecordItem> _planned = [];
+
+    // Pending and planned records with a one-tap ✓ that marks them completed.
+    private RenderFragment OpenRecords(IReadOnlyList<RecordItem> records, WalletSnapshot wallet) =>
+        @<ul class="list">
+            @foreach (var record in records)
+            {
+                var label = record.Name ?? wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)?.Name ?? record.Type.ToString();
+                <li class="template-row record-row--@record.Status.ToString().ToLowerInvariant()" @key="record.Id">
+                    <ListRow Title="@label" Subtitle="@record.OccurredOn.ToString("d MMM")" Href="@($"records/{record.Id}")">
+                        <Leading>
+                            <RecordAvatar Category="wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)" Type="record.Type"
+                                          Fallback="@label" />
+                        </Leading>
+                        <Trailing>
+                            <Amount Value="record.Amount" Currency="@record.Currency" Sign="TemplateText.Sign(record.Type)" />
+                        </Trailing>
+                    </ListRow>
+                    <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {label} as completed")"
+                            title="Mark as completed" disabled="@_busy" @onclick="() => ConfirmAsync(record)">
+                        <Icon Name="check" />
+                    </button>
+                </li>
+            }
+        </ul>;
     private IReadOnlyList<RecordItem> _recent = [];
     private IReadOnlyList<TemplateItem> _templates = [];
     private RecordSummary? _month;
@@ -280,6 +294,7 @@
             .Take(10)
             .ToList();
         _pending = data.Pending;
+        _planned = data.Planned;
         _recent = data.Recent;
         _templates = data.PinnedTemplates;
         _month = data.Month;

@@ -9,6 +9,7 @@ namespace BM2.Contracts.Dashboard;
 public sealed record DashboardData(
     RecordSummary Month,
     IReadOnlyList<RecordItem> Pending,
+    IReadOnlyList<RecordItem> Planned,
     IReadOnlyList<TemplateItem> PinnedTemplates,
     BudgetOverview Budgets,
     IReadOnlyList<RecurringRuleItem> Recurring,
