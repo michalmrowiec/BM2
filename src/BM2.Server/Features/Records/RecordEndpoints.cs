@@ -13,6 +13,7 @@ public static class RecordEndpoints
         ListRecords.Map(records);
         GetRecordSummary.Map(records);
         GetRecordSuggestions.Map(records);
+        ExportRecords.Map(records);
         GetRecord.Map(records);
         CreateRecord.Map(records);
         UpdateRecord.Map(records);

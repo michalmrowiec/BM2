@@ -386,6 +386,46 @@ namespace BM2.Server.Data.Migrations
                     b.ToTable("RecurringRuleTag");
                 });
 
+            modelBuilder.Entity("BM2.Domain.Stats.PinnedChart", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Query")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WalletId", "UserId", "SortOrder");
+
+                    b.ToTable("PinnedCharts");
+                });
+
             modelBuilder.Entity("BM2.Domain.Tags.Tag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -890,6 +930,21 @@ namespace BM2.Server.Data.Migrations
                         .WithMany()
                         .HasForeignKey("TagId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BM2.Domain.Stats.PinnedChart", b =>
+                {
+                    b.HasOne("BM2.Server.Data.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BM2.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 

@@ -1,0 +1,35 @@
+@using BM2.Contracts.Stats
+@inject ApiClient Api
+@inject ToastService Toasts
+
+@* Saves the current stats view with its filters as a small chart on Home. *@
+<button type="button" class="btn btn-secondary btn-sm" disabled="@_busy" @onclick="PinAsync">
+    <Icon Name="pin" /> Pin to Home
+</button>
+
+@code {
+    private bool _busy;
+
+    [Parameter, EditorRequired] public Guid WalletId { get; set; }
+
+    [Parameter, EditorRequired] public PinnedChartKind Kind { get; set; }
+
+    /// <summary>Built on click, so it describes the filters at that moment.</summary>
+    [Parameter, EditorRequired] public Func<(string Title, string Query)> View { get; set; } = null!;
+
+    private async Task PinAsync()
+    {
+        _busy = true;
+        var (title, query) = View();
+        var result = await Api.PostAsync<PinnedChartItem>($"api/wallets/{WalletId}/pinned-charts", new PinChartRequest(Kind, title, query));
+        _busy = false;
+        if (result.Value is not null)
+        {
+            Toasts.Show($"Pinned to Home: {title}");
+        }
+        else
+        {
+            Toasts.Show(result.Problem?.Detail ?? "Could not pin the chart.", ToastKind.Error);
+        }
+    }
+}

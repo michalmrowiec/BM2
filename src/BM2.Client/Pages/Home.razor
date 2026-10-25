@@ -6,6 +6,8 @@
 @using BM2.Client.Components.Wallets
 @using BM2.Contracts.Records
 @using BM2.Contracts.Recurring
+@using BM2.Contracts.Stats
+@using BM2.Client.Components.Stats
 @using BM2.Contracts.Templates
 @using BM2.Contracts.Wallets
 @inherits WalletComponentBase
@@ -159,6 +161,20 @@
                     </ul>
                 }
 
+                @if (_pins.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Pinned charts</h2>
+                        <a class="link" href="stats">Stats</a>
+                    </div>
+                    <div class="pinned-charts">
+                        @foreach (var pin in _pins)
+                        {
+                            <PinnedChartCard @key="pin.Id" Wallet="wallet" Pin="pin" OnUnpin="UnpinAsync" />
+                        }
+                    </div>
+                }
+
                 @if (_upcoming.Count > 0)
                 {
                     <div class="section-header">
@@ -270,6 +286,7 @@
             }
         </ul>;
     private IReadOnlyList<RecordItem> _recent = [];
+    private IReadOnlyList<PinnedChartItem> _pins = [];
     private IReadOnlyList<TemplateItem> _templates = [];
     private RecordSummary? _month;
     private BudgetOverview? _budgets;
@@ -315,6 +332,7 @@
         _pending = data.Pending;
         _planned = data.Planned;
         _recent = data.Recent;
+        _pins = data.PinnedCharts;
         _templates = data.PinnedTemplates;
         _month = data.Month;
         _budgets = data.Budgets;
@@ -339,6 +357,20 @@
     {
         _confirmAll = false;
         return ConfirmManyAsync(_pending.ToList());
+    }
+
+    private async Task UnpinAsync(PinnedChartItem pin)
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{WalletState.Current!.Id}/pinned-charts/{pin.Id}");
+        if (result.Ok)
+        {
+            _pins = _pins.Where(p => p.Id != pin.Id).ToList();
+            Toasts.Show($"Unpinned: {pin.Title}");
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
     }
 
     private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)

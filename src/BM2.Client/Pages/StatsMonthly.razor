@@ -17,6 +17,7 @@
 else
 {
     <StatsFilters Wallet="Wallet" Mode="StatsFilterMode.Months" OnChanged="ReloadAsync" />
+    <div class="stats-actions"><PinButton WalletId="Wallet.Id" Kind="BM2.Contracts.Stats.PinnedChartKind.Monthly" View="PinView" /></div>
 
     @if (_monthly is null)
     {
@@ -42,6 +43,8 @@ else
 }
 
 @code {
+    private (string, string) PinView() => ("Income vs expenses · 12 months", PinnedChartQueries.Monthly(State));
+
     private WalletSnapshot? _loadedFor;
     private MonthlyTotals? _monthly;
     private object _chart = new();

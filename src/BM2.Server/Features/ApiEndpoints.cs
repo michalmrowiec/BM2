@@ -4,6 +4,7 @@ using BM2.Server.Features.Categories;
 using BM2.Server.Features.Dashboard;
 using BM2.Server.Features.Invitations;
 using BM2.Server.Features.Members;
+using BM2.Server.Features.PinnedCharts;
 using BM2.Server.Features.Profile;
 using BM2.Server.Features.Records;
 using BM2.Server.Features.Recurring;
@@ -31,6 +32,7 @@ public static class ApiEndpoints
         wallet.MapBudgetEndpoints();
         wallet.MapDashboardEndpoints();
         wallet.MapStatsEndpoints();
+        wallet.MapPinnedChartEndpoints();
         wallet.MapMemberEndpoints();
         wallet.MapInvitationManagementEndpoints();
         api.MapInvitationEndpoints();

@@ -75,6 +75,17 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   przez `Chart.razor.js`. Przy wykresie zawsze te same liczby tekstem (lista/tabela). Statystyki: `stats/categories`,
   `stats/monthly`, `stats/category-months` (rekordy `Completed` i `Pending`, bez transferów, jedna waluta kont, `tagIds` = dowolny
   z tagów); filtry ekranów Stats współdzieli scoped `StatsState` + komponent `StatsFilters`; kliknięcie słupka (id `Typ:yyyy-MM-dd`) lub kategorii otwiera `RecordsPreview` z rekordami.
+- **Prognoza, eksport, przypięte wykresy:** `stats/forecast` liczy na serwerze saldo dziś (Completed/Pending do dziś)
+  + wystąpienia reguł od `NextIndex` (`RecurrenceSchedule`) + rekordy po dzisiejszej dacie (i zaległe `Planned` na dziś)
+  + opcjonalnie średnia dzienna wydatków z 3 pełnych miesięcy z kategorii bez cyklicznych wydatków. `records/export`
+  bierze filtry listy (`format=csv|xlsx`, limit 50 tys.); CSV ręcznie (UTF-8 BOM, `;`, kropka dziesiętna, ochrona
+  przed formułami), XLSX przez ClosedXML (SixLabors.Fonts przypięte do 1.0.x – nowsze nie są Apache-2.0); klient
+  pobiera zwykłym linkiem `download`. `PinnedChart` (portfel + użytkownik, `Kind`, `Title`, `Query` jako zwykły tekst)
+  – zapytanie składa i czyta klient (`PinnedChartQueries`, okres „this month/year/12 months” bez dat, więc się
+  przesuwa); Home dostaje listę w `GET dashboard`, a dane każdego wykresu osobnym wywołaniem stats (`PinnedChartCard`).
+- **PWA:** `wwwroot/manifest.webmanifest`, ikony w `wwwroot/icons` (PNG generowane z marki), `wwwroot/service-worker.js`
+  rejestrowany w `BM2.Client.lib.module.js` (`afterWebStarted`). SW: nawigacje i `/api` zawsze z sieci, pliki
+  z fingerprintem cache-first, pozostałe statyczne network-first z fallbackiem; zmiana strategii = podbij `version`.
 - **Klient:** strony korzystające z portfela dziedziczą `WalletComponentBase` (`WalletState` z migawką portfela,
   ostatni wybór w `localStorage`); API przez `ApiClient` (`ApiResult`/`ApiProblem`, 401 → logowanie); formularze to
   `EditForm` na modyfikowalnym modelu z nazwami pól jak w requeście + `FluentValidator` (ten sam walidator co serwer,

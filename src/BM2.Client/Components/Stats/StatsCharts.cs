@@ -115,6 +115,50 @@ public static class StatsCharts
         };
     }
 
+    /// <summary>Forecast balance as a line, with a dashed zero line.</summary>
+    public static object Forecast(IReadOnlyList<ForecastPoint> points) => new
+    {
+        grid = new { left = 4, right = 8, top = 12, bottom = 4, containLabel = true },
+        tooltip = new { trigger = "axis" },
+        xAxis = new
+        {
+            type = "category",
+            boundaryGap = false,
+            data = points.Select(p => p.Date.ToString("d MMM", CultureInfo.CurrentCulture)).ToList(),
+            axisTick = new { show = false },
+            axisLine = new { lineStyle = new { color = "var(--rule)" } },
+            axisLabel = new { color = "var(--ink-muted)" },
+        },
+        yAxis = new
+        {
+            type = "value",
+            scale = true,
+            splitLine = new { lineStyle = new { color = "var(--rule)" } },
+            axisLabel = new { color = "var(--ink-muted)", fontFamily = NumberFont },
+        },
+        series = new object[]
+        {
+            new
+            {
+                name = "Balance",
+                type = "line",
+                data = points.Select(p => p.Balance).ToList(),
+                symbol = "none",
+                lineStyle = new { color = "var(--ink)", width = 2 },
+                itemStyle = new { color = "var(--ink)" },
+                areaStyle = new { color = "var(--wash)" },
+                markLine = new
+                {
+                    silent = true,
+                    symbol = "none",
+                    label = new { show = false },
+                    lineStyle = new { color = "var(--negative)", type = "dashed" },
+                    data = new[] { new { yAxis = 0 } },
+                },
+            },
+        },
+    };
+
     // Each bar's id ("Expense:2026-10-01") tells a click which records it stands for.
     private static object Bars(string name, RecordType type, IReadOnlyList<MonthTotal> items, Func<MonthTotal, decimal> value, string color) => new
     {

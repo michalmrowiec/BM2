@@ -34,6 +34,12 @@ public sealed class StatsState
 
     public Guid? TagCategoryId { get; set; }
 
+    public int ForecastMonths { get; set; } = 6;
+
+    public ForecastStep ForecastStep { get; set; } = ForecastStep.Week;
+
+    public bool ForecastAverages { get; set; } = true;
+
     /// <summary>Months (1–12) of the anchor year counted in averages; null means the default.</summary>
     public IReadOnlyCollection<int>? AverageMonths { get; set; }
 

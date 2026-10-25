@@ -4,6 +4,7 @@ using BM2.Domain.Categories;
 using BM2.Domain.Invitations;
 using BM2.Domain.Records;
 using BM2.Domain.Recurring;
+using BM2.Domain.Stats;
 using BM2.Domain.Tags;
 using BM2.Domain.Templates;
 using BM2.Domain.Wallets;
@@ -40,6 +41,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<RecurringRule> RecurringRules => Set<RecurringRule>();
 
     public DbSet<Budget> Budgets => Set<Budget>();
+
+    public DbSet<PinnedChart> PinnedCharts => Set<PinnedChart>();
 
     // Pinned so the model does not depend on IdentityOptions from DI (schema v3 adds passkeys).
     protected override Version SchemaVersion => IdentitySchemaVersions.Version3;

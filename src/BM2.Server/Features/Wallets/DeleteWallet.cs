@@ -26,6 +26,7 @@ internal static class DeleteWallet
         await db.Records.Where(r => r.Account.WalletId == walletId).ExecuteDeleteAsync(ct);
         await db.RecurringRules.Where(r => r.WalletId == walletId).ExecuteDeleteAsync(ct);
         await db.Templates.Where(t => t.WalletId == walletId).ExecuteDeleteAsync(ct);
+        await db.PinnedCharts.Where(p => p.WalletId == walletId).ExecuteDeleteAsync(ct);
         await db.Tags.Where(t => t.WalletId == walletId).ExecuteDeleteAsync(ct);
         await db.Categories.Where(c => c.WalletId == walletId).ExecuteDeleteAsync(ct);
         await db.Accounts.Where(a => a.WalletId == walletId).ExecuteDeleteAsync(ct);

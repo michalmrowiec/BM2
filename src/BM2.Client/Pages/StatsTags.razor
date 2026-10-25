@@ -30,6 +30,10 @@ else
         <SelectField Label="Category" Options="CategoryOptions" @bind-Value="State.TagCategoryId" @bind-Value:after="ReloadAsync"
                      Hint="Optional: only this category within the tags." />
     </StatsFilters>
+    @if (State.TagIds.Count > 0)
+    {
+        <div class="stats-actions"><PinButton WalletId="Wallet.Id" Kind="BM2.Contracts.Stats.PinnedChartKind.Tags" View="PinView" /></div>
+    }
 
     @if (State.TagIds.Count == 0)
     {
@@ -67,6 +71,13 @@ else
 }
 
 @code {
+    private (string, string) PinView()
+    {
+        var names = string.Join(", ", Wallet!.Tags.Where(t => State.TagIds.Contains(t.Id)).Select(t => t.Name));
+        var title = $"Tags: {names}";
+        return (title.Length > 100 ? title[..99] + "…" : title, PinnedChartQueries.Monthly(State, State.TagCategoryId, State.TagIds));
+    }
+
     private WalletSnapshot? _loadedFor;
     private CategoryTotals? _categories;
     private MonthlyTotals? _monthly;

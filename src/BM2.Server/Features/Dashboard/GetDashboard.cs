@@ -2,10 +2,12 @@ using BM2.Contracts.Dashboard;
 using BM2.Contracts.Records;
 using BM2.Server.Data;
 using BM2.Server.Features.Budgets;
+using BM2.Server.Features.PinnedCharts;
 using BM2.Server.Features.Records;
 using BM2.Server.Features.Recurring;
 using BM2.Server.Features.Templates;
 using BM2.Server.Features.Wallets;
+using BM2.Server.Infrastructure;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BM2.Server.Features.Dashboard;
@@ -20,7 +22,7 @@ internal static class GetDashboard
 
     /// <param name="today">The device's date, so the month matches the user's time zone.</param>
     private static async Task<Ok<DashboardData>> HandleAsync(
-        CurrentWallet current, AppDbContext db, TimeProvider time, CancellationToken ct, DateOnly? today = null)
+        CurrentWallet current, ICurrentUser user, AppDbContext db, TimeProvider time, CancellationToken ct, DateOnly? today = null)
     {
         var day = today ?? DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime);
         var start = new DateOnly(day.Year, day.Month, 1);
@@ -35,6 +37,8 @@ internal static class GetDashboard
         var recurring = await RecurringEndpoints.LoadAsync(current, db, ct);
         var recent = await ListRecords.LatestAsync(db, RecordQueries.Filtered(db, current, new RecordFilter())!, 5, ct);
 
-        return TypedResults.Ok(new DashboardData(month, pending, planned, templates, budgets, recurring, recent));
+        var pins = await PinnedChartEndpoints.LoadAsync(current, user, db, ct);
+
+        return TypedResults.Ok(new DashboardData(month, pending, planned, templates, budgets, recurring, recent, pins));
     }
 }

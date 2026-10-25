@@ -2193,3 +2193,52 @@ button.list-row:hover { background: var(--wash); }
 .stats-table th:first-child { text-align: left; font-weight: 500; }
 
 .stats-table thead th { color: var(--ink-muted); font-weight: 600; }
+
+/* Pin to Home, forecast, pinned charts on Home */
+.stats-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: var(--space-3) 0;
+}
+
+.chart--small { height: 10rem; }
+
+.pinned-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--space-3);
+}
+
+.pinned-chart { padding: var(--space-3) var(--space-4); }
+
+.pinned-chart__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.pinned-chart__title {
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.pinned-chart__title:hover { text-decoration: underline; }
+
+.pinned-chart__figure {
+    margin: var(--space-1) 0 var(--space-2);
+    font-size: var(--text-s);
+    color: var(--ink-muted);
+}
+
+/* Records export */
+.export-options {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.page-header__actions {
+    display: flex;
+    gap: var(--space-2);
+}

@@ -21,6 +21,7 @@ public static class StatsEndpoints
         stats.MapGet("/categories", CategoriesAsync);
         stats.MapGet("/monthly", MonthlyAsync);
         stats.MapGet("/category-months", CategoryMonthsAsync);
+        GetForecast.Map(stats);
         return wallet;
     }
 

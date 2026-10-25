@@ -5,6 +5,7 @@ using BM2.Contracts.Categories;
 using BM2.Contracts.Invitations;
 using BM2.Contracts.Members;
 using BM2.Contracts.Records;
+using BM2.Contracts.Stats;
 using BM2.Contracts.Tags;
 using BM2.Contracts.Wallets;
 using BM2.IntegrationTests.Infrastructure;
@@ -34,6 +35,9 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         new("GET", "/api/wallets/{w}/stats/categories", null, MemberRole.Viewer),
         new("GET", "/api/wallets/{w}/stats/monthly", null, MemberRole.Viewer),
         new("GET", "/api/wallets/{w}/stats/category-months", null, MemberRole.Viewer),
+        new("GET", "/api/wallets/{w}/stats/forecast", null, MemberRole.Viewer),
+        new("GET", "/api/wallets/{w}/records/export", null, MemberRole.Viewer),
+        new("POST", "/api/wallets/{w}/pinned-charts", _ => new PinChartRequest(PinnedChartKind.Monthly, "Monthly", ""), MemberRole.Viewer),
         new("POST", "/api/wallets/{w}/records", ValidRecord, MemberRole.Editor),
         new("PUT", "/api/wallets/{w}/records/{r}", ValidRecord, MemberRole.Editor),
         new("DELETE", "/api/wallets/{w}/records/{r}", null, MemberRole.Editor),

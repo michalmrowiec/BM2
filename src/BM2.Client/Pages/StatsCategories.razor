@@ -21,6 +21,7 @@ else
     <StatsFilters Wallet="Wallet" OnChanged="ReloadAsync">
         <SegmentedControl Label="Record type" Options="TypeOptions" Value="State.Type" ValueChanged="(RecordType t) => SetTypeAsync(t)" />
     </StatsFilters>
+    <div class="stats-actions"><PinButton WalletId="Wallet.Id" Kind="BM2.Contracts.Stats.PinnedChartKind.Categories" View="PinView" /></div>
 
     @if (_totals is null)
     {
@@ -64,6 +65,18 @@ else
 }
 
 @code {
+    private (string, string) PinView()
+    {
+        var period = State.Period switch
+        {
+            StatsPeriod.Month => "this month",
+            StatsPeriod.Year => "this year",
+            _ => $"{State.From:d MMM} – {State.To:d MMM yyyy}",
+        };
+        var noun = State.Type == RecordType.Income ? "Income" : "Expenses";
+        return ($"{noun} by category · {period}", PinnedChartQueries.Categories(State));
+    }
+
     private static readonly IReadOnlyList<(RecordType, string)> TypeOptions =
         [(RecordType.Expense, "Expenses"), (RecordType.Income, "Income")];
 

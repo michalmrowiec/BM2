@@ -15,13 +15,18 @@
 
 <header class="page-header">
     <h1 class="page-title">Records</h1>
-    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _filtersOpen = true">
-        <Icon Name="filter" /> Filters
-        @if (ActiveFilters.Count > 0)
-        {
-            <span class="badge" aria-label="@($"{ActiveFilters.Count} active")">@ActiveFilters.Count</span>
-        }
-    </button>
+    <div class="page-header__actions">
+        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _exportOpen = true">
+            <Icon Name="share" /> Export
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _filtersOpen = true">
+            <Icon Name="filter" /> Filters
+            @if (ActiveFilters.Count > 0)
+            {
+                <span class="badge" aria-label="@($"{ActiveFilters.Count} active")">@ActiveFilters.Count</span>
+            }
+        </button>
+    </div>
 </header>
 
 <div class="records-toolbar">
@@ -112,6 +117,17 @@ else
 {
     <RecordFilterSheet Open="_filtersOpen" OpenChanged="v => _filtersOpen = v" Wallet="Wallet" Value="CurrentFilter"
                        ValueChanged="ApplyFilters" />
+
+    <Sheet Open="_exportOpen" OpenChanged="v => _exportOpen = v" Title="Export records">
+        <p class="muted">
+            Downloads the records shown with the current period and filters@(ActiveFilters.Count > 0 ? $" ({ActiveFilters.Count} active)" : ""),
+            newest first, up to 50,000. Expenses and transfers out are negative.
+        </p>
+        <div class="export-options">
+            <a class="btn btn-primary" href="@ExportUrl("xlsx")" download @onclick="() => _exportOpen = false">Excel (.xlsx)</a>
+            <a class="btn btn-secondary" href="@ExportUrl("csv")" download @onclick="() => _exportOpen = false">CSV (semicolon, UTF-8)</a>
+        </div>
+    </Sheet>
 }
 
 @code {
@@ -125,6 +141,7 @@ else
     private bool _loadingMore;
     private bool _failed;
     private bool _filtersOpen;
+    private bool _exportOpen;
     private string? _search;
     private CancellationTokenSource? _debounce;
     private ElementReference _sentinel;
@@ -159,6 +176,12 @@ else
     private DateOnly MonthStart => DateOnly.TryParseExact(Month, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var month)
         ? month
         : new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+    private string ExportUrl(string format)
+    {
+        var query = CurrentFilter.ToQueryString();
+        return $"api/wallets/{Wallet!.Id}/records/export{query}{(query.Length == 0 ? "?" : "&")}format={format}";
+    }
 
     private RecordFilter CurrentFilter => new()
     {
