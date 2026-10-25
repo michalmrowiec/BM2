@@ -6,7 +6,11 @@
 
 @* The records behind a chart bar or a list row: same filters as the stats (no planned, one currency). *@
 <Sheet Open="Query is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(Query?.Title ?? "Records")">
-    @if (_items is null)
+    @if (Query is null)
+    {
+        @* Closing: nothing to show. *@
+    }
+    else if (_items is null)
     {
         <p class="muted" aria-busy="true">Loading…</p>
     }
@@ -55,7 +59,14 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Query is null || ReferenceEquals(Query, _loaded))
+        if (Query is null)
+        {
+            _loaded = null;
+            _items = null;
+            return;
+        }
+
+        if (ReferenceEquals(Query, _loaded))
         {
             return;
         }

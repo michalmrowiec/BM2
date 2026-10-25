@@ -5,9 +5,12 @@
 <div class="field">
     <label class="field__label" for="@FieldId">@Label</label>
     <div class="date-field">
-        <input @attributes="AdditionalAttributes" id="@FieldId" class="field__control" type="date" value="@CurrentValueAsString"
-               @onchange="e => CurrentValueAsString = e.Value?.ToString()"
-               aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
+        @* A button with the app's own calendar: the browser's date picker can't be styled. *@
+        <button type="button" @attributes="AdditionalAttributes" id="@FieldId" class="field__control date-field__button" value="@CurrentValueAsString" aria-haspopup="dialog"
+                aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" @onclick="() => _open = true">
+            <span>@CurrentValue.ToString("ddd, d MMM yyyy", CultureInfo.CurrentCulture)</span>
+            <Icon Name="calendar" />
+        </button>
         <div class="date-field__shortcuts">
             <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">Today</button>
             <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">Yesterday</button>
@@ -16,7 +19,22 @@
     <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
 </div>
 
+<Sheet Open="_open" OpenChanged="v => _open = v" Title="@Label">
+    @if (_open)
+    {
+        <CalendarGrid Value="CurrentValue" ValueChanged="Pick" />
+    }
+</Sheet>
+
 @code {
+    private bool _open;
+
+    private void Pick(DateOnly day)
+    {
+        CurrentValue = day;
+        _open = false;
+    }
+
     // The user's calendar day, from the device clock.
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
 

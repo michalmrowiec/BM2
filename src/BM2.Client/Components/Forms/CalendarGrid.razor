@@ -1,0 +1,57 @@
+@using System.Globalization
+
+@* Month grid for DateField: weeks start on the culture's first day; outside days show the neighbouring months. *@
+<div class="calendar">
+    <div class="calendar__head">
+        <button type="button" class="icon-button" aria-label="Previous month" @onclick="() => _month = _month.AddMonths(-1)">
+            <Icon Name="arrow-left" />
+        </button>
+        <span class="calendar__title" aria-live="polite">@_month.ToString("MMMM yyyy", Culture)</span>
+        <button type="button" class="icon-button" aria-label="Next month" @onclick="() => _month = _month.AddMonths(1)">
+            <Icon Name="arrow-right" />
+        </button>
+    </div>
+    <div class="calendar__grid">
+        @foreach (var name in DayNames)
+        {
+            <span class="calendar__weekday" aria-hidden="true">@name</span>
+        }
+        @foreach (var day in Days)
+        {
+            <button type="button" class="calendar__day @(day.Month == _month.Month ? null : "is-outside")"
+                    aria-pressed="@(day == Value ? "true" : "false")" aria-current="@(day == Today ? "date" : null)"
+                    aria-label="@day.ToString("D", Culture)" @onclick="() => ValueChanged.InvokeAsync(day)">
+                @day.Day
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private DateOnly _month;
+
+    [Parameter] public DateOnly Value { get; set; }
+
+    [Parameter] public EventCallback<DateOnly> ValueChanged { get; set; }
+
+    private static CultureInfo Culture => CultureInfo.CurrentCulture;
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
+
+    private static DayOfWeek FirstDay => Culture.DateTimeFormat.FirstDayOfWeek;
+
+    private static IEnumerable<string> DayNames =>
+        Enumerable.Range(0, 7).Select(i => Culture.DateTimeFormat.ShortestDayNames[((int)FirstDay + i) % 7]);
+
+    // Six full weeks, so the grid keeps its height from month to month.
+    private IEnumerable<DateOnly> Days
+    {
+        get
+        {
+            var start = _month.AddDays(-(((int)_month.DayOfWeek - (int)FirstDay + 7) % 7));
+            return Enumerable.Range(0, 42).Select(start.AddDays);
+        }
+    }
+
+    protected override void OnInitialized() => _month = new DateOnly(Value.Year, Value.Month, 1);
+}
