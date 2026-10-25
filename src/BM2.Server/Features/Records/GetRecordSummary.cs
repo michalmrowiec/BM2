@@ -20,6 +20,11 @@ internal static class GetRecordSummary
             return Error.NotFound().ToProblem();
         }
 
+        return TypedResults.Ok(await SummarizeAsync(query, ct));
+    }
+
+    public static async Task<RecordSummary> SummarizeAsync(IQueryable<Domain.Records.Record> query, CancellationToken ct)
+    {
         var totals = await query
             .Where(r => r.Type != RecordType.Transfer)
             .GroupBy(r => r.Account.Currency)
@@ -30,6 +35,6 @@ internal static class GetRecordSummary
                 g.Sum(r => r.Type == RecordType.Expense ? r.AccountAmount : 0m)))
             .ToListAsync(ct);
 
-        return TypedResults.Ok(new RecordSummary(totals));
+        return new RecordSummary(totals);
     }
 }

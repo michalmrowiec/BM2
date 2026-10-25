@@ -1,4 +1,5 @@
 using BM2.Domain.Accounts;
+using BM2.Domain.Budgets;
 using BM2.Domain.Categories;
 using BM2.Domain.Invitations;
 using BM2.Domain.Records;
@@ -37,6 +38,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Template> Templates => Set<Template>();
 
     public DbSet<RecurringRule> RecurringRules => Set<RecurringRule>();
+
+    public DbSet<Budget> Budgets => Set<Budget>();
 
     // Pinned so the model does not depend on IdentityOptions from DI (schema v3 adds passkeys).
     protected override Version SchemaVersion => IdentitySchemaVersions.Version3;

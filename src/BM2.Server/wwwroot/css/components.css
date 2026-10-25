@@ -1621,3 +1621,116 @@ button.list-row:hover { background: var(--wash); }
         left: calc(50% + var(--rail-w) / 2);
     }
 }
+
+/* Budgets */
+.month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin: var(--space-4) 0;
+}
+
+.month-nav__label {
+    font-family: var(--font-display);
+    font-size: var(--text-l);
+    font-weight: 600;
+}
+
+.budget-total {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-m);
+}
+
+.budget-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.budget-list__button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.budget {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-l);
+    background: var(--sheet);
+}
+
+.budget-list__button:hover .budget { background: var(--sheet-raised); }
+
+.budget__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.budget__name {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 600;
+    min-width: 0;
+}
+
+.budget__state {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-s);
+    color: var(--ink-muted);
+    white-space: nowrap;
+}
+
+.budget--over .budget__state {
+    color: var(--negative);
+    font-weight: 600;
+}
+
+.budget__bar {
+    width: 100%;
+    height: 0.5rem;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--wash);
+    overflow: hidden;
+    appearance: none;
+}
+
+.budget__bar::-webkit-progress-bar { background: var(--wash); border-radius: var(--radius-pill); }
+.budget__bar::-webkit-progress-value { background: var(--ink); border-radius: var(--radius-pill); }
+.budget__bar::-moz-progress-bar { background: var(--ink); border-radius: var(--radius-pill); }
+.budget--over .budget__bar::-webkit-progress-value { background: var(--negative); }
+.budget--over .budget__bar::-moz-progress-bar { background: var(--negative); }
+
+.budget__numbers {
+    font-size: var(--text-s);
+}
+
+.budget__note {
+    font-size: var(--text-xs);
+    color: var(--ink-muted);
+}
+
+/* Home: the month's balance spans the row under income and expenses */
+.month-stats--three .stat:nth-child(3n) { grid-column: 1 / -1; }
+
+.month-stats + .section-header,
+.month-stats + .section-title,
+.budget-list + .section-header { margin-top: var(--space-5); }

@@ -1,5 +1,7 @@
 using BM2.Server.Features.Accounts;
+using BM2.Server.Features.Budgets;
 using BM2.Server.Features.Categories;
+using BM2.Server.Features.Dashboard;
 using BM2.Server.Features.Invitations;
 using BM2.Server.Features.Members;
 using BM2.Server.Features.Profile;
@@ -25,6 +27,8 @@ public static class ApiEndpoints
         wallet.MapRecordEndpoints();
         wallet.MapTemplateEndpoints();
         wallet.MapRecurringEndpoints();
+        wallet.MapBudgetEndpoints();
+        wallet.MapDashboardEndpoints();
         wallet.MapMemberEndpoints();
         wallet.MapInvitationManagementEndpoints();
         api.MapInvitationEndpoints();

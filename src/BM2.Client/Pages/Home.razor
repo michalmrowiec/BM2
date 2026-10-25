@@ -1,5 +1,8 @@
 ﻿@page "/"
+@using BM2.Client.Components.Budgets
 @using BM2.Client.Components.Records
+@using BM2.Contracts.Budgets
+@using BM2.Contracts.Dashboard
 @using BM2.Client.Components.Wallets
 @using BM2.Contracts.Records
 @using BM2.Contracts.Recurring
@@ -56,28 +59,26 @@
                     }
                 </ul>
 
-                @if (_templates.Count > 0)
+                @if (_month?.Totals.Count > 0)
                 {
-                    <div class="section-header">
-                        <h2 class="section-title">Quick add</h2>
-                        <a class="link" href="templates">Templates</a>
-                    </div>
-                    <ul class="template-bar">
-                        @foreach (var template in _templates)
+                    <h2 class="section-title">@DateTime.Now.ToString("MMMM")</h2>
+                    <div class="month-stats month-stats--three">
+                        @foreach (var total in _month.Totals)
                         {
-                            <li>
-                                <a class="template-tile" href="@($"records/new?template={template.Id}")">
-                                    <RecordAvatar Category="TemplateText.CategoryOf(template, wallet)" Type="template.Type"
-                                                  Fallback="@TemplateText.Label(template, wallet)" />
-                                    <span class="template-tile__label">@TemplateText.Label(template, wallet)</span>
-                                    @if (template.Amount is { } amount)
-                                    {
-                                        <Amount Value="amount" Currency="@TemplateText.Currency(template, wallet)" Sign="TemplateText.Sign(template.Type)" />
-                                    }
-                                </a>
-                            </li>
+                            <a class="stat" href="records?type=Income">
+                                <span class="stat__label">Income</span>
+                                <Amount Value="total.Income" Currency="@total.Currency" Sign="AmountSign.Plus" />
+                            </a>
+                            <a class="stat" href="records?type=Expense">
+                                <span class="stat__label">Expenses</span>
+                                <Amount Value="total.Expense" Currency="@total.Currency" Sign="AmountSign.Minus" />
+                            </a>
+                            <a class="stat" href="records">
+                                <span class="stat__label">Balance</span>
+                                <Amount Value="total.Income - total.Expense" Currency="@total.Currency" />
+                            </a>
                         }
-                    </ul>
+                    </div>
                 }
 
                 @if (_pending.Count > 0)
@@ -109,6 +110,49 @@
                     </ul>
                 }
 
+                @if (_templates.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Quick add</h2>
+                        <a class="link" href="templates">Templates</a>
+                    </div>
+                    <ul class="template-bar">
+                        @foreach (var template in _templates)
+                        {
+                            <li>
+                                <a class="template-tile" href="@($"records/new?template={template.Id}")">
+                                    <RecordAvatar Category="TemplateText.CategoryOf(template, wallet)" Type="template.Type"
+                                                  Fallback="@TemplateText.Label(template, wallet)" />
+                                    <span class="template-tile__label">@TemplateText.Label(template, wallet)</span>
+                                    @if (template.Amount is { } amount)
+                                    {
+                                        <Amount Value="amount" Currency="@TemplateText.Currency(template, wallet)" Sign="TemplateText.Sign(template.Type)" />
+                                    }
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (_budgets is { Items.Count: > 0 } budgets)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Budgets</h2>
+                        <a class="link" href="budgets">All budgets</a>
+                    </div>
+                    <ul class="budget-list">
+                        @foreach (var item in BudgetBar.ByUsage(budgets.Items).Take(4))
+                        {
+                            <li @key="item.Id">
+                                <a class="budget-list__button" href="budgets">
+                                    <BudgetBar Item="item" Currency="@budgets.Currency"
+                                               Category="wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId)" />
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+
                 @if (_upcoming.Count > 0)
                 {
                     <div class="section-header">
@@ -133,24 +177,6 @@
                             </li>
                         }
                     </ul>
-                }
-
-                @if (_month?.Totals.Count > 0)
-                {
-                    <h2 class="section-title">This month</h2>
-                    <div class="month-stats">
-                        @foreach (var total in _month.Totals)
-                        {
-                            <a class="stat" href="records?type=Income">
-                                <span class="stat__label">Income</span>
-                                <Amount Value="total.Income" Currency="@total.Currency" Sign="AmountSign.Plus" />
-                            </a>
-                            <a class="stat" href="records?type=Expense">
-                                <span class="stat__label">Expenses</span>
-                                <Amount Value="total.Expense" Currency="@total.Currency" Sign="AmountSign.Minus" />
-                            </a>
-                        }
-                    </div>
                 }
 
                 @if (_recent.Count > 0)
@@ -199,6 +225,7 @@
     private IReadOnlyList<RecordItem> _recent = [];
     private IReadOnlyList<TemplateItem> _templates = [];
     private RecordSummary? _month;
+    private BudgetOverview? _budgets;
     private IReadOnlyList<RecordItem> _pending = [];
     private IReadOnlyList<(RecurringRuleItem Rule, int Index, DateOnly Date)> _upcoming = [];
     private bool _busy;
@@ -223,28 +250,26 @@
         }
 
         _loadedFor = wallet;
-        var monthStart = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1);
-        var month = new RecordFilter { From = monthStart, To = monthStart.AddMonths(1), Status = RecordStatus.Completed };
-        var recent = Api.GetAsync<RecordPage>($"api/wallets/{wallet.Id}/records{new RecordFilter { Limit = 5 }.ToQueryString()}");
-        var summary = Api.GetAsync<RecordSummary>($"api/wallets/{wallet.Id}/records/summary{month.ToQueryString()}");
-        var templates = Api.GetAsync<List<TemplateItem>>($"api/wallets/{wallet.Id}/templates");
-        var pending = Api.GetAsync<RecordPage>(
-            $"api/wallets/{wallet.Id}/records{new RecordFilter { Status = RecordStatus.Pending, Limit = 10 }.ToQueryString()}");
-        var rules = Api.GetAsync<List<RecurringRuleItem>>($"api/wallets/{wallet.Id}/recurring");
 
         // Warms the cache, so the record form opens with suggestions.
         _ = WalletState.GetSuggestionsAsync();
-        await Task.WhenAll(recent, summary, templates, pending, rules);
-        _pending = pending.Result.Value?.Items ?? [];
+        var result = await Api.GetAsync<DashboardData>($"api/wallets/{wallet.Id}/dashboard?today={DateTime.Now:yyyy-MM-dd}");
+        if (result.Value is not { } data)
+        {
+            return;
+        }
+
         var until = DateOnly.FromDateTime(DateTime.Now).AddDays(30);
-        _upcoming = (rules.Result.Value ?? [])
+        _upcoming = data.Recurring
             .SelectMany(r => RecurringText.Upcoming(r, until).Select(o => (r, o.Index, o.Date)))
             .OrderBy(o => o.Date)
             .Take(10)
             .ToList();
-        _recent = recent.Result.Value?.Items ?? [];
-        _templates = templates.Result.Value?.Where(t => t.IsPinned).ToList() ?? [];
-        _month = summary.Result.Value;
+        _pending = data.Pending;
+        _recent = data.Recent;
+        _templates = data.PinnedTemplates;
+        _month = data.Month;
+        _budgets = data.Budgets;
     }
 
     private async Task ConfirmAsync(RecordItem r)

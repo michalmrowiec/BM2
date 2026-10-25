@@ -37,20 +37,30 @@ internal static class ListRecords
         var pageSize = Math.Clamp(filter.Limit ?? MaxPageSize, 1, MaxPageSize);
 
         // Keys first, then the page's items: keeps the TOP query free of the tag collection.
-        var keys = await query
-            .OrderByDescending(r => r.OccurredOn).ThenByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id)
-            .Select(r => new RecordCursor(r.OccurredOn, r.CreatedAt, r.Id))
+        var keys = await Latest(query)
             .Take(pageSize + 1)
             .ToListAsync(ct);
         var page = keys.Take(pageSize).ToList();
-        var ids = page.Select(k => k.Id).ToList();
+        var next = keys.Count > pageSize ? page[^1].Encode() : null;
+        return TypedResults.Ok(new RecordPage(await ItemsAsync(db, page, ct), next));
+    }
+
+    /// <summary>The newest <paramref name="count"/> records of the query.</summary>
+    public static async Task<List<RecordItem>> LatestAsync(AppDbContext db, IQueryable<Domain.Records.Record> query, int count, CancellationToken ct) =>
+        await ItemsAsync(db, await Latest(query).Take(count).ToListAsync(ct), ct);
+
+    private static IQueryable<RecordCursor> Latest(IQueryable<Domain.Records.Record> query) => query
+        .OrderByDescending(r => r.OccurredOn).ThenByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id)
+        .Select(r => new RecordCursor(r.OccurredOn, r.CreatedAt, r.Id));
+
+    private static async Task<List<RecordItem>> ItemsAsync(AppDbContext db, List<RecordCursor> keys, CancellationToken ct)
+    {
+        var ids = keys.Select(k => k.Id).ToList();
         var items = await db.Records
             .AsNoTracking()
             .Where(r => ids.Contains(r.Id))
             .Select(RecordQueries.ToItem)
             .ToDictionaryAsync(i => i.Id, ct);
-
-        var next = keys.Count > pageSize ? page[^1].Encode() : null;
-        return TypedResults.Ok(new RecordPage(page.Select(k => items[k.Id]).ToList(), next));
+        return keys.Select(k => items[k.Id]).ToList();
     }
 }

@@ -10,7 +10,10 @@ internal static class ListTemplates
 {
     public static void Map(RouteGroupBuilder templates) => templates.MapGet("/", HandleAsync);
 
-    private static async Task<Ok<List<TemplateItem>>> HandleAsync(CurrentWallet current, AppDbContext db, CancellationToken ct)
+    private static async Task<Ok<List<TemplateItem>>> HandleAsync(CurrentWallet current, AppDbContext db, CancellationToken ct) =>
+        TypedResults.Ok(await LoadAsync(current, db, ct));
+
+    public static async Task<List<TemplateItem>> LoadAsync(CurrentWallet current, AppDbContext db, CancellationToken ct)
     {
         var access = current.Access;
         var walletId = current.Id;
@@ -32,7 +35,7 @@ internal static class ListTemplates
             .ToHashSet();
         var tags = (await db.Tags.Where(t => t.WalletId == walletId && !t.IsArchived).Select(t => t.Id).ToListAsync(ct)).ToHashSet();
 
-        return TypedResults.Ok(templates
+        return templates
             .Select(t => new TemplateItem(
                 t.Id,
                 t.Type,
@@ -44,7 +47,7 @@ internal static class ListTemplates
                 t.Name,
                 t.TagIds.Where(tags.Contains).ToList(),
                 t.IsPinned))
-            .ToList());
+            .ToList();
     }
 
     private static Guid? Keep(Guid? id, HashSet<Guid> active) => id is { } value && active.Contains(value) ? value : null;

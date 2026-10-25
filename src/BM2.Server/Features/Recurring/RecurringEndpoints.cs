@@ -26,7 +26,10 @@ public static class RecurringEndpoints
         return wallet;
     }
 
-    private static async Task<Ok<List<RecurringRuleItem>>> ListAsync(CurrentWallet current, AppDbContext db, CancellationToken ct)
+    private static async Task<Ok<List<RecurringRuleItem>>> ListAsync(CurrentWallet current, AppDbContext db, CancellationToken ct) =>
+        TypedResults.Ok(await LoadAsync(current, db, ct));
+
+    internal static async Task<List<RecurringRuleItem>> LoadAsync(CurrentWallet current, AppDbContext db, CancellationToken ct)
     {
         var access = current.Access;
         var walletId = current.Id;
@@ -43,10 +46,10 @@ public static class RecurringEndpoints
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(g => g.Key, g => g.Count, ct);
 
-        return TypedResults.Ok(rules
+        return rules
             .Where(r => access.CanReadRecord(r.AccountId, r.TransferAccountId))
             .Select(r => ToItem(r, counts.GetValueOrDefault(r.Id)))
-            .ToList());
+            .ToList();
     }
 
     private static async Task<Results<Created<RecurringRuleItem>, ProblemHttpResult>> CreateAsync(
