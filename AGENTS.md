@@ -59,7 +59,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   portfela z trasy. Każdy nowy endpoint portfela dopisuje przypadek do `WalletEndpointAccessTests`.
 - **Rekordy:** kwota nieujemna (0 dozwolone), kierunek wynika z typu (wydatek/przychód/transfer jako jeden wiersz); data rekordu
   `DateOnly` (`date`), momenty `DateTimeOffset` UTC z wstrzykiwanego `TimeProvider`; saldo = saldo otwarcia + rekordy
-  `Completed`; sumy zawsze per waluta konta.
+  `Completed` i `Pending` (`Planned` tylko w prognozie „with planned” – saldo i budżet); sumy zawsze per waluta konta.
 - **Szablony i podpowiedzi:** `Template` (portfel, pola opcjonalne, bez FK do kont/kategorii – zarchiwizowane
   lub usunięte `ListTemplates` zwraca jako puste; etykieta = nazwa albo kategoria). Ikona kategorii to klucz z
   `CategoryIcons` (SVG w `Icon`), kolor tagu to klucz z `TagColors` (tokeny `--tag-*`, klasa `tag-color--*`); ikonę
@@ -73,7 +73,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Wykresy:** komponent `Chart` (opcje ECharts, kolory jako `"var(--token)"`, przerysowanie po zmianie motywu, bez
   animacji przy `prefers-reduced-motion`); ECharts 5.6.0 lokalnie w `BM2.Server/wwwroot/lib/echarts`, ładowany leniwie
   przez `Chart.razor.js`. Przy wykresie zawsze te same liczby tekstem (lista/tabela). Statystyki: `stats/categories`,
-  `stats/monthly`, `stats/category-months` (rekordy `Completed`, bez transferów, jedna waluta kont, `tagIds` = dowolny
+  `stats/monthly`, `stats/category-months` (rekordy `Completed` i `Pending`, bez transferów, jedna waluta kont, `tagIds` = dowolny
   z tagów); filtry ekranów Stats współdzieli scoped `StatsState` + komponent `StatsFilters`.
 - **Klient:** strony korzystające z portfela dziedziczą `WalletComponentBase` (`WalletState` z migawką portfela,
   ostatni wybór w `localStorage`); API przez `ApiClient` (`ApiResult`/`ApiProblem`, 401 → logowanie); formularze to
