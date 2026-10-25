@@ -1,0 +1,127 @@
+@page "/templates/{Id:guid}"
+@attribute [Authorize]
+@using BM2.Client.Components.Records
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Records
+@using BM2.Contracts.Templates
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+@inject NavigationManager Navigation
+
+<PageTitle>Edit template · BM2</PageTitle>
+
+<section class="editor-sheet" aria-labelledby="editor-title">
+    <header class="editor-sheet__header">
+        <BackButton Fallback="templates" Icon="close" Label="Close" />
+        <h1 id="editor-title" class="editor-sheet__title" tabindex="-1">Edit template</h1>
+        <div class="editor-sheet__actions">
+            @if (_template is not null && CanWrite)
+            {
+                <a class="icon-button" href="@($"records/new?template={Id}")" aria-label="Use template"><Icon Name="plus" /></a>
+                <button type="button" class="icon-button" aria-label="Delete template" @onclick="() => _confirmDelete = true">
+                    <Icon Name="trash" />
+                </button>
+            }
+        </div>
+    </header>
+
+    @if (Wallet is null)
+    {
+        <WalletPlaceholder />
+    }
+    else if (_loading)
+    {
+        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    }
+    else if (_template is null)
+    {
+        <EmptyState IconName="list" Title="This template doesn't exist">It may have been deleted.</EmptyState>
+    }
+    else if (!CanWrite)
+    {
+        <EmptyState IconName="list" Title="View only">You can see this template but not change it.</EmptyState>
+    }
+    else
+    {
+        <p class="muted">Fields left empty are filled in when you use the template. Amount empty or 0 means "type it each time".</p>
+        <RecordForm @key="_template.Id" Wallet="Wallet" Template="_template" TemplateMode="true" Suggestions="_suggestions"
+                    Busy="_busy" OnSaveTemplate="SaveAsync" />
+    }
+</section>
+
+<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete template?" ConfirmLabel="Delete"
+               Danger="true" OnConfirm="DeleteAsync">
+    <p>Records added from it stay as they are.</p>
+</ConfirmDialog>
+
+@code {
+    private TemplateItem? _template;
+    private RecordSuggestions? _suggestions;
+    private bool _loading = true;
+    private bool _busy;
+    private bool _confirmDelete;
+
+    [Parameter] public Guid Id { get; set; }
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool CanWrite => Wallet?.Accounts.Any(a => a.CanWrite) == true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        if (Wallet is null)
+        {
+            return;
+        }
+
+        _loading = true;
+        var suggestions = WalletState.GetSuggestionsAsync();
+        var templates = await Api.GetAsync<List<TemplateItem>>($"api/wallets/{Wallet.Id}/templates");
+        _template = templates.Value?.Find(t => t.Id == Id);
+        _suggestions = await suggestions;
+        _loading = false;
+    }
+
+    private async Task SaveAsync(SaveTemplateRequest request)
+    {
+        _busy = true;
+        var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/templates/{Id}", request);
+        _busy = false;
+        if (result.Ok)
+        {
+            Toasts.Show("Template saved.", ToastKind.Success);
+            Navigation.NavigateTo("templates");
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/templates/{Id}");
+        _confirmDelete = false;
+        if (result.Ok)
+        {
+            Toasts.Show("Template deleted.");
+            Navigation.NavigateTo("templates");
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

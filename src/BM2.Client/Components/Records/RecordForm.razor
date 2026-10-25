@@ -74,7 +74,11 @@
     <SelectField id="record-account" Label="@(_model.Type == RecordType.Income ? "To account" : "From account")"
                  Options="AccountOptions" @bind-Value="_model.AccountId" @bind-Value:after="OnAccountChanged" />
 
-    @if (Rule is { RecordCount: > 0 })
+    @if (TemplateMode)
+    {
+        @* A template has no date, schedule or status; the record gets them when the template is used. *@
+    }
+    else if (Rule is { RecordCount: > 0 })
     {
         @* Moving the start would renumber and shift dates of records already added, so it is fixed. *@
         <div class="field">
@@ -88,7 +92,10 @@
         <DateField id="record-date" Label="@(RuleMode ? "Starts" : "Date")" @bind-Value="_model.OccurredOn" />
     }
 
-    @if (RuleMode)
+    @if (TemplateMode)
+    {
+    }
+    else if (RuleMode)
     {
         <RepeatFields Model="_repeat" Start="_model.OccurredOn" Existing="Rule" FirstStatus="@(Rule is null && Initial is not null ? Initial.Status : null)"
                       FirstExists="true" />
@@ -145,7 +152,7 @@
     <details class="record-form__more" open="@_moreOpen">
         <summary>More</summary>
         <div class="form-stack">
-            @if (!RuleMode)
+            @if (!RuleMode && !TemplateMode)
             {
                 <SelectField id="record-status" Label="@(_repeatOn ? "Status of this record" : "Status")" Options="StatusOptions"
                              @bind-Value="_model.Status" @bind-Value:after="SyncRepeatMode" />
@@ -158,7 +165,7 @@
         </div>
     </details>
 
-    @if (IsForeign)
+    @if (IsForeign && !TemplateMode)
     {
         <div class="record-form__fx">
             <MoneyInput id="record-rate" Label="@($"Rate {_model.Currency} → {AccountCurrency}")" Decimals="6"
@@ -168,14 +175,24 @@
         </div>
     }
 
-    @if (OnSaveTemplate.HasDelegate && !_repeatOn)
+    @if (TemplateMode)
     {
-        <button type="button" class="btn btn-ghost btn-block" disabled="@Busy" @onclick="SaveTemplateAsync">
-            <Icon Name="bolt" /> Save as template
+        @* Template fields are optional, so the record rules (e.g. a required category) don't apply here. *@
+        <button type="button" class="btn btn-primary btn-block record-form__submit" disabled="@Busy" @onclick="SaveTemplateAsync">
+            Save template
         </button>
     }
+    else
+    {
+        @if (OnSaveTemplate.HasDelegate && !_repeatOn)
+        {
+            <button type="button" class="btn btn-ghost btn-block" disabled="@Busy" @onclick="SaveTemplateAsync">
+                <Icon Name="bolt" /> Save as template
+            </button>
+        }
 
-    <button type="submit" class="btn btn-primary btn-block record-form__submit" disabled="@Busy">Save</button>
+        <button type="submit" class="btn btn-primary btn-block record-form__submit" disabled="@Busy">Save</button>
+    }
 </EditForm>
 
 @code {
@@ -221,6 +238,9 @@
 
     /// <summary>Edits a recurring rule: the date is the schedule start and the schedule is always shown.</summary>
     [Parameter] public bool RuleMode { get; set; }
+
+    /// <summary>Edits <see cref="Template"/>: no date, repeat or status; Save sends <see cref="OnSaveTemplate"/>.</summary>
+    [Parameter] public bool TemplateMode { get; set; }
 
     /// <summary>The schedule to start from in <see cref="RuleMode"/>.</summary>
     [Parameter] public RecurringRuleItem? Rule { get; set; }
@@ -585,7 +605,7 @@
             _model.TagIds.ToList());
     }
 
-    private Task SubmitAsync() => OnSubmit.InvokeAsync(BuildRequest());
+    private Task SubmitAsync() => TemplateMode ? SaveTemplateAsync() : OnSubmit.InvokeAsync(BuildRequest());
 
     private Task SaveTemplateAsync()
     {
@@ -600,7 +620,7 @@
             hasAmount ? request.Currency : null,
             request.Name,
             request.TagIds,
-            IsPinned: true));
+            IsPinned: !TemplateMode || Template?.IsPinned != false));
     }
 
     // Property names match SaveRecordRequest so validation messages land on the right fields.

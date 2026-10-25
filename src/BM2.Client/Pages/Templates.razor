@@ -35,8 +35,7 @@ else
         {
             var label = TemplateText.Label(template, Wallet);
             <li class="template-row" @key="template.Id">
-                <ListRow Title="@label" Subtitle="@Subtitle(template)"
-                         OnClick="@(CanWrite ? EventCallback.Factory.Create(this, () => OpenEditor(template)) : default)">
+                <ListRow Title="@label" Subtitle="@Subtitle(template)" Href="@(CanWrite ? $"templates/{template.Id}" : null)">
                     <Leading>
                         <RecordAvatar Category="TemplateText.CategoryOf(template, Wallet)" Type="template.Type" Fallback="@label" />
                     </Leading>
@@ -50,47 +49,18 @@ else
                 @if (CanWrite)
                 {
                     <button type="button" class="icon-button pin-toggle" aria-pressed="@(template.IsPinned ? "true" : "false")"
-                            aria-label="@($"Pin {label} on Home")" @onclick="() => SaveAsync(template, template.Name, !template.IsPinned)">
+                            aria-label="@($"Pin {label} on Home")" @onclick="() => TogglePinAsync(template)">
                         <Icon Name="pin" />
                     </button>
                 }
             </li>
         }
     </ul>
-
-    <Sheet Open="_editing is not null" OpenChanged="v => { if (!v) _editing = null; }" Title="Edit template">
-        @if (_editing is { } editing)
-        {
-            <div class="form-stack">
-                <div class="field">
-                    <label class="field__label" for="template-name">Name</label>
-                    <input id="template-name" class="field__control" value="@_name" maxlength="100" autocomplete="off"
-                           placeholder="@(TemplateText.CategoryOf(editing, Wallet)?.Name ?? "Optional")"
-                           @oninput="e => _name = e.Value?.ToString()" />
-                </div>
-                <label class="check">
-                    <input type="checkbox" checked="@_pinned" @onchange="e => _pinned = e.Value is true" />
-                    <span>Pinned on Home</span>
-                </label>
-                <button type="button" class="btn btn-primary btn-block" disabled="@_busy" @onclick="() => SaveAsync(editing, _name, _pinned)">
-                    Save
-                </button>
-                <a class="btn btn-secondary btn-block" href="@($"records/new?template={editing.Id}")">Use template</a>
-                <button type="button" class="btn btn-ghost btn-block danger-text" disabled="@_busy" @onclick="DeleteAsync">
-                    <Icon Name="trash" /> Delete template
-                </button>
-            </div>
-        }
-    </Sheet>
 }
 
 @code {
     private List<TemplateItem>? _templates;
     private WalletSnapshot? _loadedFor;
-    private TemplateItem? _editing;
-    private string? _name;
-    private bool _pinned;
-    private bool _busy;
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
@@ -126,46 +96,18 @@ else
         return string.Join(" · ", parts.OfType<string>());
     }
 
-    private void OpenEditor(TemplateItem template)
+    private async Task TogglePinAsync(TemplateItem t)
     {
-        _editing = template;
-        _name = template.Name;
-        _pinned = template.IsPinned;
-    }
-
-    private async Task SaveAsync(TemplateItem template, string? name, bool pinned)
-    {
-        _busy = true;
         var request = new SaveTemplateRequest(
-            template.Type, template.AccountId, template.CategoryId, template.TransferAccountId, template.Amount, template.Currency,
-            string.IsNullOrWhiteSpace(name) ? null : name.Trim(), template.TagIds, pinned);
-        var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/templates/{template.Id}", request);
-        _busy = false;
+            t.Type, t.AccountId, t.CategoryId, t.TransferAccountId, t.Amount, t.Currency, t.Name, t.TagIds, !t.IsPinned);
+        var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/templates/{t.Id}", request);
         if (result.Ok)
         {
-            _editing = null;
             await LoadAsync(force: true);
         }
         else
         {
             Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
-        }
-    }
-
-    private async Task DeleteAsync()
-    {
-        _busy = true;
-        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/templates/{_editing!.Id}");
-        _busy = false;
-        if (result.Ok)
-        {
-            _editing = null;
-            Toasts.Show("Template deleted.");
-            await LoadAsync(force: true);
-        }
-        else
-        {
-            Toasts.ShowError();
         }
     }
 }
