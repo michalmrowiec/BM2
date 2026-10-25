@@ -14,9 +14,20 @@
     <a href="stats" class="bottom-nav__item" aria-current="@Current("stats")">
         <Icon Name="chart" /><span>Stats</span>
     </a>
-    <a href="recurring" class="bottom-nav__item bottom-nav__item--rail" aria-current="@Current("recurring")">
-        <Icon Name="repeat" /><span>Recurring</span>
-    </a>
+    @* Large screens only: the side rail has room for what phones reach through More. *@
+    @foreach (var (href, icon, label) in RailOnly)
+    {
+        @if (href is null)
+        {
+            <span class="bottom-nav__group bottom-nav__item--rail">@label</span>
+        }
+        else
+        {
+            <a href="@href" class="bottom-nav__item bottom-nav__item--rail" aria-current="@Current(href)">
+                <Icon Name="@icon" /><span>@label</span>
+            </a>
+        }
+    }
     <a href="more" class="bottom-nav__item" aria-current="@Current("more")">
         <Icon Name="dots" /><span>More</span>
     </a>
@@ -24,6 +35,20 @@
 
 @code {
     private const string QuickAddPath = "records/new";
+
+    // A null href is a group heading.
+    private static readonly (string? Href, string Icon, string Label)[] RailOnly =
+    [
+        ("budgets", "piggy", "Budgets"),
+        ("recurring", "repeat", "Recurring"),
+        ("templates", "bolt", "Templates"),
+        (null, "", "Manage"),
+        ("accounts", "bank", "Accounts"),
+        ("categories", "category", "Categories"),
+        ("tags", "tag", "Tags"),
+        ("wallets", "wallet", "Wallets"),
+        ("members", "users", "Members"),
+    ];
 
     protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
 

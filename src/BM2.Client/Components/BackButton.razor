@@ -1,0 +1,31 @@
+@inject AppNavigation AppNavigation
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+@* Goes back to the previous app page; without one (opened directly) goes to Fallback. *@
+<a class="icon-button @Class" href="@Fallback" aria-label="@Label" title="@Label"
+   @onclick="GoBackAsync" @onclick:preventDefault="true">
+    <Icon Name="@Icon" />
+</a>
+
+@code {
+    [Parameter, EditorRequired] public string Fallback { get; set; } = "";
+
+    [Parameter] public string Icon { get; set; } = "arrow-left";
+
+    [Parameter] public string Label { get; set; } = "Back";
+
+    [Parameter] public string? Class { get; set; }
+
+    private async Task GoBackAsync()
+    {
+        if (AppNavigation.CanGoBack)
+        {
+            await JS.InvokeVoidAsync("history.back");
+        }
+        else
+        {
+            Navigation.NavigateTo(Fallback);
+        }
+    }
+}

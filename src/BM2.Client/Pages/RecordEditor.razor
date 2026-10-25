@@ -18,7 +18,7 @@
 
 <section class="editor-sheet" aria-labelledby="editor-title">
     <header class="editor-sheet__header">
-        <a class="icon-button" href="records" aria-label="Close"><Icon Name="close" /></a>
+        <BackButton Fallback="records" Icon="close" Label="Close" />
         <h1 id="editor-title" class="editor-sheet__title" tabindex="-1">@Title</h1>
         <div class="editor-sheet__actions">
             @if (Id is not null && _record is not null && CanWriteRecord)

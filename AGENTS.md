@@ -79,7 +79,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   ostatni wybór w `localStorage`); API przez `ApiClient` (`ApiResult`/`ApiProblem`, 401 → logowanie); formularze to
   `EditForm` na modyfikowalnym modelu z nazwami pól jak w requeście + `FluentValidator` (ten sam walidator co serwer,
   `ShowServerErrors` dla 400/409). Komponenty bazowe: `Sheet` (natywny `<dialog>`), `ConfirmDialog`, `TextField`,
-  `SelectField`, `MoneyInput`, `DateField`, `SegmentedControl`, `ChipGroup`, `ListRow`, `Amount`, `ToastHost`.
+  `SelectField`, `MoneyInput`, `DateField`, `SegmentedControl`, `ChipGroup`, `ListRow`, `Amount`, `ToastHost`, `BackButton` (wstecz w historii aplikacji, bez niej `Fallback`).
   Usługi klienta są rejestrowane także na serwerze (prerendering); API wołamy tylko w trybie interaktywnym.
 - **Konfiguracja:** `ConnectionStrings:BM2`; `Database:PrepareOnStartup` (tylko dev/testy) tworzy i migruje bazę.
   Paczki w `Directory.Packages.props` (centralnie, z pinowaniem zależności przechodnich), źródło tylko nuget.org.
