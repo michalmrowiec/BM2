@@ -56,9 +56,15 @@ public static class RecurringEndpoints
         SaveRecurringRuleRequest request, CurrentWallet current, ICurrentUser currentUser, AppDbContext db, TimeProvider time,
         CancellationToken ct)
     {
-        if (await CheckAsync(db, current.Access, request, currentUser.UserId, time, ct) is { } error)
+        if (await CheckAsync(db, current.Access, request, currentUser.UserId, time, null, ct) is { } error)
         {
             return error.ToProblem();
+        }
+
+        var walletId = current.Id;
+        if (await db.RecurringRules.CountAsync(r => r.WalletId == walletId, ct) >= WalletLimits.RecurringRules)
+        {
+            return Error.Conflict($"A wallet can have up to {WalletLimits.RecurringRules} recurring rules. Delete ones you no longer need.").ToProblem();
         }
 
         Record? first = null;
@@ -99,7 +105,7 @@ public static class RecurringEndpoints
             return Error.Forbidden().ToProblem();
         }
 
-        if (await CheckAsync(db, current.Access, request, currentUser.UserId, time, ct) is { } error)
+        if (await CheckAsync(db, current.Access, request, currentUser.UserId, time, rule.StartDate, ct) is { } error)
         {
             return error.ToProblem();
         }
@@ -172,10 +178,17 @@ public static class RecurringEndpoints
         return null;
     }
 
-    /// <summary>The same checks as a new record dated on the schedule start.</summary>
+    /// <summary>The same checks as a new record dated on the schedule start; a new or moved start is at most a few years back.</summary>
     private static async Task<Error?> CheckAsync(
-        AppDbContext db, WalletAccess access, SaveRecurringRuleRequest request, Guid userId, TimeProvider time, CancellationToken ct)
+        AppDbContext db, WalletAccess access, SaveRecurringRuleRequest request, Guid userId, TimeProvider time, DateOnly? savedStart,
+        CancellationToken ct)
     {
+        var start = request.Schedule.StartDate;
+        if (start != savedStart && start < Today(time).AddYears(-WalletLimits.RuleStartYearsBack))
+        {
+            return Error.Validation("Schedule.StartDate", $"Start at most {WalletLimits.RuleStartYearsBack} years back.");
+        }
+
         var draft = (request.Record with { OccurredOn = request.Schedule.StartDate, Status = RecordStatus.Completed }).ToDraft();
         var context = await RecordContextLoader.LoadAsync(db, access.WalletId, draft, ct);
         if (RecordAccess.CheckWrite(access, draft, context) is { } denied)
@@ -250,13 +263,16 @@ internal static partial class RecurringCatchUp
             return;
         }
 
+        var budget = Math.Min(WalletLimits.CatchUpPerRun, WalletLimits.Records - await WalletLimits.RecordCountAsync(db, walletId, ct));
         var now = time.GetUtcNow();
         foreach (var rule in rules)
         {
-            while (rule.NextDate is { } date && date <= today)
+            // Account, category and tags are the same for every occurrence of a rule.
+            RecordContext? context = null;
+            while (budget > 0 && rule.NextDate is { } date && date <= today)
             {
                 var draft = rule.NextDraft();
-                var context = await RecordContextLoader.LoadAsync(db, walletId, draft, ct);
+                context ??= await RecordContextLoader.LoadAsync(db, walletId, draft, ct);
                 var created = Record.Create(draft, context, rule.CreatedByUserId, now);
                 if (created.IsSuccess)
                 {
@@ -265,6 +281,7 @@ internal static partial class RecurringCatchUp
                 }
 
                 rule.Advance();
+                budget--;
             }
         }
 

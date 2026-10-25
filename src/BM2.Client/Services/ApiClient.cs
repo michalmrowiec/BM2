@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Components;
 
 namespace BM2.Client.Services;
 
-/// <summary>Calls the BM2 API and turns failures into <see cref="ApiProblem"/>; 401 sends the user to log in.</summary>
-public sealed class ApiClient(HttpClient http, NavigationManager navigation)
+/// <summary>Calls the BM2 API and turns failures into <see cref="ApiProblem"/>; 401 sends the user to log in, 429 shows a toast.</summary>
+public sealed class ApiClient(HttpClient http, NavigationManager navigation, ToastService toasts)
 {
     public Task<ApiResult<T>> GetAsync<T>(string url) => SendAsync<T>(() => http.GetAsync(url));
 
@@ -67,7 +67,13 @@ public sealed class ApiClient(HttpClient http, NavigationManager navigation)
                 navigation.NavigateTo($"Account/Login?returnUrl={Uri.EscapeDataString(navigation.Uri)}", forceLoad: true);
             }
 
-            return (null, await ReadProblemAsync(response));
+            var problem = await ReadProblemAsync(response);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                toasts.Show(problem.Detail ?? "Too many requests. Wait a minute and try again.", ToastKind.Error);
+            }
+
+            return (null, problem);
         }
     }
 

@@ -23,6 +23,7 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddBm2Authentication();
+builder.Services.AddBm2RateLimiting(builder.Configuration);
 
 // Client services for prerendering; components call the API only once WebAssembly runs.
 builder.Services.AddBm2Client();
@@ -57,6 +58,7 @@ app.UseHttpsRedirection();
 // Explicit, so auth runs inside error handling (otherwise WebApplication adds it at the very start).
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseAntiforgery();
 app.UseRegistrationOnlyInDevelopment();
 

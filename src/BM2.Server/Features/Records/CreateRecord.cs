@@ -28,6 +28,11 @@ internal static class CreateRecord
             return created.Error!.ToProblem();
         }
 
+        if (await WalletLimits.RecordCountAsync(db, current.Id, ct) >= WalletLimits.Records)
+        {
+            return WalletLimits.TooManyRecords().ToProblem();
+        }
+
         db.Records.Add(created.Value);
         await db.SaveChangesAsync(ct);
 

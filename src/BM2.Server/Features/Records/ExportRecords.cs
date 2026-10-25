@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using BM2.Contracts.Records;
 using BM2.Domain.Common;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BM2.Server.Features.Records;
 
-/// <summary>The list's filtered records as CSV (UTF-8 with BOM, ";") or XLSX, newest first, without paging.</summary>
+/// <summary>The list's filtered records as CSV (UTF-8 with BOM, ";", streamed) or XLSX, newest first, without paging.</summary>
 internal static class ExportRecords
 {
     private const int MaxRows = 50_000;
@@ -23,9 +24,9 @@ internal static class ExportRecords
         DateOnly Date, RecordType Type, string? Name, string? Category, string Account, string? TransferAccount,
         string Tags, decimal Amount, string Currency, decimal AccountAmount, RecordStatus Status);
 
-    public static void Map(RouteGroupBuilder records) => records.MapGet("/export", HandleAsync);
+    public static void Map(RouteGroupBuilder records) => records.MapGet("/export", HandleAsync).RequireRateLimiting(RateLimiting.ExportPolicy);
 
-    private static async Task<Results<FileContentHttpResult, ProblemHttpResult>> HandleAsync(
+    private static async Task<Results<FileContentHttpResult, PushStreamHttpResult, ProblemHttpResult>> HandleAsync(
         [AsParameters] RecordFilter filter, CurrentWallet current, AppDbContext db, TimeProvider time, CancellationToken ct,
         string format = "csv")
     {
@@ -42,7 +43,20 @@ internal static class ExportRecords
 
         var walletId = current.Id;
         var tagNames = await db.Tags.Where(t => t.WalletId == walletId).ToDictionaryAsync(t => t.Id, t => t.Name, ct);
-        var records = await query
+        var wallet = await db.Wallets.Where(w => w.Id == walletId).Select(w => w.Name).SingleAsync(ct);
+        var name = $"bm2-{Slug(wallet)}-records-{DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime):yyyy-MM-dd}";
+        var rows = RowsAsync(query, tagNames, ct);
+
+        // CSV is written while rows are read, so memory stays flat; XLSX needs the whole workbook in memory.
+        return xlsx
+            ? TypedResults.File(Xlsx(await rows.ToListAsync(ct)), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name + ".xlsx")
+            : TypedResults.Stream(stream => WriteCsvAsync(stream, rows, ct), "text/csv; charset=utf-8", name + ".csv");
+    }
+
+    private static async IAsyncEnumerable<Row> RowsAsync(
+        IQueryable<Domain.Records.Record> query, Dictionary<Guid, string> tagNames, [EnumeratorCancellation] CancellationToken ct)
+    {
+        var records = query
             .OrderByDescending(r => r.OccurredOn).ThenByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id)
             .Take(MaxRows)
             .Select(r => new
@@ -51,22 +65,16 @@ internal static class ExportRecords
                 TransferAccount = r.TransferAccount != null ? r.TransferAccount.Name : null,
                 TagIds = r.Tags.Select(t => t.TagId).ToList(), r.Amount, r.Currency, r.AccountAmount, r.Status,
             })
-            .ToListAsync(ct);
+            .AsAsyncEnumerable();
 
-        // Expenses and transfers leave the account: negative.
-        var rows = records.Select(r =>
+        await foreach (var r in records.WithCancellation(ct))
         {
+            // Expenses and transfers leave the account: negative.
             var sign = r.Type == RecordType.Income ? 1 : -1;
             var tags = string.Join(", ", r.TagIds.Select(id => tagNames.GetValueOrDefault(id)).Where(n => n is not null));
-            return new Row(r.OccurredOn, r.Type, r.Name, r.Category, r.Account, r.TransferAccount, tags,
+            yield return new Row(r.OccurredOn, r.Type, r.Name, r.Category, r.Account, r.TransferAccount, tags,
                 sign * r.Amount, r.Currency, sign * r.AccountAmount, r.Status);
-        }).ToList();
-
-        var wallet = await db.Wallets.Where(w => w.Id == walletId).Select(w => w.Name).SingleAsync(ct);
-        var name = $"bm2-{Slug(wallet)}-records-{DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime):yyyy-MM-dd}";
-        return xlsx
-            ? TypedResults.File(Xlsx(rows), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name + ".xlsx")
-            : TypedResults.File(Csv(rows), "text/csv; charset=utf-8", name + ".csv");
+        }
     }
 
     // Letters and digits of the wallet name, other characters as single dashes.
@@ -90,11 +98,12 @@ internal static class ExportRecords
 
     private static string AccountText(Row row) => row.TransferAccount is null ? row.Account : $"{row.Account} → {row.TransferAccount}";
 
-    private static byte[] Csv(List<Row> rows)
+    private static async Task WriteCsvAsync(Stream stream, IAsyncEnumerable<Row> rows, CancellationToken ct)
     {
-        var csv = new StringBuilder();
-        csv.AppendJoin(';', Header).Append("\r\n");
-        foreach (var row in rows)
+        // UTF-8 with BOM, so spreadsheets detect the encoding.
+        await using var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true), leaveOpen: true);
+        await writer.WriteAsync(string.Join(';', Header) + "\r\n");
+        await foreach (var row in rows.WithCancellation(ct))
         {
             string[] fields =
             [
@@ -109,10 +118,8 @@ internal static class ExportRecords
                 row.AccountAmount.ToString("0.00##", CultureInfo.InvariantCulture),
                 row.Status.ToString(),
             ];
-            csv.AppendJoin(';', fields).Append("\r\n");
+            await writer.WriteAsync(string.Join(';', fields) + "\r\n");
         }
-
-        return [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(csv.ToString())];
     }
 
     // Quotes when needed; a leading formula character is escaped so spreadsheets do not run it.

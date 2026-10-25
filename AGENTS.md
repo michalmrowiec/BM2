@@ -83,6 +83,11 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   pobiera zwykłym linkiem `download`. `PinnedChart` (portfel + użytkownik, `Kind`, `Title`, `Query` jako zwykły tekst)
   – zapytanie składa i czyta klient (`PinnedChartQueries`, okres „this month/year/12 months” bez dat, więc się
   przesuwa); Home dostaje listę w `GET dashboard`, a dane każdego wykresu osobnym wywołaniem stats (`PinnedChartCard`).
+- **Limity obciążenia:** stałe w `Features/WalletLimits` (200 tys. rekordów i 200 reguł cyklicznych na portfel, start
+  reguły najwyżej 2 lata wstecz – sprawdzane tylko przy nowej/zmienionej dacie, catch-up dodaje najwyżej 500 wystąpień
+  na wywołanie). Rate limiting w `Infrastructure/RateLimiting` (na minutę: POST-y `/Account` 20 na IP, zapisy `/api`
+  120 na użytkownika, eksport 5 – polityka `RateLimiting.ExportPolicy`); 429 jako ProblemDetails, `ApiClient` pokazuje
+  toast. W testach integracyjnych wyłączone (`RateLimiting:Enabled=false`). CSV eksportu jest strumieniowany.
 - **PWA:** `wwwroot/manifest.webmanifest`, ikony w `wwwroot/icons` (PNG generowane z marki), `wwwroot/service-worker.js`
   rejestrowany w `BM2.Client.lib.module.js` (`afterWebStarted`). SW: nawigacje i `/api` zawsze z sieci, pliki
   z fingerprintem cache-first, pozostałe statyczne network-first z fallbackiem; zmiana strategii = podbij `version`.

@@ -29,6 +29,7 @@ public sealed class BM2AppFactory(string connectionString) : WebApplicationFacto
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:BM2", connectionString);
         builder.UseSetting("Database:PrepareOnStartup", "true");
+        builder.UseSetting("RateLimiting:Enabled", "false");
         builder.ConfigureTestServices(services =>
         {
             services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(new SqlServer2012Guard()));
