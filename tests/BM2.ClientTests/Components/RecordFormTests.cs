@@ -1,4 +1,5 @@
 using System.Globalization;
+using BM2.Client.Components.Forms;
 using BM2.Client.Components.Records;
 using BM2.ClientTests.Infrastructure;
 using BM2.Contracts.Accounts;
@@ -74,7 +75,7 @@ public class RecordFormTests : BunitContext
         var cut = RenderForm(defaultAccount: Savings.Id);
 
         cut.Find("#record-account").GetAttribute("value").ShouldBe(Savings.Id.ToString());
-        cut.Find("#record-date").GetAttribute("value").ShouldBe(Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        cut.Find("#record-date").GetAttribute("value").ShouldBe(Today.ToString(DateField.Pattern, CultureInfo.CurrentCulture));
     }
 
     [Fact]

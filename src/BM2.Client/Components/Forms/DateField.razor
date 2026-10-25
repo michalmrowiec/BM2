@@ -5,12 +5,17 @@
 <div class="field">
     <label class="field__label" for="@FieldId">@Label</label>
     <div class="date-field">
-        @* A button with the app's own calendar: the browser's date picker can't be styled. *@
-        <button type="button" @attributes="AdditionalAttributes" id="@FieldId" class="field__control date-field__button" value="@CurrentValueAsString" aria-haspopup="dialog"
-                aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" @onclick="() => _open = true">
-            <span>@CurrentValue.ToString("ddd, d MMM yyyy", CultureInfo.CurrentCulture)</span>
-            <Icon Name="calendar" />
-        </button>
+        @* Type the date (culture format, "25.10" means this year) or pick it in the app's calendar. *@
+        <div class="date-field__input">
+            <input @attributes="AdditionalAttributes" id="@FieldId" class="field__control" type="text" autocomplete="off"
+                   placeholder="@Pattern.ToLowerInvariant()" value="@CurrentValueAsString"
+                   @onchange="e => CurrentValueAsString = e.Value?.ToString()"
+                   aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
+            <button type="button" class="icon-button date-field__open" aria-label="@($"Choose {Label.ToLowerInvariant()} in a calendar")"
+                    aria-haspopup="dialog" @onclick="() => _open = true">
+                <Icon Name="calendar" />
+            </button>
+        </div>
         <div class="date-field__shortcuts">
             <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">Today</button>
             <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">Yesterday</button>
@@ -29,29 +34,35 @@
 @code {
     private bool _open;
 
+    // The user's calendar day, from the device clock.
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
+
+    /// <summary>The culture's short date pattern, e.g. dd.MM.yyyy.</summary>
+    public static string Pattern => CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+
+    private string Pressed(DateOnly day) => CurrentValue == day ? "true" : "false";
+
     private void Pick(DateOnly day)
     {
         CurrentValue = day;
         _open = false;
     }
 
-    // The user's calendar day, from the device clock.
-    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
-
-    private string Pressed(DateOnly day) => CurrentValue == day ? "true" : "false";
-
-    protected override string FormatValueAsString(DateOnly value) => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    protected override string FormatValueAsString(DateOnly value) => value.ToString(Pattern, CultureInfo.CurrentCulture);
 
     protected override bool TryParseValueFromString(
         string? value, out DateOnly result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
-        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
+        // Culture format (also without the year), or ISO.
+        var text = value?.Trim();
+        if (DateOnly.TryParse(text, CultureInfo.CurrentCulture, DateTimeStyles.AllowWhiteSpaces, out result)
+            || DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
         {
             validationErrorMessage = null;
             return true;
         }
 
-        validationErrorMessage = "Choose a date.";
+        validationErrorMessage = $"Enter a date like {Today.ToString(Pattern, CultureInfo.CurrentCulture)}.";
         return false;
     }
 }
