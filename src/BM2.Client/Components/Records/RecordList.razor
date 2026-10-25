@@ -176,6 +176,12 @@
     <p>Selected pending and planned records become Completed. Planned ones start counting in balances, budgets and stats.</p>
 </ConfirmDialog>
 
+<ConfirmDialog Open="_confirmOne is not null" OpenChanged="v => { if (!v) _confirmOne = null; }"
+               Title="@($"Mark {(_confirmOne is null ? "record" : View(_confirmOne).Title)} as completed?")"
+               ConfirmLabel="Mark as completed" OnConfirm="() => ConfirmAsync([_confirmOne!])">
+    <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
+</ConfirmDialog>
+
 <PlannedChoice Record="_choiceFor" Title="@(_choiceFor is null ? null : View(_choiceFor).Title)" Closed="() => _choiceFor = null"
                Chosen="s => ConfirmAsync([_choiceFor!], s)" />
 
@@ -195,24 +201,27 @@
     private List<RecordItem> SelectedOpen => SelectedItems.Where(i => i.Status != RecordStatus.Completed && CanWrite(i)).ToList();
 
     private RecordItem? _choiceFor;
+    private RecordItem? _confirmOne;
 
-    // Planned records ask whether they become completed or pending.
-    private Task Check(RecordItem item)
+    // Always asks first: planned records choose completed or pending, pending ones confirm.
+    private void Check(RecordItem item)
     {
         _menuFor = null;
         if (item.Status == RecordStatus.Planned)
         {
             _choiceFor = item;
-            return Task.CompletedTask;
         }
-
-        return ConfirmAsync([item]);
+        else
+        {
+            _confirmOne = item;
+        }
     }
 
     private async Task ConfirmAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
     {
         _menuFor = null;
         _choiceFor = null;
+        _confirmOne = null;
         _confirmBulkComplete = false;
         _busy = true;
         var failed = await RecordConfirm.ConfirmAsync(Api, Wallet.Id, records, status);

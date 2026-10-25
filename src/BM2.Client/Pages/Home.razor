@@ -232,6 +232,12 @@
     <p>The records shown in To confirm are marked as checked (Completed). They already count in balances, so totals stay the same.</p>
 </ConfirmDialog>
 
+<ConfirmDialog Open="_confirmOne is not null" OpenChanged="v => { if (!v) _confirmOne = null; }"
+               Title="@($"Mark {_confirmOne?.Name ?? "record"} as completed?")"
+               ConfirmLabel="Mark as completed" OnConfirm="() => ConfirmManyAsync([_confirmOne!])">
+    <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
+</ConfirmDialog>
+
 <PlannedChoice Record="_choiceFor" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
                Chosen="s => ConfirmManyAsync([_choiceFor!], s)" />
 
@@ -257,7 +263,7 @@
                         </Trailing>
                     </ListRow>
                     <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {label} as completed")"
-                            title="Mark as completed" disabled="@_busy" @onclick="() => ConfirmAsync(record)">
+                            title="Mark as completed" disabled="@_busy" @onclick="() => Check(record)">
                         <Icon Name="check" />
                     </button>
                 </li>
@@ -314,15 +320,19 @@
         _budgets = data.Budgets;
     }
 
-    private Task ConfirmAsync(RecordItem r)
+    private RecordItem? _confirmOne;
+
+    // Always asks first: planned records choose completed or pending, pending ones confirm.
+    private void Check(RecordItem r)
     {
         if (r.Status == RecordStatus.Planned)
         {
             _choiceFor = r;
-            return Task.CompletedTask;
         }
-
-        return ConfirmManyAsync([r]);
+        else
+        {
+            _confirmOne = r;
+        }
     }
 
     private Task ConfirmAllAsync()
@@ -334,6 +344,7 @@
     private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
     {
         _choiceFor = null;
+        _confirmOne = null;
         _busy = true;
         var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records, status);
         _busy = false;
