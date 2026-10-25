@@ -12,6 +12,7 @@
             @option.Label
         </button>
     }
+    @ChildContent
 </div>
 
 @code {
@@ -33,6 +34,9 @@
 
     /// <summary>Id of the message (e.g. a validation error) that describes the group.</summary>
     [Parameter] public string? DescribedBy { get; set; }
+
+    /// <summary>Extra chips after the options, e.g. "All…".</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private Task ToggleAsync(TValue value)
     {

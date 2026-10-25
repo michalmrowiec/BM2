@@ -987,6 +987,21 @@ button.list-row:hover { background: var(--wash); }
 .record-form__more[open] > summary::after { content: "\2212"; }
 .record-form__more[open] > .form-stack { padding-top: var(--space-2); }
 
+/* Transfer: From ⇄ To in one row */
+.record-form__route {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: var(--space-2);
+}
+
+.record-form__route .field { min-width: 0; }
+.record-form__swap { margin-bottom: 2px; color: var(--ink-muted); }
+
+/* Category picker sheet: search on top, all categories below */
+.category-picker { margin-top: var(--space-3); }
+.category-picker button[aria-pressed="true"] { font-weight: 600; }
+
 .record-form__fx {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1422,7 +1437,9 @@ button.list-row:hover { background: var(--wash); }
 }
 
 .suggestions__item:hover,
-.suggestions__item:focus-visible { background: var(--wash); }
+.suggestions__item:focus-visible,
+.suggestions__item.is-active { background: var(--wash); }
+.suggestions__item.is-active { box-shadow: inset 2px 0 0 var(--ink); }
 
 .suggestions__meta {
     display: inline-flex;

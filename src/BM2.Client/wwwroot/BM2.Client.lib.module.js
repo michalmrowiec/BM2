@@ -3,6 +3,7 @@
 export function afterWebAssemblyStarted() {
     document.addEventListener("beforeinput", blockInvalidMoney);
     document.addEventListener("input", cleanMoney);
+    document.addEventListener("keydown", keepComboboxEnter);
 
     setTimeout(() => {
         document.documentElement.classList.add("motion-ready");
@@ -21,6 +22,17 @@ export function afterWebAssemblyStarted() {
             }
         }).observe(main, { childList: true });
     }, 400);
+}
+
+// Enter on a highlighted combobox suggestion, or in a field marked data-enter-picks, picks (in Blazor) instead of
+// submitting the form; cancelling keydown also stops the keypress that would reach a refocused form field.
+function keepComboboxEnter(event) {
+    const input = event.target;
+    if (event.key === "Enter" && input instanceof HTMLInputElement
+        && (input.hasAttribute("data-enter-picks")
+            || (input.getAttribute("role") === "combobox" && input.getAttribute("aria-activedescendant")))) {
+        event.preventDefault();
+    }
 }
 
 // Amount fields (data-money="<decimals>"): digits, one "," or "." separator, at most <decimals> places.

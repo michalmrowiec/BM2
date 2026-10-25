@@ -18,42 +18,17 @@
     <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null || Template?.Amount > 0)"
                 Currency="@AccountCurrency" @bind-Value="_model.Amount" @bind-Value:after="Recalculate" />
 
-    <div class="field name-field">
-        <label class="field__label" for="record-name">Name</label>
-        <input id="record-name" class="field__control" value="@_model.Name" placeholder="Where or what, e.g. Lidl" autocomplete="off"
-               maxlength="100" aria-invalid="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "true")"
-               aria-describedby="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "record-name-error")"
-               @oninput="OnNameInput" @onfocus="() => _nameFocused = true" @onblur="() => _nameFocused = false" />
-        @if (_nameFocused && NameMatches.Count > 0)
-        {
-            <ul class="suggestions" aria-label="Suggestions">
-                @foreach (var suggestion in NameMatches)
-                {
-                    <li>
-                        @* Mousedown keeps focus in the input, so the list stays until the click lands. *@
-                        <button type="button" class="suggestions__item" @onmousedown:preventDefault="true" @onclick="() => PickName(suggestion)">
-                            <span>@suggestion.Name</span>
-                            @if (FindCategory(suggestion.CategoryId) is { } category)
-                            {
-                                <span class="suggestions__meta">
-                                    @if (category.Icon is { } icon)
-                                    {
-                                        <Icon Name="@icon" />
-                                    }
-                                    @category.Name
-                                </span>
-                            }
-                        </button>
-                    </li>
-                }
-            </ul>
-        }
-        <FieldMessages Error="@ErrorFor(nameof(FormModel.Name))" ErrorId="record-name-error" HintId="record-name-hint" />
-    </div>
-
     @if (_model.Type == RecordType.Transfer)
     {
-        <SelectField id="record-target" Label="To account" Options="TargetOptions" @bind-Value="_model.TransferAccountId" />
+        <div class="record-form__route">
+            <SelectField id="record-account" Label="From account" Options="AccountOptions" @bind-Value="_model.AccountId"
+                         @bind-Value:after="OnAccountChanged" />
+            <button type="button" class="icon-button record-form__swap" aria-label="Swap from and to accounts"
+                    disabled="@(_model.TransferAccountId is null)" @onclick="SwapAccounts">
+                <Icon Name="transfer" />
+            </button>
+            <SelectField id="record-target" Label="To account" Options="TargetOptions" @bind-Value="_model.TransferAccountId" />
+        </div>
         @if (NeedsTransferAmount)
         {
             <MoneyInput id="record-transfer-amount" Label="@($"Amount received in {TargetCurrency}")" Currency="@TargetCurrency"
@@ -62,17 +37,93 @@
     }
     else
     {
-        <div class="field record-form__categories">
-            <span class="field__label" id="record-category-label">Category</span>
-            <ChipGroup TValue="Guid" Options="CategoryOptions" Selected="SelectedCategory" SelectedChanged="OnCategoryChanged"
-                       Label="Category" Class="chip-group--categories" IconOf="id => FindCategory(id)?.Icon"
-                       DescribedBy="@(ErrorFor(nameof(FormModel.CategoryId)) is null ? null : "record-category-error")" />
-            <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint" />
-        </div>
+        <SelectField id="record-account" Label="@(_model.Type == RecordType.Income ? "To account" : "From account")"
+                     Options="AccountOptions" @bind-Value="_model.AccountId" @bind-Value:after="OnAccountChanged" />
     }
 
-    <SelectField id="record-account" Label="@(_model.Type == RecordType.Income ? "To account" : "From account")"
-                 Options="AccountOptions" @bind-Value="_model.AccountId" @bind-Value:after="OnAccountChanged" />
+    <div class="field name-field">
+        <label class="field__label" for="record-name">Name</label>
+        @* Combobox: arrows move through the suggestions, Enter picks, Escape closes. *@
+        @{ var listOpen = _nameFocused && !_suggestionsClosed && NameMatches.Count > 0; }
+        <input id="record-name" class="field__control" value="@_model.Name" placeholder="Where or what, e.g. Lidl" autocomplete="off"
+               maxlength="100" aria-invalid="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "true")"
+               aria-describedby="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "record-name-error")"
+               role="combobox" aria-autocomplete="list" aria-controls="record-name-list" aria-expanded="@(listOpen ? "true" : "false")"
+               aria-activedescendant="@(listOpen && _activeSuggestion >= 0 ? $"record-name-option-{_activeSuggestion}" : null)"
+               @oninput="OnNameInput" @onfocus="() => _nameFocused = true" @onblur="OnNameBlur"
+               @onkeydown="OnNameKeyDown" />
+        @if (listOpen)
+        {
+            <ul class="suggestions" id="record-name-list" role="listbox" aria-label="Suggestions">
+                @for (var i = 0; i < NameMatches.Count; i++)
+                {
+                    var suggestion = NameMatches[i];
+                    var active = i == _activeSuggestion;
+                    @* Mousedown keeps focus in the input, so the list stays until the click lands. *@
+                    <li id="@($"record-name-option-{i}")" role="option" aria-selected="@(active ? "true" : "false")"
+                        class="suggestions__item @(active ? "is-active" : null)"
+                        @onmousedown:preventDefault="true" @onclick="() => PickName(suggestion)">
+                        <span>@suggestion.Name</span>
+                        @if (FindCategory(suggestion.CategoryId) is { } category)
+                        {
+                            <span class="suggestions__meta">
+                                @if (category.Icon is { } icon)
+                                {
+                                    <Icon Name="@icon" />
+                                }
+                                @category.Name
+                            </span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        <FieldMessages Error="@ErrorFor(nameof(FormModel.Name))" ErrorId="record-name-error" HintId="record-name-hint" />
+    </div>
+
+    @if (_model.Type != RecordType.Transfer)
+    {
+        @* The most used categories as chips; the rest through All, with search. *@
+        <div class="field record-form__categories">
+            <span class="field__label" id="record-category-label">Category</span>
+            <ChipGroup TValue="Guid" Options="ShownCategories" Selected="SelectedCategory" SelectedChanged="OnCategoryChanged"
+                       Label="Category" Class="chip-group--categories" IconOf="id => FindCategory(id)?.Icon"
+                       DescribedBy="@(ErrorFor(nameof(FormModel.CategoryId)) is null ? null : "record-category-error")">
+                @if (CategoryOptions.Count > ShownCategories.Count)
+                {
+                    <button type="button" class="chip chip--add" @onclick="OpenCategoryPicker">
+                        <Icon Name="search" /> All @CategoryOptions.Count
+                    </button>
+                }
+            </ChipGroup>
+            <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint" />
+        </div>
+
+        <Sheet Open="_pickCategory" OpenChanged="v => _pickCategory = v" Title="Category">
+            @* Enter picks the first match; data-enter-picks keeps it from saving the record. *@
+            <input type="search" class="field__control" form="record-category-search" data-enter-picks placeholder="Search categories"
+                   aria-label="Search categories" autocomplete="off" value="@_categoryTerm"
+                   @oninput="e => _categoryTerm = e.Value?.ToString()" @onkeydown="OnCategorySearchKeyDown" />
+            <ul class="menu-list category-picker">
+                @foreach (var (id, name) in CategoryMatches)
+                {
+                    <li>
+                        <button type="button" aria-pressed="@(_model.CategoryId == id ? "true" : "false")" @onclick="() => PickCategory(id)">
+                            <Icon Name="@(FindCategory(id)?.Icon ?? "category")" /><span>@name</span>
+                            @if (_model.CategoryId == id)
+                            {
+                                <Icon Name="check" Class="menu-list__trail" />
+                            }
+                        </button>
+                    </li>
+                }
+            </ul>
+            @if (CategoryMatches.Count == 0)
+            {
+                <p class="muted">No category matches “@_categoryTerm”.</p>
+            }
+        </Sheet>
+    }
 
     @if (TemplateMode)
     {
@@ -436,8 +487,42 @@
         _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
     }
 
+    private int _activeSuggestion = -1;
+    private bool _suggestionsClosed;
+
+    private void OnNameBlur()
+    {
+        _nameFocused = false;
+        _activeSuggestion = -1;
+    }
+
+    private void OnNameKeyDown(KeyboardEventArgs e)
+    {
+        var count = NameMatches.Count;
+        switch (e.Key)
+        {
+            case "ArrowDown" when count > 0:
+                _suggestionsClosed = false;
+                _activeSuggestion = (_activeSuggestion + 1) % count;
+                break;
+            case "ArrowUp" when count > 0:
+                _suggestionsClosed = false;
+                _activeSuggestion = _activeSuggestion <= 0 ? count - 1 : _activeSuggestion - 1;
+                break;
+            case "Enter" when !_suggestionsClosed && _activeSuggestion >= 0 && _activeSuggestion < count:
+                PickName(NameMatches[_activeSuggestion]);
+                break;
+            case "Escape":
+                _suggestionsClosed = true;
+                _activeSuggestion = -1;
+                break;
+        }
+    }
+
     private void OnNameInput(ChangeEventArgs e)
     {
+        _activeSuggestion = -1;
+        _suggestionsClosed = false;
         _model.Name = e.Value?.ToString();
         _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.Name)));
 
@@ -453,6 +538,7 @@
 
     private void PickName(NameSuggestion suggestion)
     {
+        _activeSuggestion = -1;
         _model.Name = suggestion.Name;
         ApplySuggestion(suggestion);
         _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.Name)));
@@ -475,6 +561,69 @@
     {
         _model.CategoryId = selected.FirstOrDefault();
         _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
+    }
+
+    private const int MaxCategoryChips = 7;
+    private bool _pickCategory;
+    private string? _categoryTerm;
+
+    // The top used ones, plus the chosen one when it isn't among them.
+    private IReadOnlyList<(Guid Value, string Label)> ShownCategories
+    {
+        get
+        {
+            var all = CategoryOptions;
+            var top = all.Take(MaxCategoryChips).ToList();
+            if (_model.CategoryId is { } id && top.All(c => c.Value != id))
+            {
+                top.AddRange(all.Where(c => c.Value == id));
+            }
+
+            return top;
+        }
+    }
+
+    private IReadOnlyList<(Guid Value, string Label)> CategoryMatches => string.IsNullOrWhiteSpace(_categoryTerm)
+        ? CategoryOptions
+        : CategoryOptions.Where(c => c.Label.Contains(_categoryTerm.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
+
+    // No autofocus: on phones the keyboard would cover the list.
+    private void OpenCategoryPicker()
+    {
+        _categoryTerm = null;
+        _pickCategory = true;
+    }
+
+    private void PickCategory(Guid id)
+    {
+        OnCategoryChanged([id]);
+        _pickCategory = false;
+    }
+
+    private void OnCategorySearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && CategoryMatches.Count > 0)
+        {
+            PickCategory(CategoryMatches[0].Value);
+        }
+    }
+
+    private void SwapAccounts()
+    {
+        if (_model.TransferAccountId is not { } target)
+        {
+            return;
+        }
+
+        var from = _model.AccountId;
+        _model.AccountId = target;
+        _model.TransferAccountId = from;
+        if (_model.TransferAmount is { } received)
+        {
+            (_model.Amount, _model.TransferAmount) = (received, _model.Amount);
+        }
+
+        OnAccountChanged();
     }
 
     private void ToggleTag(Guid id)

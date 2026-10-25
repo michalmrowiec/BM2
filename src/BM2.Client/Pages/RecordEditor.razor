@@ -70,7 +70,7 @@
             </div>
         }
         <RecordForm @ref="_form" @key="_formKey" Wallet="Wallet" Initial="_record" IsCopy="@(CopyId is not null && Id is null)"
-                    Template="_template" Suggestions="_suggestions" DefaultAccountId="_lastAccount" Busy="_busy" OnSubmit="SaveAsync"
+                    Template="_template" Suggestions="_suggestions" DefaultAccountId="AccountId ?? _lastAccount" Busy="_busy" OnSubmit="SaveAsync"
                     OnSaveTemplate="SaveTemplateAsync" />
     }
 </section>
@@ -97,6 +97,9 @@
     [SupplyParameterFromQuery(Name = "copy")] public Guid? CopyId { get; set; }
 
     [SupplyParameterFromQuery(Name = "template")] public Guid? TemplateId { get; set; }
+
+    /// <summary>The account a new record starts on, e.g. when added from that account's records.</summary>
+    [SupplyParameterFromQuery(Name = "account")] public Guid? AccountId { get; set; }
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
@@ -143,7 +146,7 @@
 
         _suggestions = await suggestions;
         _lastAccount = await WalletState.GetLastAccountAsync();
-        _formKey = $"{Wallet.Id}/{Id}/{CopyId}/{TemplateId}";
+        _formKey = $"{Wallet.Id}/{Id}/{CopyId}/{TemplateId}/{AccountId}";
         _loading = false;
     }
 

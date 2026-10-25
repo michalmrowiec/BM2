@@ -8,7 +8,7 @@
     <a href="records" class="bottom-nav__item" aria-current="@Current("records")">
         <Icon Name="list" /><span>Records</span>
     </a>
-    <a href="records/new" class="bottom-nav__fab" aria-label="Add record">
+    <a href="@AddHref" class="bottom-nav__fab" aria-label="Add record">
         <Icon Name="plus" /><span class="bottom-nav__fab-label">Add record</span>
     </a>
     <a href="stats" class="bottom-nav__item" aria-current="@Current("stats")">
@@ -51,6 +51,12 @@
     ];
 
     protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    // On one account's records, a new record starts on that account.
+    private string AddHref =>
+        IsActive("records") && System.Web.HttpUtility.ParseQueryString(new Uri(Navigation.Uri).Query)["accountId"] is { Length: > 0 } accountId
+            ? $"{QuickAddPath}?account={Uri.EscapeDataString(accountId)}"
+            : QuickAddPath;
 
     private string? Current(string section) => IsActive(section) ? "page" : null;
 
