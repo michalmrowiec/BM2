@@ -7,7 +7,13 @@
     @foreach (var toast in Toasts.Items)
     {
         <div class="toast toast--@toast.Kind.ToString().ToLowerInvariant()" @key="toast.Id">
-            <span>@toast.Message</span>
+            <span class="toast__text">
+                @if (toast.Kind is ToastKind.Success or ToastKind.Error)
+                {
+                    <span class="toast__icon" aria-hidden="true"><Icon Name="@(toast.Kind == ToastKind.Success ? "check" : "alert")" /></span>
+                }
+                @toast.Message
+            </span>
             <button type="button" class="icon-button" aria-label="Dismiss" @onclick="() => Toasts.Dismiss(toast.Id)">
                 <Icon Name="close" />
             </button>

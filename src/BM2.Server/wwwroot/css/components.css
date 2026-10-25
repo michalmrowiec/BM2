@@ -649,6 +649,27 @@ button.list-row:hover { background: var(--wash); }
 .toast .icon-button:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
 .toast--error { background: var(--negative); }
 
+.toast__text {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+}
+
+.toast__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--positive);
+    color: var(--paper);
+}
+
+.toast__icon .icon { width: 0.95rem; height: 0.95rem; }
+.toast--error .toast__icon { background: color-mix(in srgb, var(--paper) 22%, transparent); color: inherit; }
+
 /* Wallet switcher in the header */
 .wallet-switcher {
     display: inline-flex;
@@ -1391,14 +1412,23 @@ button.list-row:hover { background: var(--wash); }
 }
 
 /* The toast host is a popover: undo the browser's popover box but keep the position above. */
+/* Toasts sit under the header: centered on phones, top right on large screens. */
 .toast-host[popover] {
-    inset: auto auto calc(var(--nav-h) + var(--space-4) + env(safe-area-inset-bottom)) 50%;
+    inset: calc(var(--header-h) + env(safe-area-inset-top) + var(--space-2)) auto auto 50%;
     margin: 0;
     padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
     overflow: visible;
+}
+
+@media (min-width: 64rem) {
+    .toast-host[popover] {
+        inset: calc(var(--header-h) + var(--space-3)) var(--space-5) auto auto;
+        width: 22rem;
+        translate: none;
+    }
 }
 
 /* Record form: name suggestions and inline new tag */
