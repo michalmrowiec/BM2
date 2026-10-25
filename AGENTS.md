@@ -70,6 +70,10 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne
   waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Home ładuje wszystko jednym `GET dashboard`.
+- **Wykresy:** komponent `Chart` (opcje ECharts, kolory jako `"var(--token)"`, przerysowanie po zmianie motywu, bez
+  animacji przy `prefers-reduced-motion`); ECharts 5.6.0 lokalnie w `BM2.Server/wwwroot/lib/echarts`, ładowany leniwie
+  przez `Chart.razor.js`. Przy wykresie zawsze te same liczby tekstem (lista/tabela). Statystyki: `stats/categories`,
+  `stats/monthly` (rekordy `Completed`, bez transferów, jedna waluta kont).
 - **Klient:** strony korzystające z portfela dziedziczą `WalletComponentBase` (`WalletState` z migawką portfela,
   ostatni wybór w `localStorage`); API przez `ApiClient` (`ApiResult`/`ApiProblem`, 401 → logowanie); formularze to
   `EditForm` na modyfikowalnym modelu z nazwami pól jak w requeście + `FluentValidator` (ten sam walidator co serwer,

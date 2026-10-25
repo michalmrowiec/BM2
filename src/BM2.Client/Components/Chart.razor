@@ -1,0 +1,65 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* ECharts canvas; colors in Options may be "var(--token)" strings. The numbers must also be shown as text nearby. *@
+<div @ref="_element" class="chart @Class" role="img" aria-label="@Label"></div>
+
+@code {
+    private ElementReference _element;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _chart;
+    private DotNetObjectReference<Chart>? _self;
+    private object? _rendered;
+
+    /// <summary>ECharts option object; pass a new instance to redraw.</summary>
+    [Parameter, EditorRequired] public object Options { get; set; } = new();
+
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+
+    /// <summary>Receives the clicked item's <c>id</c> (or name).</summary>
+    [Parameter] public EventCallback<string> OnItemClick { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _self = DotNetObjectReference.Create(this);
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Chart.razor.js");
+            _chart = await _module.InvokeAsync<IJSObjectReference>("create", _element, _self);
+        }
+
+        if (_chart is not null && !ReferenceEquals(Options, _rendered))
+        {
+            _rendered = Options;
+            await _chart.InvokeVoidAsync("setOption", Options);
+        }
+    }
+
+    [JSInvokable]
+    public Task OnClick(string key) => OnItemClick.InvokeAsync(key);
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_chart is not null)
+            {
+                await _chart.InvokeVoidAsync("dispose");
+                await _chart.DisposeAsync();
+            }
+
+            if (_module is not null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The page is gone; nothing to clean up in the browser.
+        }
+
+        _self?.Dispose();
+    }
+}

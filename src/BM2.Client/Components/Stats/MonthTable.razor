@@ -1,0 +1,56 @@
+@using System.Globalization
+@using BM2.Contracts.Records
+@using BM2.Contracts.Stats
+
+@* The numbers behind a monthly chart, newest first. *@
+<details class="stats-numbers">
+    <summary>Show numbers</summary>
+    <table class="stats-table">
+        <thead>
+            <tr>
+                <th scope="col">Month</th>
+                @if (Only != RecordType.Expense)
+                {
+                    <th scope="col">Income</th>
+                }
+                @if (Only != RecordType.Income)
+                {
+                    <th scope="col">Expenses</th>
+                }
+                @if (Only is null)
+                {
+                    <th scope="col">Net</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var month in Items.Reverse())
+            {
+                <tr>
+                    <th scope="row">@month.Month.ToString("MMMM yyyy", CultureInfo.CurrentCulture)</th>
+                    @if (Only != RecordType.Expense)
+                    {
+                        <td><Amount Value="month.Income" Currency="@Currency" /></td>
+                    }
+                    @if (Only != RecordType.Income)
+                    {
+                        <td><Amount Value="-month.Expense" Currency="@Currency" /></td>
+                    }
+                    @if (Only is null)
+                    {
+                        <td><Amount Value="month.Income - month.Expense" Currency="@Currency" /></td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</details>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<MonthTotal> Items { get; set; } = [];
+
+    [Parameter, EditorRequired] public string Currency { get; set; } = "";
+
+    /// <summary>Show only this type's column.</summary>
+    [Parameter] public RecordType? Only { get; set; }
+}
