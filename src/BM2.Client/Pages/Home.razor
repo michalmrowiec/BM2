@@ -85,7 +85,15 @@
                 {
                     <div class="section-header">
                         <h2 class="section-title">To confirm</h2>
-                        <a class="link" href="records?status=Pending&all=true">All</a>
+                        <span class="section-header__actions">
+                            @if (_pending.Count > 1)
+                            {
+                                <button type="button" class="btn btn-secondary btn-sm" disabled="@_busy" @onclick="() => _confirmAll = true">
+                                    <Icon Name="check" /> Confirm all
+                                </button>
+                            }
+                            <a class="link" href="records?status=Pending&all=true">All</a>
+                        </span>
                     </div>
                     <ul class="list">
                         @foreach (var record in _pending)
@@ -221,7 +229,13 @@
     </NotAuthorized>
 </AuthorizeView>
 
+<ConfirmDialog Open="_confirmAll" OpenChanged="v => _confirmAll = v" Title="@($"Confirm {_pending.Count} records?")"
+               ConfirmLabel="Confirm all" OnConfirm="ConfirmAllAsync">
+    <p>The records shown in To confirm become Completed and count in account balances.</p>
+</ConfirmDialog>
+
 @code {
+    private bool _confirmAll;
     private IReadOnlyList<RecordItem> _recent = [];
     private IReadOnlyList<TemplateItem> _templates = [];
     private RecordSummary? _month;
@@ -272,22 +286,21 @@
         _budgets = data.Budgets;
     }
 
-    private async Task ConfirmAsync(RecordItem r)
+    private Task ConfirmAsync(RecordItem r) => ConfirmManyAsync([r]);
+
+    private Task ConfirmAllAsync()
+    {
+        _confirmAll = false;
+        return ConfirmManyAsync(_pending.ToList());
+    }
+
+    private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records)
     {
         _busy = true;
-        var request = new SaveRecordRequest(
-            r.Type, RecordStatus.Completed, r.OccurredOn, r.AccountId, r.Amount, r.Currency, r.AccountAmount, r.CategoryId,
-            r.TransferAccountId, r.TransferAmount, r.Name, r.TagIds);
-        var result = await Api.PutAsync($"api/wallets/{WalletState.Current!.Id}/records/{r.Id}", request);
+        var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records);
         _busy = false;
-        if (result.Ok)
-        {
-            Toasts.Show("Confirmed.", ToastKind.Success);
-            await WalletState.RefreshAsync();
-        }
-        else
-        {
-            Toasts.Show(result.Problem!.Detail ?? "Couldn't confirm the record.", ToastKind.Error);
-        }
+        Toasts.Show(failed == 0 ? (records.Count == 1 ? "Confirmed." : $"{records.Count} records confirmed.") : $"{failed} couldn't be confirmed.",
+            failed == 0 ? ToastKind.Success : ToastKind.Error);
+        await WalletState.RefreshAsync();
     }
 }

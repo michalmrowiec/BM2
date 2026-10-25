@@ -26,7 +26,8 @@
                 var view = View(item);
                 @* Right click and Android long press open the same menu as the dots button. *@
                 var selected = _selected.Contains(item.Id);
-                <li @key="item.Id" class="record-row @(selected ? "is-selected" : null)" @oncontextmenu="() => _menuFor = item" @oncontextmenu:preventDefault="true">
+                var open = item.Status != RecordStatus.Completed;
+                <li @key="item.Id" class="record-row @(open ? $"record-row--{item.Status.ToString().ToLowerInvariant()}" : null) @(selected ? "is-selected" : null)" @oncontextmenu="() => _menuFor = item" @oncontextmenu:preventDefault="true">
                     @if (Selectable)
                     {
                         @* Tapping the icon selects; the rest of the row opens the record. *@
@@ -68,12 +69,19 @@
                         </span>
                         <span class="record-row__end">
                             <Amount Value="view.Amount" Currency="@view.Currency" Sign="view.Sign" />
-                            @if (item.Status != RecordStatus.Completed)
+                            @if (open)
                             {
-                                <span class="tag">@item.Status</span>
+                                <span class="tag record-status"><Icon Name="@(item.Status == RecordStatus.Pending ? "clock" : "calendar")" />@item.Status</span>
                             }
                         </span>
                     </a>
+                    @if (open && CanWrite(item))
+                    {
+                        <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {view.Title} as completed")"
+                                title="Mark as completed" disabled="@_busy" @onclick="() => ConfirmAsync([item])">
+                            <Icon Name="check" />
+                        </button>
+                    }
                     <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {view.Title}")"
                             @onclick="() => _menuFor = item">
                         <Icon Name="dots" />
@@ -93,6 +101,12 @@
             </li>
             @if (CanWrite(record))
             {
+                @if (record.Status != RecordStatus.Completed)
+                {
+                    <li>
+                        <button type="button" @onclick="() => ConfirmAsync([record])"><Icon Name="check" /><span>Mark as completed</span></button>
+                    </li>
+                }
                 <li>
                     <a href="@($"records/new?copy={record.Id}")"><Icon Name="copy" /><span>Copy</span></a>
                 </li>
@@ -139,6 +153,12 @@
             <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.UnionWith(Items.Select(i => i.Id))">Select all</button>
         }
         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.Clear()">Clear</button>
+        @if (SelectedOpen.Count > 0)
+        {
+            <button type="button" class="btn btn-primary btn-sm" disabled="@_busy" @onclick="() => _confirmBulkComplete = true">
+                <Icon Name="check" /> Complete
+            </button>
+        }
         <button type="button" class="btn btn-danger btn-sm" @onclick="() => _confirmBulk = true">
             <Icon Name="trash" /> Delete
         </button>
@@ -148,6 +168,12 @@
 <ConfirmDialog Open="_confirmBulk" OpenChanged="v => _confirmBulk = v" Title="@($"Delete {SelectedItems.Count} records?")"
                ConfirmLabel="Delete" Danger="true" OnConfirm="DeleteSelectedAsync">
     <p>This can't be undone. Records you can only view are skipped.</p>
+</ConfirmDialog>
+
+<ConfirmDialog Open="_confirmBulkComplete" OpenChanged="v => _confirmBulkComplete = v"
+               Title="@($"Mark {SelectedOpen.Count} records as completed?")" ConfirmLabel="Mark as completed"
+               OnConfirm="() => ConfirmAsync(SelectedOpen)">
+    <p>Selected pending and planned records become Completed and count in account balances. Completed ones stay as they are.</p>
 </ConfirmDialog>
 
 <ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="Delete record?" ConfirmLabel="Delete"
@@ -160,6 +186,23 @@
     private RecordItem? _deleting;
     private readonly HashSet<Guid> _selected = [];
     private bool _confirmBulk;
+    private bool _confirmBulkComplete;
+    private bool _busy;
+
+    private List<RecordItem> SelectedOpen => SelectedItems.Where(i => i.Status != RecordStatus.Completed && CanWrite(i)).ToList();
+
+    private async Task ConfirmAsync(IReadOnlyList<RecordItem> records)
+    {
+        _menuFor = null;
+        _confirmBulkComplete = false;
+        _busy = true;
+        var failed = await RecordConfirm.ConfirmAsync(Api, Wallet.Id, records);
+        _busy = false;
+        _selected.ExceptWith(records.Select(r => r.Id));
+        Toasts.Show(failed == 0 ? (records.Count == 1 ? "Marked as completed." : $"{records.Count} records completed.") : $"{failed} couldn't be completed.",
+            failed == 0 ? ToastKind.Success : ToastKind.Error);
+        await WalletState.RefreshAsync();
+    }
 
     /// <summary>Lets the user select records by tapping their icon, with a sum and bulk delete.</summary>
     [Parameter] public bool Selectable { get; set; }
