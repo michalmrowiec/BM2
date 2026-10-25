@@ -7,7 +7,7 @@ namespace BM2.Contracts.Budgets;
 public sealed record BudgetOverview(DateOnly Month, string Currency, IReadOnlyList<BudgetItem> Items);
 
 /// <param name="OtherSpent">Spending in the category on accounts in other currencies, not counted against the limit.</param>
-public sealed record BudgetItem(Guid Id, Guid CategoryId, decimal Limit, decimal Spent, IReadOnlyList<CurrencyAmount> OtherSpent);
+public sealed record BudgetItem(Guid Id, Guid CategoryId, decimal Limit, decimal Spent, decimal Planned, IReadOnlyList<CurrencyAmount> OtherSpent);
 
 public sealed record CurrencyAmount(string Currency, decimal Amount);
 

@@ -63,7 +63,7 @@ internal static class GetWallet
                 access.Can(WalletPermission.ManageMembers)),
             accounts
                 .Select(a => new AccountItem(
-                    a.Id, a.Name, a.Currency, a.OpeningBalance, balances[a.Id], a.IsArchived, access.CanWriteAccount(a.Id)))
+                    a.Id, a.Name, a.Currency, a.OpeningBalance, balances[a.Id].Balance, balances[a.Id].WithPlanned, a.IsArchived, access.CanWriteAccount(a.Id)))
                 .ToList(),
             categories,
             tags));

@@ -11,10 +11,10 @@ namespace BM2.ClientTests.Components;
 
 public class RecordFormTests : BunitContext
 {
-    private static readonly AccountItem Cash = new(Guid.NewGuid(), "Cash", "PLN", 0, 0, false, true);
-    private static readonly AccountItem Savings = new(Guid.NewGuid(), "Savings", "PLN", 0, 0, false, true);
-    private static readonly AccountItem Euro = new(Guid.NewGuid(), "Euro", "EUR", 0, 0, false, true);
-    private static readonly AccountItem ReadOnly = new(Guid.NewGuid(), "Joint", "PLN", 0, 0, false, false);
+    private static readonly AccountItem Cash = new(Guid.NewGuid(), "Cash", "PLN", 0, 0, 0, false, true);
+    private static readonly AccountItem Savings = new(Guid.NewGuid(), "Savings", "PLN", 0, 0, 0, false, true);
+    private static readonly AccountItem Euro = new(Guid.NewGuid(), "Euro", "EUR", 0, 0, 0, false, true);
+    private static readonly AccountItem ReadOnly = new(Guid.NewGuid(), "Joint", "PLN", 0, 0, 0, false, false);
     private static readonly CategoryItem Groceries = new(Guid.NewGuid(), "Groceries", CategoryType.Expense, false);
     private static readonly CategoryItem Transport = new(Guid.NewGuid(), "Transport", CategoryType.Expense, false);
     private static readonly CategoryItem Old = new(Guid.NewGuid(), "Old hobby", CategoryType.Expense, true);

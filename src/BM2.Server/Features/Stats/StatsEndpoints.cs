@@ -119,7 +119,7 @@ public static class StatsEndpoints
         return await db.Wallets.Where(w => w.Id == walletId).Select(w => w.BaseCurrency).SingleAsync(ct);
     }
 
-    // Completed income and expenses on visible accounts in one currency; null when the account is not readable.
+    // Completed and pending income and expenses on visible accounts in one currency; null when the account is not readable.
     private static IQueryable<Record>? Query(
         AppDbContext db, CurrentWallet current, StatsFilter filter, string currency, DateOnly? from = null, DateOnly? to = null)
     {
@@ -129,8 +129,7 @@ public static class StatsEndpoints
             To = to ?? filter.To,
             AccountId = filter.AccountId,
             CategoryId = filter.CategoryId,
-            Status = RecordStatus.Completed,
-        })?.Where(r => r.Type != RecordType.Transfer && r.Account.Currency == currency);
+        })?.Where(r => r.Status != RecordStatus.Planned && r.Type != RecordType.Transfer && r.Account.Currency == currency);
 
         if (query is not null && filter.TagIds is { Length: > 0 } tagIds)
         {

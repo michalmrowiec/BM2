@@ -27,7 +27,7 @@ internal static class GetDashboard
 
         // One DbContext, so the queries run one after another.
         var month = await GetRecordSummary.SummarizeAsync(
-            RecordQueries.Filtered(db, current, new RecordFilter { From = start, To = start.AddMonths(1), Status = RecordStatus.Completed })!, ct);
+            RecordQueries.Filtered(db, current, new RecordFilter { From = start, To = start.AddMonths(1) })!.Where(r => r.Status != RecordStatus.Planned), ct);
         var pending = await ListRecords.LatestAsync(db, RecordQueries.Filtered(db, current, new RecordFilter { Status = RecordStatus.Pending })!, 10, ct);
         var planned = await ListRecords.EarliestAsync(db, RecordQueries.Filtered(db, current, new RecordFilter { Status = RecordStatus.Planned })!, 10, ct);
         var templates =(await ListTemplates.LoadAsync(current, db, ct)).Where(t => t.IsPinned).ToList();

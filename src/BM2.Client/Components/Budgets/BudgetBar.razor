@@ -22,6 +22,13 @@
     </div>
     <progress class="budget__bar" max="100" value="@Percent.ToString(CultureInfo.InvariantCulture)" aria-hidden="true"></progress>
     <span class="budget__numbers num">@Format(Item.Spent) of @Format(Item.Limit) @Currency</span>
+    @if (Item.Planned > 0)
+    {
+        <span class="budget__note">
+            Planned: @Format(Item.Planned) more.
+            @(Item.Spent + Item.Planned > Item.Limit ? $"With it you'd be over by {Format(Item.Spent + Item.Planned - Item.Limit)}." : "Still within the limit.")
+        </span>
+    }
     @if (Item.OtherSpent.Count > 0)
     {
         <span class="budget__note">

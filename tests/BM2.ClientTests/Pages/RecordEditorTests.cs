@@ -13,7 +13,7 @@ namespace BM2.ClientTests.Pages;
 public class RecordEditorTests : BunitContext
 {
     private static readonly Guid WalletId = Guid.NewGuid();
-    private static readonly AccountItem Cash = new(Guid.NewGuid(), "Cash", "PLN", 0, 0, false, true);
+    private static readonly AccountItem Cash = new(Guid.NewGuid(), "Cash", "PLN", 0, 0, 0, false, true);
     private static readonly CategoryItem Groceries = new(Guid.NewGuid(), "Groceries", CategoryType.Expense, false);
 
     private readonly CultureScope _culture = new("en-US");

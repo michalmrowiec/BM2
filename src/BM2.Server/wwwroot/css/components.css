@@ -787,6 +787,14 @@ button.list-row:hover { background: var(--wash); }
     margin: var(--space-4) 0 var(--space-5);
 }
 
+.balance__planned {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-size: var(--text-s);
+    color: var(--ink-muted);
+}
+
 .account-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));

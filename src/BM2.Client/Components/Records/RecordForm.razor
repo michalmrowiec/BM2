@@ -187,7 +187,11 @@
         [(RecordType.Expense, "Expense"), (RecordType.Income, "Income"), (RecordType.Transfer, "Transfer")];
 
     private static readonly IReadOnlyList<(RecordStatus Value, string Label)> StatusOptions =
-        [(RecordStatus.Completed, "Completed"), (RecordStatus.Pending, "Pending"), (RecordStatus.Planned, "Planned")];
+        [
+            (RecordStatus.Completed, "Completed – done and checked"),
+            (RecordStatus.Pending, "Pending – happened, waiting for your ✓ (counts in balances)"),
+            (RecordStatus.Planned, "Planned – not counted yet, shown as a forecast"),
+        ];
 
     private readonly List<TagItem> _createdTags = [];
     private FormModel _model = new();

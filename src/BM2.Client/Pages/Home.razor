@@ -40,10 +40,19 @@
             if (accounts.Count > 0)
             {
                 <section class="balance" aria-label="Total balance">
-                    @foreach (var total in accounts.GroupBy(a => a.Currency).Select(g => (Currency: g.Key, Sum: g.Sum(a => a.Balance))))
+                    @foreach (var total in accounts.GroupBy(a => a.Currency)
+                                  .Select(g => (Currency: g.Key, Sum: g.Sum(a => a.Balance), WithPlanned: g.Sum(a => a.WithPlanned))))
                     {
                         <Amount Value="total.Sum" Currency="@total.Currency" Large="true"
                                 Sign="@(total.Sum < 0 ? AmountSign.Minus : AmountSign.None)" />
+                        @if (total.WithPlanned != total.Sum)
+                        {
+                            <span class="balance__planned">
+                                With planned:
+                                <Amount Value="total.WithPlanned" Currency="@total.Currency"
+                                        Sign="@(total.WithPlanned < 0 ? AmountSign.Minus : AmountSign.None)" />
+                            </span>
+                        }
                     }
                 </section>
 
@@ -220,14 +229,18 @@
 
 <ConfirmDialog Open="_confirmAll" OpenChanged="v => _confirmAll = v" Title="@($"Confirm {_pending.Count} records?")"
                ConfirmLabel="Confirm all" OnConfirm="ConfirmAllAsync">
-    <p>The records shown in To confirm become Completed and count in account balances.</p>
+    <p>The records shown in To confirm are marked as checked (Completed). They already count in balances, so totals stay the same.</p>
 </ConfirmDialog>
+
+<PlannedChoice Record="_choiceFor" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
+               Chosen="s => ConfirmManyAsync([_choiceFor!], s)" />
 
 @code {
     private bool _confirmAll;
     private IReadOnlyList<RecordItem> _planned = [];
+    private RecordItem? _choiceFor;
 
-    // Pending and planned records with a one-tap ✓ that marks them completed.
+    // Pending and planned records with a one-tap ✓; planned ones ask completed or pending.
     private RenderFragment OpenRecords(IReadOnlyList<RecordItem> records, WalletSnapshot wallet) =>
         @<ul class="list">
             @foreach (var record in records)
@@ -301,7 +314,16 @@
         _budgets = data.Budgets;
     }
 
-    private Task ConfirmAsync(RecordItem r) => ConfirmManyAsync([r]);
+    private Task ConfirmAsync(RecordItem r)
+    {
+        if (r.Status == RecordStatus.Planned)
+        {
+            _choiceFor = r;
+            return Task.CompletedTask;
+        }
+
+        return ConfirmManyAsync([r]);
+    }
 
     private Task ConfirmAllAsync()
     {
@@ -309,12 +331,14 @@
         return ConfirmManyAsync(_pending.ToList());
     }
 
-    private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records)
+    private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
     {
+        _choiceFor = null;
         _busy = true;
-        var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records);
+        var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records, status);
         _busy = false;
-        Toasts.Show(failed == 0 ? (records.Count == 1 ? "Confirmed." : $"{records.Count} records confirmed.") : $"{failed} couldn't be confirmed.",
+        var done = status == RecordStatus.Pending ? "pending" : "completed";
+        Toasts.Show(failed == 0 ? (records.Count == 1 ? $"Marked as {done}." : $"{records.Count} records marked as {done}.") : $"{failed} couldn't be changed.",
             failed == 0 ? ToastKind.Success : ToastKind.Error);
         await WalletState.RefreshAsync();
     }

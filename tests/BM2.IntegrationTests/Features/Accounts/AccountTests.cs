@@ -20,7 +20,7 @@ public class AccountTests(IntegrationFixture fixture) : IntegrationTest(fixture)
         var snapshot = await client.GetFromJsonAsync<WalletSnapshot>($"/api/wallets/{wallet}", Ct);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
-        snapshot!.Accounts.ShouldHaveSingleItem().ShouldBe(new AccountItem(created!.Id, "Bank", "EUR", 100m, 100m, false, true));
+        snapshot!.Accounts.ShouldHaveSingleItem().ShouldBe(new AccountItem(created!.Id, "Bank", "EUR", 100m, 100m, 100m, false, true));
     }
 
     [Fact]

@@ -1,0 +1,28 @@
+@using BM2.Contracts.Records
+
+@* A planned record can become pending (it happened, check it later) or completed (checked). *@
+<Sheet Open="Record is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(Title ?? "Planned record")">
+    <ul class="menu-list">
+        <li>
+            <button type="button" @onclick="() => Chosen.InvokeAsync(RecordStatus.Completed)">
+                <Icon Name="check" /><span>Completed – it's done and checked</span>
+            </button>
+        </li>
+        <li>
+            <button type="button" @onclick="() => Chosen.InvokeAsync(RecordStatus.Pending)">
+                <Icon Name="clock" /><span>Pending – it happened, I'll check it later</span>
+            </button>
+        </li>
+    </ul>
+    <p class="budget__note">Both count in balances, budgets and stats from now on.</p>
+</Sheet>
+
+@code {
+    [Parameter] public RecordItem? Record { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+
+    [Parameter] public EventCallback<RecordStatus> Chosen { get; set; }
+
+    [Parameter] public EventCallback Closed { get; set; }
+}

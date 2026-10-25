@@ -10,7 +10,7 @@ namespace BM2.ClientTests.Components;
 
 public class RecordListTests : BunitContext
 {
-    private static readonly AccountItem Cash = new(Guid.NewGuid(), "Cash", "PLN", 0, 0, false, true);
+    private static readonly AccountItem Cash = new(Guid.NewGuid(), "Cash", "PLN", 0, 0, 0, false, true);
     private static readonly CategoryItem Groceries = new(Guid.NewGuid(), "Groceries", CategoryType.Expense, false);
     private static readonly TagItem House = new(Guid.NewGuid(), "House", false);
     private static readonly DateOnly Day = new(2026, 10, 20);
@@ -67,7 +67,7 @@ public class RecordListTests : BunitContext
     [Fact]
     public void Incoming_transfer_for_shared_account_shows_plus_and_counterpart()
     {
-        var euro = new AccountItem(Guid.NewGuid(), "Euro", "EUR", 0, 0, false, false);
+        var euro = new AccountItem(Guid.NewGuid(), "Euro", "EUR", 0, 0, 0, false, false);
         var transfer = new RecordItem(
             Guid.NewGuid(), RecordType.Transfer, RecordStatus.Completed, Day, Guid.NewGuid(), "Savings", 430m, "PLN", 430m,
             null, euro.Id, "Euro", 100m, null, []);
@@ -82,7 +82,7 @@ public class RecordListTests : BunitContext
     [Fact]
     public void Outgoing_transfer_shows_minus_and_target()
     {
-        var savings = new AccountItem(Guid.NewGuid(), "Savings", "PLN", 0, 0, false, true);
+        var savings = new AccountItem(Guid.NewGuid(), "Savings", "PLN", 0, 0, 0, false, true);
         var transfer = new RecordItem(
             Guid.NewGuid(), RecordType.Transfer, RecordStatus.Completed, Day, Cash.Id, "Cash", 50m, "PLN", 50m, null, savings.Id,
             "Savings", 50m, null, []);

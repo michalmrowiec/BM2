@@ -33,7 +33,7 @@ internal static class CreateAccount
 
         return TypedResults.Created(
             $"{ApiPaths.Prefix}/wallets/{current.Id}/accounts/{account.Id}",
-            new AccountItem(account.Id, account.Name, account.Currency, account.OpeningBalance, account.OpeningBalance, false, true));
+            new AccountItem(account.Id, account.Name, account.Currency, account.OpeningBalance, account.OpeningBalance, account.OpeningBalance, false, true));
     }
 }
 

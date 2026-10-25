@@ -78,7 +78,7 @@
                     @if (open && CanWrite(item))
                     {
                         <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {view.Title} as completed")"
-                                title="Mark as completed" disabled="@_busy" @onclick="() => ConfirmAsync([item])">
+                                title="Mark as completed" disabled="@_busy" @onclick="() => Check(item)">
                             <Icon Name="check" />
                         </button>
                     }
@@ -104,7 +104,7 @@
                 @if (record.Status != RecordStatus.Completed)
                 {
                     <li>
-                        <button type="button" @onclick="() => ConfirmAsync([record])"><Icon Name="check" /><span>Mark as completed</span></button>
+                        <button type="button" @onclick="() => Check(record)"><Icon Name="check" /><span>@(record.Status == RecordStatus.Planned ? "Mark as done…" : "Mark as completed")</span></button>
                     </li>
                 }
                 <li>
@@ -173,8 +173,11 @@
 <ConfirmDialog Open="_confirmBulkComplete" OpenChanged="v => _confirmBulkComplete = v"
                Title="@($"Mark {SelectedOpen.Count} records as completed?")" ConfirmLabel="Mark as completed"
                OnConfirm="() => ConfirmAsync(SelectedOpen)">
-    <p>Selected pending and planned records become Completed and count in account balances. Completed ones stay as they are.</p>
+    <p>Selected pending and planned records become Completed. Planned ones start counting in balances, budgets and stats.</p>
 </ConfirmDialog>
+
+<PlannedChoice Record="_choiceFor" Title="@(_choiceFor is null ? null : View(_choiceFor).Title)" Closed="() => _choiceFor = null"
+               Chosen="s => ConfirmAsync([_choiceFor!], s)" />
 
 <ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="Delete record?" ConfirmLabel="Delete"
                Danger="true" OnConfirm="DeleteAsync">
@@ -191,15 +194,32 @@
 
     private List<RecordItem> SelectedOpen => SelectedItems.Where(i => i.Status != RecordStatus.Completed && CanWrite(i)).ToList();
 
-    private async Task ConfirmAsync(IReadOnlyList<RecordItem> records)
+    private RecordItem? _choiceFor;
+
+    // Planned records ask whether they become completed or pending.
+    private Task Check(RecordItem item)
     {
         _menuFor = null;
+        if (item.Status == RecordStatus.Planned)
+        {
+            _choiceFor = item;
+            return Task.CompletedTask;
+        }
+
+        return ConfirmAsync([item]);
+    }
+
+    private async Task ConfirmAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
+    {
+        _menuFor = null;
+        _choiceFor = null;
         _confirmBulkComplete = false;
         _busy = true;
-        var failed = await RecordConfirm.ConfirmAsync(Api, Wallet.Id, records);
+        var failed = await RecordConfirm.ConfirmAsync(Api, Wallet.Id, records, status);
         _busy = false;
         _selected.ExceptWith(records.Select(r => r.Id));
-        Toasts.Show(failed == 0 ? (records.Count == 1 ? "Marked as completed." : $"{records.Count} records completed.") : $"{failed} couldn't be completed.",
+        var done = status == RecordStatus.Pending ? "pending" : "completed";
+        Toasts.Show(failed == 0 ? (records.Count == 1 ? $"Marked as {done}." : $"{records.Count} records marked as {done}.") : $"{failed} couldn't be changed.",
             failed == 0 ? ToastKind.Success : ToastKind.Error);
         await WalletState.RefreshAsync();
     }
