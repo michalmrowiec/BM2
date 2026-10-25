@@ -70,12 +70,12 @@ public static class StatsCharts
         var series = new List<object>();
         if (only != RecordType.Expense)
         {
-            series.Add(Bars("Income", items.Select(m => m.Income), only is null ? "var(--positive)" : "var(--vivid)"));
+            series.Add(Bars("Income", RecordType.Income, items, m => m.Income, only is null ? "var(--positive)" : "var(--vivid)"));
         }
 
         if (only != RecordType.Income)
         {
-            series.Add(Bars("Expenses", items.Select(m => m.Expense), only is null ? "var(--negative)" : "var(--vivid)"));
+            series.Add(Bars("Expenses", RecordType.Expense, items, m => m.Expense, only is null ? "var(--negative)" : "var(--vivid)"));
         }
 
         if (only is null)
@@ -115,14 +115,27 @@ public static class StatsCharts
         };
     }
 
-    private static object Bars(string name, IEnumerable<decimal> values, string color) => new
+    // Each bar's id ("Expense:2026-10-01") tells a click which records it stands for.
+    private static object Bars(string name, RecordType type, IReadOnlyList<MonthTotal> items, Func<MonthTotal, decimal> value, string color) => new
     {
         name,
         type = "bar",
-        data = values.ToList(),
+        data = items.Select(m => new { id = $"{type}:{m.Month.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}", value = value(m) }).ToList(),
         barMaxWidth = 18,
         itemStyle = new { color, borderRadius = new[] { 4, 4, 0, 0 } },
+        cursor = "pointer",
     };
+
+    /// <summary>Reads a bar id made by <see cref="Months"/>.</summary>
+    public static bool TryParseBar(string key, out RecordType type, out DateOnly month)
+    {
+        month = default;
+        type = default;
+        var parts = key.Split(':');
+        return parts.Length == 2
+            && Enum.TryParse(parts[0], out type)
+            && DateOnly.TryParseExact(parts[1], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out month);
+    }
 
     private static string TokenOf(string swatch) => swatch switch
     {

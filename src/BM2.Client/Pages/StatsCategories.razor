@@ -10,7 +10,7 @@
 @inject ApiClient Api
 @inject StatsState State
 
-<StatsHeader Title="By category">Tap a category in the list or the chart to see its last 12 months.</StatsHeader>
+<StatsHeader Title="By category">Tap a category to see its last 12 months, then a bar to see that month's records.</StatsHeader>
 
 @if (Wallet is null)
 {
@@ -47,12 +47,20 @@ else
         <section class="stats-trend card" aria-labelledby="stats-trend-title">
             <div class="stats-section__head">
                 <h2 class="stats-trend__title" id="stats-trend-title">@StatsCharts.NameOf(Wallet, trendId) · last 12 months</h2>
-                <button type="button" class="icon-button" aria-label="Close category trend" @onclick="CloseTrend"><Icon Name="close" /></button>
+                <span class="section-header__actions">
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => ShowPeriodRecords(trendId)">
+                        <Icon Name="list" /> Records
+                    </button>
+                    <button type="button" class="icon-button" aria-label="Close category trend" @onclick="CloseTrend"><Icon Name="close" /></button>
+                </span>
             </div>
-            <Chart Options="_trendChart" Label="@($"Monthly {TypeNoun} for {StatsCharts.NameOf(Wallet, trendId)}. The table lists every month.")" />
+            <Chart Options="_trendChart" OnItemClick="ShowBarRecords"
+                   Label="@($"Monthly {TypeNoun} for {StatsCharts.NameOf(Wallet, trendId)}. Tap a bar for its records. The table lists every month.")" />
             <MonthTable Items="_trend.Items" Currency="@Currency" Only="State.Type" />
         </section>
     }
+
+    <RecordsPreview Wallet="Wallet" Query="_preview" Closed="() => _preview = null" />
 }
 
 @code {
@@ -128,6 +136,26 @@ else
             _trendId = id;
             await LoadTrendAsync();
         }
+    }
+
+    private RecordsPreviewQuery? _preview;
+
+    // The selected category in one month of the trend.
+    private void ShowBarRecords(string key)
+    {
+        if (_trendId is { } id && StatsCharts.TryParseBar(key, out var type, out var month))
+        {
+            _preview = new RecordsPreviewQuery($"{StatsCharts.NameOf(Wallet!, id)} · {month:MMMM yyyy}", month, month.AddMonths(1),
+                type, Currency, State.AccountId, id);
+        }
+    }
+
+    // The selected category in the chosen period.
+    private void ShowPeriodRecords(Guid id)
+    {
+        var (from, to) = State.Range;
+        _preview = new RecordsPreviewQuery($"{StatsCharts.NameOf(Wallet!, id)} · {from:d MMM yyyy} – {to.AddDays(-1):d MMM yyyy}", from, to,
+            State.Type, Currency, State.AccountId, id);
     }
 
     private void CloseTrend()

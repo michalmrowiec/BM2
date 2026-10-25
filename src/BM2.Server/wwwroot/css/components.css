@@ -383,6 +383,11 @@
     }
 }
 
+/* Wide screens: lists and stats get more room; grids (cards, tiles) fit more columns. */
+@media (min-width: 80rem) {
+    :root { --content-max: 60rem; }
+}
+
 /* Page header: title with an action */
 .page-header {
     display: flex;
@@ -525,10 +530,36 @@ button.list-row:hover { background: var(--wash); }
 
 .field__select { position: relative; }
 
+/* Choice controls (select, date) are pills like chips; typed fields keep the softer rectangle. */
 .field__select .field__control {
     appearance: none;
     padding-right: var(--space-7);
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+    cursor: pointer;
 }
+
+input[type="date"].field__control {
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+input[type="date"].field__control::-webkit-datetime-edit-text { color: var(--ink-muted); }
+
+/* Lucide calendar instead of the browser's icon (Chromium; Firefox and Safari keep their own). */
+input[type="date"].field__control::-webkit-calendar-picker-indicator {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: var(--space-2);
+    background: var(--ink-muted);
+    -webkit-mask: url("../icons/calendar.svg") center / contain no-repeat;
+    mask: url("../icons/calendar.svg") center / contain no-repeat;
+    cursor: pointer;
+}
+
+input[type="date"].field__control:hover::-webkit-calendar-picker-indicator { background: var(--ink); }
 
 .field__select-icon {
     position: absolute;
@@ -1850,6 +1881,7 @@ button.list-row:hover { background: var(--wash); }
 .stats-filters {
     display: grid;
     gap: var(--space-3);
+    margin-bottom: var(--space-5);
     padding: var(--space-4);
 }
 
@@ -1984,8 +2016,27 @@ button.list-row:hover { background: var(--wash); }
 .stats-months .chip { min-width: 3.25rem; justify-content: center; }
 
 .stats-trend {
-    margin-top: var(--space-4);
+    margin-top: var(--space-5);
     padding: var(--space-4);
+}
+
+.stats-figures + .chart,
+.chart + .stats-numbers,
+.stats-list + .section-title { margin-top: var(--space-5); }
+
+/* Records behind a chart bar */
+.records-preview__total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0 0 var(--space-3);
+    color: var(--ink-muted);
+}
+
+@media (min-width: 64rem) {
+    .stats-split { grid-template-columns: 17rem 1fr; gap: var(--space-5); }
+    .chart--donut { height: 17rem; }
+    .chart { height: 18rem; }
 }
 
 .stats-trend__title {

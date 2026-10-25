@@ -1,0 +1,108 @@
+@using System.Globalization
+@using BM2.Client.Components.Records
+@using BM2.Contracts.Records
+@using BM2.Contracts.Wallets
+@inject ApiClient Api
+
+@* The records behind a chart bar or a list row: same filters as the stats (no planned, one currency). *@
+<Sheet Open="Query is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(Query?.Title ?? "Records")">
+    @if (_items is null)
+    {
+        <p class="muted" aria-busy="true">Loading…</p>
+    }
+    else if (_items.Count == 0)
+    {
+        <p class="muted">No records.</p>
+    }
+    else
+    {
+        <p class="records-preview__total">
+            @StatsCharts.Records(_items.Count)
+            <Amount Value="_items.Sum(i => i.AccountAmount)" Currency="@Query!.Currency" Sign="TemplateText.Sign(Query.Type)" />
+        </p>
+        <ul class="list records-preview">
+            @foreach (var item in _items)
+            {
+                var category = Wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId);
+                var title = item.Name ?? category?.Name ?? item.Type.ToString();
+                <li @key="item.Id">
+                    <ListRow Title="@title" Subtitle="@Subtitle(item, category?.Name)" Href="@($"records/{item.Id}")">
+                        <Leading><RecordAvatar Category="category" Type="item.Type" Fallback="@title" /></Leading>
+                        <Trailing><Amount Value="item.AccountAmount" Currency="@Query!.Currency" Sign="TemplateText.Sign(item.Type)" /></Trailing>
+                    </ListRow>
+                </li>
+            }
+        </ul>
+        @if (_more)
+        {
+            <p class="muted">Showing the latest @_items.Count. Use Records with filters to see all.</p>
+        }
+    }
+</Sheet>
+
+@code {
+    private const int Limit = 50;
+    private RecordsPreviewQuery? _loaded;
+    private List<RecordItem>? _items;
+    private bool _more;
+
+    [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
+
+    /// <summary>What to show; null keeps the sheet closed.</summary>
+    [Parameter] public RecordsPreviewQuery? Query { get; set; }
+
+    [Parameter] public EventCallback Closed { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Query is null || ReferenceEquals(Query, _loaded))
+        {
+            return;
+        }
+
+        _loaded = Query;
+        _items = null;
+        var query = Query;
+
+        // The API takes one tag; several tags are asked one by one and merged ("any of the tags").
+        IEnumerable<Guid?> tags = query.TagIds is { Count: > 0 } ids ? ids.Select(id => (Guid?)id) : [null];
+        var items = new Dictionary<Guid, RecordItem>();
+        _more = false;
+        foreach (var tagId in tags)
+        {
+            var filter = new RecordFilter
+            {
+                From = query.From,
+                To = query.To,
+                Type = query.Type,
+                AccountId = query.AccountId,
+                CategoryId = query.CategoryId,
+                TagId = tagId,
+                Limit = Limit,
+            };
+            var page = (await Api.GetAsync<RecordPage>($"api/wallets/{Wallet.Id}/records{filter.ToQueryString()}")).Value;
+            foreach (var item in page?.Items ?? [])
+            {
+                items.TryAdd(item.Id, item);
+            }
+
+            _more |= page?.NextCursor is not null;
+        }
+
+        if (ReferenceEquals(query, Query))
+        {
+            _items = items.Values
+                .Where(i => i.Status != RecordStatus.Planned && CurrencyOf(i.AccountId) == query.Currency)
+                .OrderByDescending(i => i.OccurredOn)
+                .ToList();
+        }
+    }
+
+    private string? CurrencyOf(Guid accountId) => Wallet.Accounts.FirstOrDefault(a => a.Id == accountId)?.Currency;
+
+    private static string Subtitle(RecordItem item, string? category)
+    {
+        var parts = new[] { item.OccurredOn.ToString("d MMM", CultureInfo.CurrentCulture), item.Name is null || item.Name == category ? null : category, item.AccountName };
+        return string.Join(" · ", parts.OfType<string>());
+    }
+}

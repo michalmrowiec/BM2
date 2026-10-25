@@ -179,6 +179,19 @@ html.theme-switching::view-transition-new(root) {
 
 .toast { animation: toast-in 300ms var(--ease-spring); }
 
+/* Controls that swap in place (month ↔ custom dates) and sheet lists fade in instead of popping. */
+.stats-filters > *,
+.records-preview {
+    animation: swap-in 280ms var(--ease-out) both;
+}
+
+@keyframes swap-in {
+    from {
+        opacity: 0;
+        transform: translateY(-0.3rem);
+    }
+}
+
 @keyframes toast-in {
     from {
         opacity: 0;

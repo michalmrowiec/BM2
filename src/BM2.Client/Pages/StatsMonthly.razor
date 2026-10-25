@@ -33,15 +33,28 @@ else
             <div><dt>Net</dt><dd><Amount Value="income - expense" Currency="@Currency" /></dd></div>
             <div><dt>Net per month</dt><dd><Amount Value="(income - expense) / months" Currency="@Currency" /></dd></div>
         </dl>
-        <Chart Options="_chart" Label="Income, expenses and net per month for 12 months. The table lists every month." />
+        <Chart Options="_chart" OnItemClick="ShowBarRecords"
+               Label="Income, expenses and net per month for 12 months. Tap a bar for its records. The table lists every month." />
         <MonthTable Items="_monthly.Items" Currency="@Currency" />
     }
+
+    <RecordsPreview Wallet="Wallet" Query="_preview" Closed="() => _preview = null" />
 }
 
 @code {
     private WalletSnapshot? _loadedFor;
     private MonthlyTotals? _monthly;
     private object _chart = new();
+    private RecordsPreviewQuery? _preview;
+
+    private void ShowBarRecords(string key)
+    {
+        if (StatsCharts.TryParseBar(key, out var type, out var month))
+        {
+            var noun = type == BM2.Contracts.Records.RecordType.Income ? "Income" : "Expenses";
+            _preview = new RecordsPreviewQuery($"{noun} · {month:MMMM yyyy}", month, month.AddMonths(1), type, Currency, State.AccountId);
+        }
+    }
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
