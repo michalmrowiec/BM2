@@ -1,0 +1,144 @@
+@page "/categories"
+@attribute [Authorize]
+@using BM2.Contracts.Categories
+@using BM2.Contracts.Wallets
+@using BM2.Client.Components.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>Categories · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Categories</h1>
+    @if (CanManage)
+    {
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> New</button>
+    }
+</header>
+
+<SegmentedControl Options="TypeOptions" @bind-Value="_type" Label="Category type" Class="segmented--block" />
+
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else
+{
+    var active = Wallet.Categories.Where(c => c.Type == _type && !c.IsArchived).ToList();
+    var archived = Wallet.Categories.Where(c => c.Type == _type && c.IsArchived).ToList();
+
+    @if (active.Count == 0)
+    {
+        <EmptyState IconName="category" Title="No categories here">
+            Categories group records, like groceries or salary.
+        </EmptyState>
+    }
+    else
+    {
+        <ul class="list stagger" @key="_type">
+            @foreach (var category in active)
+            {
+                <li>@Row(category)</li>
+            }
+        </ul>
+    }
+
+    @if (archived.Count > 0)
+    {
+        <details class="disclosure">
+            <summary class="section-title">Archived</summary>
+            <ul class="list">
+                @foreach (var category in archived)
+                {
+                    <li>@Row(category)</li>
+                }
+            </ul>
+        </details>
+    }
+
+    <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v" Title="@(_editing?.Name ?? (_type == CategoryType.Expense ? "New expense category" : "New income category"))">
+        @if (_editing is null)
+        {
+            <NameForm SubmitLabel="Add category" Validator="CreateValidator" ShowIcon="true"
+                      ToRequest="m => new CreateCategoryRequest(m.Name ?? string.Empty, _type, m.Icon)"
+                      Save="m => CreateAsync(m)" OnSaved="OnSavedAsync" />
+        }
+        else
+        {
+            <NameForm @key="_editing.Id" Name="@_editing.Name" IsArchived="_editing.IsArchived" ShowArchived="true"
+                      CategoryIcon="@_editing.Icon" ShowIcon="true"
+                      Validator="UpdateValidator" ToRequest="m => new UpdateCategoryRequest(m.Name ?? string.Empty, m.IsArchived, m.Icon)"
+                      Save="m => UpdateAsync(m)" OnSaved="OnSavedAsync" />
+            <button type="button" class="btn btn-ghost btn-block danger-text" @onclick="DeleteAsync">
+                <Icon Name="trash" /> Delete category
+            </button>
+        }
+    </Sheet>
+}
+
+@code {
+    private static readonly CreateCategoryRequestValidator CreateValidator = new();
+    private static readonly UpdateCategoryRequestValidator UpdateValidator = new();
+
+    private static readonly IReadOnlyList<(CategoryType Value, string Label)> TypeOptions =
+        [(CategoryType.Expense, "Expenses"), (CategoryType.Income, "Income")];
+
+    private CategoryType _type = CategoryType.Expense;
+    private bool _editorOpen;
+    private CategoryItem? _editing;
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool CanManage => Wallet?.Permissions.ManageCategories == true;
+
+    private RenderFragment Row(CategoryItem category) =>
+        @<ListRow Title="@category.Name"
+                  OnClick="@(CanManage ? EventCallback.Factory.Create(this, () => OpenEditor(category)) : default)">
+            <Leading><Icon Name="@(category.Icon ?? "category")" /></Leading>
+            <Trailing>
+                @if (CanManage)
+                {
+                    <Icon Name="chevron-right" />
+                }
+            </Trailing>
+        </ListRow>;
+
+    private void OpenEditor(CategoryItem? category)
+    {
+        _editing = category;
+        _editorOpen = true;
+    }
+
+    private async Task<ApiResult> CreateAsync(NameFormModel model) =>
+        await Api.PostAsync<CategoryItem>($"api/wallets/{Wallet!.Id}/categories", new CreateCategoryRequest(model.Name ?? "", _type, model.Icon));
+
+    private Task<ApiResult> UpdateAsync(NameFormModel model) =>
+        Api.PutAsync($"api/wallets/{Wallet!.Id}/categories/{_editing!.Id}", new UpdateCategoryRequest(model.Name ?? "", model.IsArchived, model.Icon));
+
+    private async Task OnSavedAsync()
+    {
+        _editorOpen = false;
+        await WalletState.RefreshAsync();
+        Toasts.Show("Category saved.", ToastKind.Success);
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/categories/{_editing!.Id}");
+        if (result.Ok)
+        {
+            _editorOpen = false;
+            await WalletState.RefreshAsync();
+            Toasts.Show("Category deleted.");
+        }
+        else if (result.Problem!.Status == 409)
+        {
+            Toasts.Show("This category has records. Archive it instead.", ToastKind.Error);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

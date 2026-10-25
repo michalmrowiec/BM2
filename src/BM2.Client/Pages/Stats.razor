@@ -1,0 +1,31 @@
+@page "/stats"
+@attribute [Authorize]
+
+<PageTitle>Stats · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Stats</h1>
+</header>
+<p class="muted">Completed income and expenses only; transfers between accounts are left out. Currencies are never mixed.</p>
+
+<nav class="stats-hub" aria-label="Stats">
+    @foreach (var (href, icon, title, text) in Screens)
+    {
+        <a class="stats-hub__tile" href="@href">
+            <span class="stats-hub__icon" aria-hidden="true"><Icon Name="@icon" /></span>
+            <span class="stats-hub__title">@title</span>
+            <span class="stats-hub__text">@text</span>
+        </a>
+    }
+</nav>
+
+@code {
+    private static readonly (string Href, string Icon, string Title, string Text)[] Screens =
+    [
+        ("stats/categories", "chart", "By category", "Where the money goes in a month, a year or any dates; tap a category for its trend."),
+        ("stats/monthly", "trend", "Income vs expenses", "Twelve months side by side, with the net result of each."),
+        ("stats/averages", "coins", "Category averages", "Total and monthly average per category, over the months you choose."),
+        ("stats/tags", "tag", "Tag report", "One or more tags, optionally a single category: totals, categories and months."),
+        ("stats/forecast", "calendar", "Forecast", "The balance for the next 3 to 12 months from recurring, planned and average spending."),
+    ];
+}

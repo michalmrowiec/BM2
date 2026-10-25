@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          # Throwaway container that exists only for this job.
+          MSSQL_SA_PASSWORD: "Ci_Only_Pa55w0rd!"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci_Only_Pa55w0rd!' -C -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      BM2_TEST_SQL: "Server=localhost,1433;User Id=sa;Password=Ci_Only_Pa55w0rd!;TrustServerCertificate=True"
+      DOTNET_NOLOGO: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore BM2.slnx
+
+      - name: Build
+        run: dotnet build BM2.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test --solution BM2.slnx -c Release --no-build
+
+      - name: Check vulnerable packages
+        run: |
+          dotnet list BM2.slnx package --vulnerable --include-transitive | tee vulnerable.txt
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then
+            echo "::error::Vulnerable packages found"
+            exit 1
+          fi

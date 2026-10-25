@@ -1,0 +1,15 @@
+@using BM2.Client.Components.Forms
+@using Microsoft.AspNetCore.Components.Forms
+
+<EditForm Model="Model">
+    <MoneyInput Label="Amount" Currency="PLN" @bind-Value="Model.Amount" />
+</EditForm>
+
+@code {
+    public FormModel Model { get; } = new();
+
+    public sealed class FormModel
+    {
+        public decimal? Amount { get; set; }
+    }
+}

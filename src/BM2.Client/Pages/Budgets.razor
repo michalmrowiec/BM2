@@ -1,0 +1,202 @@
+@page "/budgets"
+@attribute [Authorize]
+@using BM2.Client.Components.Budgets
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Budgets
+@using BM2.Contracts.Categories
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>Budgets · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Budgets</h1>
+    @if (CanManage && Available.Count > 0)
+    {
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> New</button>
+    }
+</header>
+<p class="muted">A monthly limit per expense category. It repeats every month; unused money does not carry over.</p>
+
+<div class="month-nav">
+    <button type="button" class="icon-button" aria-label="Previous month" @onclick="() => MoveAsync(-1)"><Icon Name="arrow-left" /></button>
+    <span class="month-nav__label">@_month.ToString("MMMM yyyy")</span>
+    <button type="button" class="icon-button" aria-label="Next month" @onclick="() => MoveAsync(1)"><Icon Name="arrow-right" /></button>
+</div>
+
+@if (Wallet is null || _overview is null)
+{
+    <WalletPlaceholder />
+}
+else if (_overview.Items.Count == 0)
+{
+    <EmptyState IconName="piggy" Title="No budgets yet">
+        <ChildContent>Set a monthly limit for a category, like 1,000 for groceries, and see how much is left.</ChildContent>
+        <Actions>
+            @if (CanManage && Available.Count > 0)
+            {
+                <button type="button" class="btn btn-primary" @onclick="() => OpenEditor(null)">Add budget</button>
+            }
+        </Actions>
+    </EmptyState>
+}
+else
+{
+    var spent = _overview.Items.Sum(b => b.Spent);
+    var limit = _overview.Items.Sum(b => b.Limit);
+    <p class="budget-total num">
+        @spent.ToString("N2") of @limit.ToString("N2") @_overview.Currency
+        <span class="muted">· @(spent > limit ? $"over by {spent - limit:N2}" : $"{limit - spent:N2} left")</span>
+    </p>
+    <ul class="budget-list stagger">
+        @foreach (var item in BudgetBar.ByUsage(_overview.Items))
+        {
+            <li @key="item.Id">
+                @if (CanManage)
+                {
+                    <button type="button" class="budget-list__button" aria-label="@($"Edit budget for {CategoryOf(item)?.Name}")"
+                            @onclick="() => OpenEditor(item)">
+                        <BudgetBar Item="item" Currency="@_overview.Currency" Category="CategoryOf(item)" />
+                    </button>
+                }
+                else
+                {
+                    <BudgetBar Item="item" Currency="@_overview.Currency" Category="CategoryOf(item)" />
+                }
+            </li>
+        }
+    </ul>
+}
+
+<Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v"
+       Title="@(_editing is null ? "New budget" : $"Budget for {CategoryOf(_editing)?.Name}")">
+    <EditForm Model="_model" OnValidSubmit="SaveAsync" class="form-stack">
+        <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToRequest()" />
+        @if (_editing is null)
+        {
+            <SelectField Label="Category" Options="Available" @bind-Value="_model.CategoryId" />
+        }
+        <MoneyInput Label="Monthly limit" Currency="@Wallet?.BaseCurrency" @bind-Value="_model.Limit"
+                    Hint="Applies to every month until you change it. Only accounts in this currency count." />
+        <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(_editing is null ? "Add budget" : "Save")</button>
+    </EditForm>
+    @if (_editing is not null)
+    {
+        <button type="button" class="btn btn-ghost btn-block danger-text" disabled="@_busy" @onclick="DeleteAsync">
+            <Icon Name="trash" /> Remove budget
+        </button>
+    }
+</Sheet>
+
+@code {
+    private static readonly SaveBudgetRequestValidator Validator = new();
+    private DateOnly _month = new(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private BudgetOverview? _overview;
+    private WalletSnapshot? _loadedFor;
+    private bool _editorOpen;
+    private bool _busy;
+    private BudgetItem? _editing;
+    private FormModel _model = new();
+    private FluentValidator? _validator;
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool CanManage => Wallet?.Permissions.ManageCategories == true;
+
+    // Expense categories that have no budget yet.
+    private IReadOnlyList<(Guid? Value, string Label)> Available => Wallet is null
+        ? []
+        : Wallet.Categories
+            .Where(c => c.Type == CategoryType.Expense && !c.IsArchived
+                && _overview?.Items.Any(b => b.CategoryId == c.Id) != true)
+            .Select(c => ((Guid?)c.Id, c.Name))
+            .ToList();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync(bool force = false)
+    {
+        if (Wallet is null || (!force && ReferenceEquals(Wallet, _loadedFor)))
+        {
+            return;
+        }
+
+        _loadedFor = Wallet;
+        var result = await Api.GetAsync<BudgetOverview>($"api/wallets/{Wallet.Id}/budgets?month={_month:yyyy-MM-dd}");
+        _overview = result.Value;
+    }
+
+    private async Task MoveAsync(int months)
+    {
+        _month = _month.AddMonths(months);
+        await LoadAsync(force: true);
+    }
+
+    private CategoryItem? CategoryOf(BudgetItem item) => Wallet?.Categories.FirstOrDefault(c => c.Id == item.CategoryId);
+
+    private void OpenEditor(BudgetItem? item)
+    {
+        _editing = item;
+        _model = item is null
+            ? new FormModel { CategoryId = Available.FirstOrDefault().Value }
+            : new FormModel { CategoryId = item.CategoryId, Limit = item.Limit };
+        _editorOpen = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/budgets", _model.ToRequest());
+        _busy = false;
+        if (result.Ok)
+        {
+            _editorOpen = false;
+            Toasts.Show("Budget saved.", ToastKind.Success);
+            await LoadAsync(force: true);
+        }
+        else if (result.Problem!.HasFieldErrors)
+        {
+            _validator?.ShowServerErrors(result.Problem);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/budgets/{_editing!.Id}");
+        _busy = false;
+        if (result.Ok)
+        {
+            _editorOpen = false;
+            Toasts.Show("Budget removed. Records are not affected.");
+            await LoadAsync(force: true);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private sealed class FormModel
+    {
+        public Guid? CategoryId { get; set; }
+
+        public decimal? Limit { get; set; }
+
+        public SaveBudgetRequest ToRequest() => new(CategoryId ?? Guid.Empty, Limit ?? 0);
+    }
+}

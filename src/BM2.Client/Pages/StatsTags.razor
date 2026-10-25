@@ -1,0 +1,167 @@
+@page "/stats/tags"
+@attribute [Authorize]
+@using BM2.Client.Components.Stats
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Categories
+@using BM2.Contracts.Records
+@using BM2.Contracts.Stats
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject StatsState State
+
+<StatsHeader Title="Tag report">Records with any of the chosen tags, each counted once.</StatsHeader>
+
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else if (Tags.Count == 0)
+{
+    <EmptyState IconName="tag" Title="No tags yet">Add tags to records, like a trip or a renovation, to see a report per tag.</EmptyState>
+}
+else
+{
+    <StatsFilters Wallet="Wallet" OnChanged="ReloadAsync">
+        <div class="field">
+            <span class="field__label">Tags</span>
+            <ChipGroup TValue="Guid" Label="Tags" Options="Tags" Multiple="true" Selected="State.TagIds" SelectedChanged="SetTagsAsync" />
+        </div>
+        <SelectField Label="Category" Options="CategoryOptions" @bind-Value="State.TagCategoryId" @bind-Value:after="ReloadAsync"
+                     Hint="Optional: only this category within the tags." />
+    </StatsFilters>
+    @if (State.TagIds.Count > 0)
+    {
+        <div class="stats-actions"><PinButton WalletId="Wallet.Id" Kind="BM2.Contracts.Stats.PinnedChartKind.Tags" View="PinView" /></div>
+    }
+
+    @if (State.TagIds.Count == 0)
+    {
+        <p class="muted">Choose one or more tags.</p>
+    }
+    else if (_categories is null || _monthly is null)
+    {
+        <p class="muted">Loading…</p>
+    }
+    else
+    {
+        var spent = _categories.Items.Where(i => i.Type == RecordType.Expense).Sum(i => i.Total);
+        var earned = _categories.Items.Where(i => i.Type == RecordType.Income).Sum(i => i.Total);
+        <dl class="stats-figures">
+            <div><dt>Expenses</dt><dd><Amount Value="-spent" Currency="@Currency" /></dd></div>
+            <div><dt>Income</dt><dd><Amount Value="earned" Currency="@Currency" /></dd></div>
+            <div><dt>Net</dt><dd><Amount Value="earned - spent" Currency="@Currency" /></dd></div>
+        </dl>
+        @if (_categories.Items.Count == 0)
+        {
+            <p class="muted">No records with these tags in the selected period.</p>
+        }
+        else
+        {
+            <h2 class="section-title">By category</h2>
+            <CategoryTotalsList Items="_categories.Items" Wallet="Wallet" Currency="@Currency" OnSelect="ShowCategoryRecords" />
+        }
+        <h2 class="section-title">Last 12 months</h2>
+        <Chart Options="_chart" OnItemClick="ShowBarRecords"
+               Label="Monthly income and expenses with these tags. Tap a bar for its records. The table lists every month." />
+        <MonthTable Items="_monthly.Items" Currency="@Currency" />
+    }
+
+    <RecordsPreview Wallet="Wallet" Query="_preview" Closed="() => _preview = null" />
+}
+
+@code {
+    private (string, string) PinView()
+    {
+        var names = string.Join(", ", Wallet!.Tags.Where(t => State.TagIds.Contains(t.Id)).Select(t => t.Name));
+        var title = $"Tags: {names}";
+        return (title.Length > 100 ? title[..99] + "…" : title, PinnedChartQueries.Monthly(State, State.TagCategoryId, State.TagIds));
+    }
+
+    private WalletSnapshot? _loadedFor;
+    private CategoryTotals? _categories;
+    private MonthlyTotals? _monthly;
+    private object _chart = new();
+    private RecordsPreviewQuery? _preview;
+
+    private void ShowBarRecords(string key)
+    {
+        if (StatsCharts.TryParseBar(key, out var type, out var month))
+        {
+            var noun = type == RecordType.Income ? "Income" : "Expenses";
+            _preview = new RecordsPreviewQuery($"{noun} with these tags · {month:MMMM yyyy}", month, month.AddMonths(1), type, Currency,
+                State.AccountId, State.TagCategoryId, State.TagIds);
+        }
+    }
+
+    private void ShowCategoryRecords(Guid categoryId)
+    {
+        var category = StatsCharts.CategoryOf(Wallet!, categoryId);
+        var type = category?.Type == CategoryType.Income ? RecordType.Income : RecordType.Expense;
+        var (from, to) = State.Range;
+        _preview = new RecordsPreviewQuery($"{StatsCharts.NameOf(Wallet!, categoryId)} with these tags", from, to, type, Currency,
+            State.AccountId, categoryId, State.TagIds);
+    }
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private string Currency => State.Currency ?? "";
+
+    private IReadOnlyList<(Guid, string)> Tags => Wallet is null
+        ? []
+        : Wallet.Tags.Where(t => !t.IsArchived || State.TagIds.Contains(t.Id)).Select(t => (t.Id, t.Name)).ToList();
+
+    private IReadOnlyList<(Guid?, string)> CategoryOptions => Wallet is null
+        ? []
+        : [(null, "All categories"), .. Wallet.Categories
+            .Where(c => !c.IsArchived || c.Id == State.TagCategoryId)
+            .OrderBy(c => c.Type).ThenBy(c => c.Name)
+            .Select(c => ((Guid?)c.Id, c.Type == CategoryType.Income ? $"{c.Name} (income)" : c.Name))];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        if (Wallet is null || ReferenceEquals(Wallet, _loadedFor))
+        {
+            return;
+        }
+
+        _loadedFor = Wallet;
+        State.Use(Wallet);
+        await ReloadAsync();
+    }
+
+    private async Task SetTagsAsync(IReadOnlyCollection<Guid> tagIds)
+    {
+        State.TagIds = tagIds;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Wallet is null || !State.IsValid || State.TagIds.Count == 0)
+        {
+            return;
+        }
+
+        var (from, to) = State.Range;
+        var trend = State.TrendRange;
+        var categories = Api.GetAsync<CategoryTotals>(State.Url(Wallet.Id, "categories", from, to, State.TagCategoryId, State.TagIds));
+        var monthly = Api.GetAsync<MonthlyTotals>(State.Url(Wallet.Id, "monthly", trend.From, trend.To, State.TagCategoryId, State.TagIds));
+        _categories = (await categories).Value;
+        _monthly = (await monthly).Value;
+        if (_monthly is not null)
+        {
+            _chart = StatsCharts.Months(_monthly.Items);
+        }
+    }
+}

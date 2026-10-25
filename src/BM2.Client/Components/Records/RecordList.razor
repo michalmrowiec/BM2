@@ -1,0 +1,360 @@
+@using System.Globalization
+@using BM2.Contracts.Categories
+@using BM2.Contracts.Records
+@using BM2.Contracts.Tags
+@using BM2.Contracts.Templates
+@using BM2.Contracts.Wallets
+@inject ApiClient Api
+@inject ToastService Toasts
+@inject WalletState WalletState
+
+@foreach (var day in RecordGrouping.ByDay(Items, CurrencyOf))
+{
+    <section class="record-day" @key="day.Date">
+        <h2 class="record-day__header">
+            <span>@day.Date.ToString("dddd, d MMMM", CultureInfo.CurrentCulture)</span>
+            <span class="record-day__total">
+                @foreach (var total in day.Totals)
+                {
+                    <Amount Value="total.Net" Currency="@total.Currency" />
+                }
+            </span>
+        </h2>
+        <ul class="list record-list stagger">
+            @foreach (var item in day.Items)
+            {
+                var view = View(item);
+                @* Right click and Android long press open the same menu as the dots button. *@
+                var selected = _selected.Contains(item.Id);
+                var open = item.Status != RecordStatus.Completed;
+                <li @key="item.Id" class="record-row @(open ? $"record-row--{item.Status.ToString().ToLowerInvariant()}" : null) @(selected ? "is-selected" : null)" @oncontextmenu="() => OpenMenu(item)" @oncontextmenu:preventDefault="true">
+                    @if (Selectable)
+                    {
+                        @* Tapping the icon selects; the rest of the row opens the record. *@
+                        <button type="button" class="record-row__select" aria-pressed="@(selected ? "true" : "false")"
+                                aria-label="@($"Select {view.Title}")" @onclick="() => ToggleSelected(item.Id)">
+                            @if (selected)
+                            {
+                                <span class="avatar avatar--selected" aria-hidden="true"><Icon Name="check" /></span>
+                            }
+                            else
+                            {
+                                <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
+                            }
+                        </button>
+                    }
+                    <a class="record-row__main @(Selectable ? "record-row__main--after-select" : null)" href="@($"records/{item.Id}")">
+                        @if (!Selectable)
+                        {
+                            <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
+                        }
+                        <span class="record-row__text">
+                            <span class="record-row__title">
+                                @view.Title
+                                @if (item.RecurringRuleId is not null)
+                                {
+                                    <span class="record-row__auto" title="Added by a recurring rule"><Icon Name="repeat" /><span class="sr-only">Recurring</span></span>
+                                }
+                            </span>
+                            <span class="record-row__meta">
+                                <span class="record-row__where">@view.Meta</span>
+                                @foreach (var tag in view.Tags)
+                                {
+                                    <span aria-hidden="true"> · </span>
+                                    <span class="record-row__tag @TagPalette.ClassFor(tag.Color)">
+                                        <span class="tag-dot" aria-hidden="true"></span>@tag.Name
+                                    </span>
+                                }
+                            </span>
+                        </span>
+                        <span class="record-row__end">
+                            <Amount Value="view.Amount" Currency="@view.Currency" Sign="view.Sign" />
+                            @if (open)
+                            {
+                                <span class="tag record-status"><Icon Name="@(item.Status == RecordStatus.Pending ? "clock" : "calendar")" />@item.Status</span>
+                            }
+                        </span>
+                    </a>
+                    @if (open && CanWrite(item))
+                    {
+                        <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {view.Title} as completed")"
+                                title="Mark as completed" disabled="@_busy" @onclick="() => Check(item)">
+                            <Icon Name="check" />
+                        </button>
+                    }
+                    <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {view.Title}")"
+                            @onclick="() => OpenMenu(item)">
+                        <Icon Name="dots" />
+                    </button>
+                </li>
+            }
+        </ul>
+    </section>
+}
+
+<Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuShown is null ? "Record" : View(_menuShown).Title)">
+    @if (_menuShown is { } record)
+    {
+        <ul class="menu-list">
+            <li>
+                <a href="@($"records/{record.Id}")"><Icon Name="edit" /><span>@(CanWrite(record) ? "Edit" : "Open")</span></a>
+            </li>
+            @if (CanWrite(record))
+            {
+                @if (record.Status != RecordStatus.Completed)
+                {
+                    <li>
+                        <button type="button" @onclick="() => Check(record)"><Icon Name="check" /><span>@(record.Status == RecordStatus.Planned ? "Mark as done…" : "Mark as completed")</span></button>
+                    </li>
+                }
+                <li>
+                    <a href="@($"records/new?copy={record.Id}")"><Icon Name="copy" /><span>Copy</span></a>
+                </li>
+                <li>
+                    <button type="button" @onclick="() => SaveTemplateAsync(record)"><Icon Name="bolt" /><span>Save as template</span></button>
+                </li>
+                <li>
+                    @if (record.RecurringRuleId is { } ruleId)
+                    {
+                        <a href="@($"recurring/{ruleId}")"><Icon Name="repeat" /><span>Edit recurring rule (future records)</span></a>
+                    }
+                    else
+                    {
+                        <a href="@($"recurring/new?from={record.Id}")"><Icon Name="repeat" /><span>Make recurring</span></a>
+                    }
+                </li>
+                <li>
+                    <button type="button" class="danger-text" @onclick="AskDelete"><Icon Name="trash" /><span>Delete</span></button>
+                </li>
+            }
+        </ul>
+    }
+</Sheet>
+
+@if (SelectedItems.Count > 0)
+{
+    <div class="selection-bar" role="region" aria-label="Selected records">
+        <div class="selection-bar__info">
+            <strong>@SelectedItems.Count selected</strong>
+            <span class="selection-bar__sums">
+                @foreach (var (currency, sum) in SelectedSums)
+                {
+                    <Amount Value="Math.Abs(sum)" Currency="@currency" Sign="@(sum < 0 ? AmountSign.Minus : AmountSign.Plus)" />
+                }
+                @if (SelectedItems.Any(i => i.Type == RecordType.Transfer))
+                {
+                    <span class="selection-bar__note">transfers not counted</span>
+                }
+            </span>
+        </div>
+        @if (SelectedItems.Count < Items.Count)
+        {
+            @* Selects the records loaded so far; scrolling loads more. *@
+            <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.UnionWith(Items.Select(i => i.Id))">Select all</button>
+        }
+        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.Clear()">Clear</button>
+        @if (SelectedOpen.Count > 0)
+        {
+            <button type="button" class="btn btn-primary btn-sm" disabled="@_busy" @onclick="() => _confirmBulkComplete = true">
+                <Icon Name="check" /> Complete
+            </button>
+        }
+        <button type="button" class="btn btn-danger btn-sm" @onclick="() => _confirmBulk = true">
+            <Icon Name="trash" /> Delete
+        </button>
+    </div>
+}
+
+<ConfirmDialog Open="_confirmBulk" OpenChanged="v => _confirmBulk = v" Title="@($"Delete {SelectedItems.Count} records?")"
+               ConfirmLabel="Delete" Danger="true" OnConfirm="DeleteSelectedAsync">
+    <p>This can't be undone. Records you can only view are skipped.</p>
+</ConfirmDialog>
+
+<ConfirmDialog Open="_confirmBulkComplete" OpenChanged="v => _confirmBulkComplete = v"
+               Title="@($"Mark {SelectedOpen.Count} records as completed?")" ConfirmLabel="Mark as completed"
+               OnConfirm="() => ConfirmAsync(SelectedOpen)">
+    <p>Selected pending and planned records become Completed. Planned ones start counting in balances, budgets and stats.</p>
+</ConfirmDialog>
+
+<ConfirmDialog Open="_confirmOne is not null" OpenChanged="v => { if (!v) _confirmOne = null; }"
+               Title="@($"Mark {(_confirmOne is null ? "record" : View(_confirmOne).Title)} as completed?")"
+               ConfirmLabel="Mark as completed" OnConfirm="() => ConfirmAsync([_confirmOne!])">
+    <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
+</ConfirmDialog>
+
+<PlannedChoice Record="_choiceFor" Title="@(_choiceFor is null ? null : View(_choiceFor).Title)" Closed="() => _choiceFor = null"
+               Chosen="s => ConfirmAsync([_choiceFor!], s)" />
+
+<ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="Delete record?" ConfirmLabel="Delete"
+               Danger="true" OnConfirm="DeleteAsync">
+    <p>This can't be undone.</p>
+</ConfirmDialog>
+
+@code {
+    private RecordItem? _menuFor;
+
+    // The last opened record, kept so the menu has content while it animates out.
+    private RecordItem? _menuShown;
+
+    private void OpenMenu(RecordItem item) => _menuFor = _menuShown = item;
+    private RecordItem? _deleting;
+    private readonly HashSet<Guid> _selected = [];
+    private bool _confirmBulk;
+    private bool _confirmBulkComplete;
+    private bool _busy;
+
+    private List<RecordItem> SelectedOpen => SelectedItems.Where(i => i.Status != RecordStatus.Completed && CanWrite(i)).ToList();
+
+    private RecordItem? _choiceFor;
+    private RecordItem? _confirmOne;
+
+    // Always asks first: planned records choose completed or pending, pending ones confirm.
+    private void Check(RecordItem item)
+    {
+        _menuFor = null;
+        if (item.Status == RecordStatus.Planned)
+        {
+            _choiceFor = item;
+        }
+        else
+        {
+            _confirmOne = item;
+        }
+    }
+
+    private async Task ConfirmAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
+    {
+        _menuFor = null;
+        _choiceFor = null;
+        _confirmOne = null;
+        _confirmBulkComplete = false;
+        _busy = true;
+        var failed = await RecordConfirm.ConfirmAsync(Api, Wallet.Id, records, status);
+        _busy = false;
+        _selected.ExceptWith(records.Select(r => r.Id));
+        var done = status == RecordStatus.Pending ? "pending" : "completed";
+        Toasts.Show(failed == 0 ? (records.Count == 1 ? $"Marked as {done}." : $"{records.Count} records marked as {done}.") : $"{failed} couldn't be changed.",
+            failed == 0 ? ToastKind.Success : ToastKind.Error);
+        await WalletState.RefreshAsync();
+    }
+
+    /// <summary>Lets the user select records by tapping their icon, with a sum and bulk delete.</summary>
+    [Parameter] public bool Selectable { get; set; }
+
+    private List<RecordItem> SelectedItems => Items.Where(i => _selected.Contains(i.Id)).ToList();
+
+    // Net per account currency, as shown in the rows; transfers move money between accounts, so they are left out.
+    private IEnumerable<(string Currency, decimal Sum)> SelectedSums => SelectedItems
+        .Where(i => i.Type != RecordType.Transfer)
+        .Select(View)
+        .GroupBy(v => v.Currency)
+        .Select(g => (g.Key, g.Sum(v => v.Sign == AmountSign.Minus ? -v.Amount : v.Amount)));
+
+    private void ToggleSelected(Guid id)
+    {
+        if (!_selected.Remove(id))
+        {
+            _selected.Add(id);
+        }
+    }
+
+    private async Task DeleteSelectedAsync()
+    {
+        _confirmBulk = false;
+        var items = SelectedItems.Where(CanWrite).ToList();
+        var failed = 0;
+        foreach (var item in items)
+        {
+            var result = await Api.DeleteAsync($"api/wallets/{Wallet.Id}/records/{item.Id}");
+            failed += result.Ok ? 0 : 1;
+        }
+
+        _selected.Clear();
+        Toasts.Show(failed == 0 ? $"{items.Count} records deleted." : $"{items.Count - failed} deleted, {failed} failed.",
+            failed == 0 ? ToastKind.Success : ToastKind.Error);
+        WalletState.ForgetSuggestions();
+        await WalletState.RefreshAsync();
+    }
+
+    [Parameter, EditorRequired] public IReadOnlyList<RecordItem> Items { get; set; } = [];
+
+    [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
+
+    /// <summary>The account the list is filtered by; transfers into it read as incoming.</summary>
+    [Parameter] public Guid? AccountId { get; set; }
+
+    private string? CurrencyOf(Guid accountId) => Wallet.Accounts.FirstOrDefault(a => a.Id == accountId)?.Currency;
+
+    private bool CanWrite(RecordItem item) =>
+        Wallet.Accounts.Any(a => a.Id == item.AccountId && a.CanWrite)
+        && (item.TransferAccountId is not { } target || Wallet.Accounts.Any(a => a.Id == target && a.CanWrite));
+
+    // Line 1 says what (name, else category); line 2 says from where: category when named, account, tags.
+    private RowView View(RecordItem item)
+    {
+        var tags = item.TagIds.Select(id => Wallet.Tags.FirstOrDefault(t => t.Id == id)).OfType<TagItem>().ToList();
+        if (item.Type == RecordType.Transfer)
+        {
+            // A transfer reads as incoming when the list is about its target, or the source account is not visible.
+            var incoming = AccountId == item.TransferAccountId || CurrencyOf(item.AccountId) is null;
+            var route = $"{item.AccountName} → {item.TransferAccountName}";
+            return incoming
+                ? new RowView(item.Name ?? "Transfer", route, tags, null, item.TransferAmount ?? item.Amount,
+                    CurrencyOf(item.TransferAccountId!.Value) ?? item.Currency, AmountSign.Plus)
+                : new RowView(item.Name ?? "Transfer", route, tags, null, item.AccountAmount,
+                    CurrencyOf(item.AccountId) ?? item.Currency, AmountSign.Minus);
+        }
+
+        var category = Wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId);
+        var income = item.Type == RecordType.Income;
+        return new RowView(
+            item.Name ?? category?.Name ?? (income ? "Income" : "Expense"),
+            item.Name is not null && category is not null ? $"{category.Name} · {item.AccountName}" : item.AccountName,
+            tags,
+            category,
+            item.AccountAmount,
+            CurrencyOf(item.AccountId) ?? item.Currency,
+            income ? AmountSign.Plus : AmountSign.Minus);
+    }
+
+    private async Task SaveTemplateAsync(RecordItem record)
+    {
+        _menuFor = null;
+        var result = await Api.PostAsync<TemplateItem>($"api/wallets/{Wallet.Id}/templates", TemplateText.FromRecord(record));
+        if (result.Ok)
+        {
+            Toasts.Show("Saved as template. It's pinned on Home.", ToastKind.Success);
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+        }
+    }
+
+    private void AskDelete()
+    {
+        _deleting = _menuFor;
+        _menuFor = null;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet.Id}/records/{_deleting!.Id}");
+        _deleting = null;
+        if (result.Ok)
+        {
+            Toasts.Show("Record deleted.");
+            WalletState.ForgetSuggestions();
+
+            // A new snapshot makes the pages reload their records and balances.
+            await WalletState.RefreshAsync();
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private sealed record RowView(
+        string Title, string Meta, IReadOnlyList<TagItem> Tags, CategoryItem? Category, decimal Amount, string Currency, AmountSign Sign);
+}

@@ -1,0 +1,23 @@
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    background: var(--negative);
+    color: var(--paper);
+}
+
+    #blazor-error-ui a {
+        color: inherit;
+        font-weight: 600;
+    }
+
+    #blazor-error-ui .dismiss {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.9rem;
+        cursor: pointer;
+    }

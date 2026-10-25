@@ -1,0 +1,422 @@
+@page "/members"
+@attribute [Authorize]
+@using System.Globalization
+@using BM2.Contracts.Invitations
+@using BM2.Contracts.Members
+@using BM2.Contracts.Wallets
+@using BM2.Client.Components.Wallets
+@inherits WalletComponentBase
+@implements IAsyncDisposable
+@inject ApiClient Api
+@inject ToastService Toasts
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Members · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Members</h1>
+    @if (CanManage)
+    {
+        <button type="button" class="btn btn-primary btn-sm invite-button" @onclick="OpenInvite"><Icon Name="plus" /> Invite</button>
+    }
+</header>
+
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else if (Wallet.Role is null)
+{
+    <p class="muted">These accounts of @Wallet.Name were shared with you.</p>
+    <ul class="list">
+        @foreach (var account in Wallet.Accounts)
+        {
+            <li>
+                <ListRow Title="@account.Name" Subtitle="@(account.CanWrite ? "Editor" : "Viewer")">
+                    <Leading><Icon Name="bank" /></Leading>
+                    <Trailing>
+                        <button type="button" class="btn btn-ghost btn-sm" @onclick="() => AskLeaveShare(account.Id, account.Name)">Leave</button>
+                    </Trailing>
+                </ListRow>
+            </li>
+        }
+    </ul>
+}
+else if (_members is null)
+{
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+}
+else
+{
+    <ul class="list stagger">
+        @foreach (var member in _members.Members)
+        {
+            <li>
+                <div class="list-row">
+                    <span class="list-row__leading"><Icon Name="user" /></span>
+                    <span class="list-row__text">
+                        <span class="list-row__title">@member.Email @(member.IsMe ? "(you)" : null)</span>
+                        <span class="list-row__subtitle">@Options.RoleLabel(member.Role)</span>
+                    </span>
+                    <span class="list-row__trailing">
+                        @if (member.IsMe)
+                        {
+                            <button type="button" class="btn btn-ghost btn-sm" @onclick="AskLeaveWallet">Leave</button>
+                        }
+                        else if (CanManage)
+                        {
+                            <select class="role-select" aria-label="@($"Role of {member.Email}")" value="@member.Role"
+                                    @onchange="e => ChangeRoleAsync(MemberPath(member.UserId), e)">
+                                @foreach (var option in Options.WalletRoles)
+                                {
+                                    <option value="@option.Value">@option.Label</option>
+                                }
+                            </select>
+                            <button type="button" class="icon-button" aria-label="@($"Remove {member.Email}")"
+                                    @onclick="() => AskRemove(MemberPath(member.UserId), member.Email)">
+                                <Icon Name="trash" />
+                            </button>
+                        }
+                    </span>
+                </div>
+            </li>
+        }
+    </ul>
+
+    @if (_members.AccountShares.Count > 0)
+    {
+        <h2 class="section-title">Shared accounts</h2>
+        <ul class="list">
+            @foreach (var share in _members.AccountShares)
+            {
+                <li>
+                    <div class="list-row">
+                        <span class="list-row__leading"><Icon Name="bank" /></span>
+                        <span class="list-row__text">
+                            <span class="list-row__title">@share.Email @(share.IsMe ? "(you)" : null)</span>
+                            <span class="list-row__subtitle">@share.AccountName · @Options.RoleLabel(share.Role)</span>
+                        </span>
+                        @if (CanManage)
+                        {
+                            <span class="list-row__trailing">
+                                <select class="role-select" aria-label="@($"Role of {share.Email} on {share.AccountName}")" value="@share.Role"
+                                        @onchange="e => ChangeRoleAsync(SharePath(share.AccountId, share.UserId), e)">
+                                    @foreach (var option in Options.AccountRoles)
+                                    {
+                                        <option value="@option.Value">@option.Label</option>
+                                    }
+                                </select>
+                                <button type="button" class="icon-button" aria-label="@($"Stop sharing {share.AccountName} with {share.Email}")"
+                                        @onclick="() => AskRemove(SharePath(share.AccountId, share.UserId), share.Email)">
+                                    <Icon Name="trash" />
+                                </button>
+                            </span>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+
+    @if (_members.Invitations.Count > 0)
+    {
+        <h2 class="section-title">Pending invitations</h2>
+        <ul class="list">
+            @foreach (var invitation in _members.Invitations)
+            {
+                <li>
+                    <ListRow Title="@($"{Options.RoleLabel(invitation.Role)} · {invitation.AccountName ?? "whole wallet"}")"
+                             Subtitle="@($"Expires {invitation.ExpiresAt.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture)}")">
+                        <Leading><Icon Name="share" /></Leading>
+                        <Trailing>
+                            <button type="button" class="btn btn-ghost btn-sm" @onclick="() => RevokeAsync(invitation.Id)">Revoke</button>
+                        </Trailing>
+                    </ListRow>
+                </li>
+            }
+        </ul>
+    }
+}
+
+<Sheet Open="_inviteOpen" OpenChanged="v => _inviteOpen = v" Title="Invite someone">
+    @if (_link is null)
+    {
+        <EditForm Model="_invite" OnValidSubmit="CreateInviteAsync" class="form-stack">
+            <SelectField TValue="Guid?" id="invite-scope" Label="Access to" Options="ScopeOptions" @bind-Value="_invite.AccountId"
+                         @bind-Value:after="OnScopeChanged" />
+            <SelectField TValue="MemberRole" id="invite-role" Label="Role" Options="RoleOptions" @bind-Value="_invite.Role"
+                         Hint="@RoleHint" />
+            <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">Create link</button>
+        </EditForm>
+    }
+    else
+    {
+        <p>Send this link to the person you're inviting. It works once and expires in 7 days.</p>
+        <div class="field">
+            <label class="field__label" for="invite-link">Invitation link</label>
+            <input id="invite-link" class="field__control" readonly value="@_link" />
+        </div>
+        <div class="invite__actions">
+            <button type="button" class="btn btn-primary" @onclick="CopyAsync"><Icon Name="copy" /> Copy link</button>
+            @if (_canShare)
+            {
+                <button type="button" class="btn btn-secondary" @onclick="ShareAsync"><Icon Name="share" /> Share</button>
+            }
+        </div>
+    }
+</Sheet>
+
+<ConfirmDialog Open="_confirmOpen" OpenChanged="v => _confirmOpen = v" Title="@_confirmTitle" ConfirmLabel="@_confirmLabel"
+               Danger="true" OnConfirm="ConfirmAsync">
+    <p>@_confirmText</p>
+</ConfirmDialog>
+
+@code {
+    private MembersResponse? _members;
+    private WalletSnapshot? _loadedFor;
+    private InviteModel _invite = new();
+    private string? _link;
+    private bool _inviteOpen;
+    private bool _busy;
+    private bool _canShare;
+    private IJSObjectReference? _module;
+    private bool _confirmOpen;
+    private string _confirmTitle = "";
+    private string _confirmLabel = "";
+    private string _confirmText = "";
+    private Func<Task>? _confirmAction;
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool CanManage => Wallet?.Permissions.ManageMembers == true;
+
+    private IReadOnlyList<(Guid? Value, string Label)> ScopeOptions =>
+        [(null, "Whole wallet"), .. (Wallet?.Accounts ?? []).Where(a => !a.IsArchived).Select(a => ((Guid?)a.Id, $"Only {a.Name}"))];
+
+    private IReadOnlyList<(MemberRole Value, string Label)> RoleOptions =>
+        _invite.AccountId is null ? Options.WalletRoles : Options.AccountRoles;
+
+    private string RoleHint => _invite.Role switch
+    {
+        MemberRole.Owner => "Can do everything, including inviting people and deleting the wallet.",
+        MemberRole.Editor => "Can add and edit records, categories and tags.",
+        _ => "Can only look.",
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && RendererInfo.IsInteractive)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Members.razor.js");
+            _canShare = await _module.InvokeAsync<bool>("canShare");
+        }
+    }
+
+    private async Task LoadAsync(bool force = false)
+    {
+        var wallet = Wallet;
+        if (wallet?.Role is null || (!force && ReferenceEquals(wallet, _loadedFor)))
+        {
+            return;
+        }
+
+        _loadedFor = wallet;
+        var result = await Api.GetAsync<MembersResponse>($"api/wallets/{wallet.Id}/members");
+        _members = result.Value;
+        if (!result.Ok)
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private static string MemberPath(Guid userId) => $"members/{userId}";
+
+    private static string SharePath(Guid accountId, Guid userId) => $"accounts/{accountId}/members/{userId}";
+
+    private void OpenInvite()
+    {
+        _invite = new InviteModel();
+        _link = null;
+        _inviteOpen = true;
+    }
+
+    private void OnScopeChanged()
+    {
+        if (_invite.AccountId is not null && _invite.Role == MemberRole.Owner)
+        {
+            _invite.Role = MemberRole.Editor;
+        }
+    }
+
+    private async Task CreateInviteAsync()
+    {
+        _busy = true;
+        var result = await Api.PostAsync<CreatedInvitation>(
+            $"api/wallets/{Wallet!.Id}/invitations", new CreateInvitationRequest(_invite.Role, _invite.AccountId));
+        _busy = false;
+        if (result.Ok)
+        {
+            _link = Navigation.BaseUri + "invite/" + result.Value!.Token;
+            await LoadAsync(force: true);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await _module!.InvokeVoidAsync("copy", _link);
+            Toasts.Show("Link copied.", ToastKind.Success);
+        }
+        catch (JSException)
+        {
+            Toasts.Show("Couldn't copy. Select the link and copy it yourself.", ToastKind.Error);
+        }
+    }
+
+    private async Task ShareAsync()
+    {
+        try
+        {
+            await _module!.InvokeVoidAsync("share", _link);
+        }
+        catch (JSException)
+        {
+            // The share sheet was dismissed.
+        }
+    }
+
+    private async Task ChangeRoleAsync(string path, ChangeEventArgs e)
+    {
+        if (!Enum.TryParse<MemberRole>(e.Value?.ToString(), out var role))
+        {
+            return;
+        }
+
+        var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/{path}", new UpdateRoleRequest(role));
+        if (result.Problem is { Status: 409 })
+        {
+            Toasts.Show("A wallet needs at least one owner.", ToastKind.Error);
+        }
+        else if (!result.Ok)
+        {
+            Toasts.ShowError();
+        }
+
+        await LoadAsync(force: true);
+    }
+
+    private async Task RevokeAsync(Guid invitationId)
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/invitations/{invitationId}");
+        if (result.Ok)
+        {
+            Toasts.Show("Invitation revoked.");
+        }
+
+        await LoadAsync(force: true);
+    }
+
+    private void AskRemove(string path, string email) => Ask(
+        $"Remove {email}?", "Remove", "They lose access right away. You can invite them again later.",
+        async () =>
+        {
+            var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/{path}");
+            if (!result.Ok)
+            {
+                Toasts.ShowError();
+            }
+
+            await LoadAsync(force: true);
+        });
+
+    private void AskLeaveWallet() => Ask(
+        $"Leave {Wallet!.Name}?", "Leave", "You lose access to this wallet until someone invites you again.",
+        async () =>
+        {
+            var me = _members!.Members.Single(m => m.IsMe).UserId;
+            await LeaveAsync(MemberPath(me));
+        });
+
+    private void AskLeaveShare(Guid accountId, string accountName) => Ask(
+        $"Leave {accountName}?", "Leave", "You lose access to this account until someone invites you again.",
+        async () =>
+        {
+            var me = await Api.GetAsync<BM2.Contracts.Profile.MeResponse>("api/me");
+            if (me.Ok)
+            {
+                await LeaveAsync(SharePath(accountId, me.Value!.Id));
+            }
+        });
+
+    private async Task LeaveAsync(string path)
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/{path}");
+        if (result.Problem is { Status: 409 })
+        {
+            Toasts.Show("Make someone else an owner first.", ToastKind.Error);
+            return;
+        }
+
+        if (!result.Ok)
+        {
+            Toasts.ShowError();
+            return;
+        }
+
+        await WalletState.RefreshAsync();
+        Navigation.NavigateTo("");
+    }
+
+    private void Ask(string title, string label, string text, Func<Task> action)
+    {
+        (_confirmTitle, _confirmLabel, _confirmText, _confirmAction) = (title, label, text, action);
+        _confirmOpen = true;
+    }
+
+    private async Task ConfirmAsync()
+    {
+        _confirmOpen = false;
+        if (_confirmAction is not null)
+        {
+            await _confirmAction();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Page unloaded.
+            }
+        }
+    }
+
+    private sealed class InviteModel
+    {
+        public Guid? AccountId { get; set; }
+
+        public MemberRole Role { get; set; } = MemberRole.Editor;
+    }
+}

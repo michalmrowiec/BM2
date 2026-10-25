@@ -1,0 +1,78 @@
+@using System.Diagnostics.CodeAnalysis
+@using System.Globalization
+@inherits FieldBase<decimal?>
+@inject IJSRuntime JS
+
+<div class="field @(Large ? "field--large" : null)">
+    <label class="field__label" for="@FieldId">
+        @Label
+        @if (Currency is not null)
+        {
+            <span class="sr-only">(@Currency)</span>
+        }
+    </label>
+    <div class="money-input">
+        <input @ref="_input" @attributes="AdditionalAttributes" id="@FieldId" class="field__control money-input__control num"
+               type="text" inputmode="decimal" autocomplete="off" value="@CurrentValueAsString"
+               data-money="@Decimals" data-money-negative="@(AllowNegative ? "" : null)"
+               @onchange="e => CurrentValueAsString = e.Value?.ToString()"
+               aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
+        @if (Currency is not null)
+        {
+            <span class="money-input__currency" aria-hidden="true">@Currency</span>
+        }
+    </div>
+    <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
+</div>
+
+@code {
+    private ElementReference _input;
+
+    [Parameter] public string? Currency { get; set; }
+
+    [Parameter] public bool Large { get; set; }
+
+    /// <summary>Focuses the field once it is shown (and selects its text when <see cref="SelectOnFocus"/> is set).</summary>
+    [Parameter] public bool Autofocus { get; set; }
+
+    [Parameter] public bool SelectOnFocus { get; set; }
+
+    /// <summary>Allowed decimal places: 2 for money, more for exchange rates.</summary>
+    [Parameter] public int Decimals { get; set; } = 2;
+
+    /// <summary>Lets the field take a leading minus, e.g. for an opening balance.</summary>
+    [Parameter] public bool AllowNegative { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Autofocus)
+        {
+            await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Forms/MoneyInput.razor.js");
+            await module.InvokeVoidAsync("focus", _input, SelectOnFocus);
+        }
+    }
+
+    protected override string? FormatValueAsString(decimal? value) =>
+        value?.ToString(Decimals == 2 ? "0.00" : "0." + new string('#', Decimals), CultureInfo.CurrentCulture);
+
+    protected override bool TryParseValueFromString(
+        string? value, out decimal? result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        if (!AmountParser.TryParse(value, CultureInfo.CurrentCulture, out result, out var decimals))
+        {
+            validationErrorMessage = "Enter a number.";
+            return false;
+        }
+
+        // Typed digits count, not the value: "1.500" in pl-PL must not quietly become 1.50.
+        if (decimals > Decimals)
+        {
+            result = null;
+            validationErrorMessage = $"Use at most {Decimals} decimal places.";
+            return false;
+        }
+
+        validationErrorMessage = null;
+        return true;
+    }
+}

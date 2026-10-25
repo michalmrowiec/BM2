@@ -1,0 +1,388 @@
+﻿@page "/"
+@using BM2.Client.Components.Budgets
+@using BM2.Client.Components.Records
+@using BM2.Contracts.Budgets
+@using BM2.Contracts.Dashboard
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Records
+@using BM2.Contracts.Recurring
+@using BM2.Contracts.Stats
+@using BM2.Client.Components.Stats
+@using BM2.Contracts.Templates
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>BM2</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        @if (!WalletState.IsLoaded)
+        {
+            <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+        }
+        else if (WalletState.Wallets.Count == 0)
+        {
+            <section class="onboarding">
+                <p class="eyebrow">Welcome to BM2</p>
+                <h1 class="page-title">Start with a wallet</h1>
+                <p class="lead">A wallet holds your accounts and records. You can share it with family later.</p>
+                <div class="card">
+                    <WalletForm OnSaved="WalletState.SelectAsync" />
+                </div>
+            </section>
+        }
+        else if (WalletState.Current is { } wallet)
+        {
+            <p class="eyebrow">@DateTime.Now.ToString("dddd, d MMMM")</p>
+            <h1 class="page-title">@wallet.Name</h1>
+
+            var accounts = wallet.Accounts.Where(a => !a.IsArchived).ToList();
+            if (accounts.Count > 0)
+            {
+                <section class="balance" aria-label="Total balance">
+                    @foreach (var total in accounts.GroupBy(a => a.Currency)
+                                  .Select(g => (Currency: g.Key, Sum: g.Sum(a => a.Balance), WithPlanned: g.Sum(a => a.WithPlanned))))
+                    {
+                        <Amount Value="total.Sum" Currency="@total.Currency" Large="true"
+                                Sign="@(total.Sum < 0 ? AmountSign.Minus : AmountSign.None)" />
+                        @if (total.WithPlanned != total.Sum)
+                        {
+                            <span class="balance__planned">
+                                With planned:
+                                <Amount Value="total.WithPlanned" Currency="@total.Currency"
+                                        Sign="@(total.WithPlanned < 0 ? AmountSign.Minus : AmountSign.None)" />
+                            </span>
+                        }
+                    }
+                </section>
+
+                <ul class="account-cards stagger">
+                    @foreach (var account in accounts)
+                    {
+                        <li>
+                            <a class="account-card" href="@($"records?accountId={account.Id}&all=true")">
+                                <span class="account-card__name">@account.Name</span>
+                                <Amount Value="account.Balance" Currency="@account.Currency" />
+                            </a>
+                        </li>
+                    }
+                </ul>
+
+                @if (_month?.Totals.Count > 0)
+                {
+                    <h2 class="section-title">@DateTime.Now.ToString("MMMM")</h2>
+                    <div class="month-stats month-stats--three">
+                        @foreach (var total in _month.Totals)
+                        {
+                            <a class="stat" href="records?type=Income">
+                                <span class="stat__label">Income</span>
+                                <Amount Value="total.Income" Currency="@total.Currency" Sign="AmountSign.Plus" />
+                            </a>
+                            <a class="stat" href="records?type=Expense">
+                                <span class="stat__label">Expenses</span>
+                                <Amount Value="total.Expense" Currency="@total.Currency" Sign="AmountSign.Minus" />
+                            </a>
+                            <a class="stat" href="records">
+                                <span class="stat__label">Balance</span>
+                                <Amount Value="total.Income - total.Expense" Currency="@total.Currency" />
+                            </a>
+                        }
+                    </div>
+                }
+
+                @if (_pending.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">To confirm</h2>
+                        <span class="section-header__actions">
+                            @if (_pending.Count > 1)
+                            {
+                                <button type="button" class="btn btn-secondary btn-sm" disabled="@_busy" @onclick="() => _confirmAll = true">
+                                    <Icon Name="check" /> Confirm all
+                                </button>
+                            }
+                            <a class="link" href="records?status=Pending&all=true">All</a>
+                        </span>
+                    </div>
+                    @OpenRecords(_pending, wallet)
+                }
+
+                @if (_planned.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Planned</h2>
+                        <a class="link" href="records?status=Planned&all=true">All</a>
+                    </div>
+                    @OpenRecords(_planned, wallet)
+                }
+
+                @if (_templates.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Quick add</h2>
+                        <a class="link" href="templates">Templates</a>
+                    </div>
+                    <ul class="template-bar">
+                        @foreach (var template in _templates)
+                        {
+                            <li>
+                                <a class="template-tile" href="@($"records/new?template={template.Id}")">
+                                    <RecordAvatar Category="TemplateText.CategoryOf(template, wallet)" Type="template.Type"
+                                                  Fallback="@TemplateText.Label(template, wallet)" />
+                                    <span class="template-tile__label">@TemplateText.Label(template, wallet)</span>
+                                    @if (template.Amount is { } amount)
+                                    {
+                                        <Amount Value="amount" Currency="@TemplateText.Currency(template, wallet)" Sign="TemplateText.Sign(template.Type)" />
+                                    }
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (_budgets is { Items.Count: > 0 } budgets)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Budgets</h2>
+                        <a class="link" href="budgets">All budgets</a>
+                    </div>
+                    <ul class="budget-list">
+                        @foreach (var item in BudgetBar.ByUsage(budgets.Items).Take(4))
+                        {
+                            <li @key="item.Id">
+                                <a class="budget-list__button" href="budgets">
+                                    <BudgetBar Item="item" Currency="@budgets.Currency"
+                                               Category="wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId)" />
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (_pins.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Pinned charts</h2>
+                        <a class="link" href="stats">Stats</a>
+                    </div>
+                    <div class="pinned-charts">
+                        @foreach (var pin in _pins)
+                        {
+                            <PinnedChartCard @key="pin.Id" Wallet="wallet" Pin="pin" OnUnpin="UnpinAsync" />
+                        }
+                    </div>
+                }
+
+                @if (_upcoming.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Upcoming</h2>
+                        <a class="link" href="recurring">Recurring</a>
+                    </div>
+                    <ul class="list">
+                        @foreach (var (rule, index, date) in _upcoming)
+                        {
+                            var name = rule.Record.Name is { } n ? n + rule.Schedule.Suffix(index) : null;
+                            var label = name ?? wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? rule.Record.Type.ToString();
+                            <li @key="(rule.Id, index)">
+                                <ListRow Title="@label" Subtitle="@date.ToString("dddd, d MMM")" Href="@($"recurring/{rule.Id}")">
+                                    <Leading>
+                                        <RecordAvatar Category="wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)" Type="rule.Record.Type"
+                                                      Fallback="@label" />
+                                    </Leading>
+                                    <Trailing>
+                                        <Amount Value="rule.Record.Amount" Currency="@rule.Record.Currency" Sign="TemplateText.Sign(rule.Record.Type)" />
+                                    </Trailing>
+                                </ListRow>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (_recent.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">Recent</h2>
+                        <a class="link" href="records">All records</a>
+                    </div>
+                    <RecordList Items="_recent" Wallet="wallet" />
+                }
+            }
+            else
+            {
+                <EmptyState IconName="wallet" Title="Add your first account">
+                    <ChildContent>Accounts are where your money lives: cash, a bank account, savings.</ChildContent>
+                    <Actions>
+                        @if (wallet.Permissions.ManageAccounts)
+                        {
+                            <a class="btn btn-primary" href="accounts">Add account</a>
+                        }
+                    </Actions>
+                </EmptyState>
+            }
+        }
+        else
+        {
+            <EmptyState IconName="wallet" Title="Couldn't load your wallet">
+                <ChildContent>Check your connection and try again.</ChildContent>
+                <Actions>
+                    <button type="button" class="btn btn-secondary" @onclick="WalletState.RefreshAsync">Try again</button>
+                </Actions>
+            </EmptyState>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <section class="hero">
+            <p class="eyebrow">Personal finance</p>
+            <h1 class="display">Your money, <span class="accent">in ink.</span></h1>
+            <p class="lead">A calm, fast ledger for everyday spending, shared wallets and what's coming next.</p>
+            <a class="btn btn-primary" href="Account/Login">Log in</a>
+        </section>
+    </NotAuthorized>
+</AuthorizeView>
+
+<ConfirmDialog Open="_confirmAll" OpenChanged="v => _confirmAll = v" Title="@($"Confirm {_pending.Count} records?")"
+               ConfirmLabel="Confirm all" OnConfirm="ConfirmAllAsync">
+    <p>The records shown in To confirm are marked as checked (Completed). They already count in balances, so totals stay the same.</p>
+</ConfirmDialog>
+
+<ConfirmDialog Open="_confirmOne is not null" OpenChanged="v => { if (!v) _confirmOne = null; }"
+               Title="@($"Mark {_confirmOne?.Name ?? "record"} as completed?")"
+               ConfirmLabel="Mark as completed" OnConfirm="() => ConfirmManyAsync([_confirmOne!])">
+    <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
+</ConfirmDialog>
+
+<PlannedChoice Record="_choiceFor" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
+               Chosen="s => ConfirmManyAsync([_choiceFor!], s)" />
+
+@code {
+    private bool _confirmAll;
+    private IReadOnlyList<RecordItem> _planned = [];
+    private RecordItem? _choiceFor;
+
+    // Pending and planned records with a one-tap ✓; planned ones ask completed or pending.
+    private RenderFragment OpenRecords(IReadOnlyList<RecordItem> records, WalletSnapshot wallet) =>
+        @<ul class="list">
+            @foreach (var record in records)
+            {
+                var label = record.Name ?? wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)?.Name ?? record.Type.ToString();
+                <li class="template-row record-row--@record.Status.ToString().ToLowerInvariant()" @key="record.Id">
+                    <ListRow Title="@label" Subtitle="@record.OccurredOn.ToString("d MMM")" Href="@($"records/{record.Id}")">
+                        <Leading>
+                            <RecordAvatar Category="wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)" Type="record.Type"
+                                          Fallback="@label" />
+                        </Leading>
+                        <Trailing>
+                            <Amount Value="record.Amount" Currency="@record.Currency" Sign="TemplateText.Sign(record.Type)" />
+                        </Trailing>
+                    </ListRow>
+                    <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {label} as completed")"
+                            title="Mark as completed" disabled="@_busy" @onclick="() => Check(record)">
+                        <Icon Name="check" />
+                    </button>
+                </li>
+            }
+        </ul>;
+    private IReadOnlyList<RecordItem> _recent = [];
+    private IReadOnlyList<PinnedChartItem> _pins = [];
+    private IReadOnlyList<TemplateItem> _templates = [];
+    private RecordSummary? _month;
+    private BudgetOverview? _budgets;
+    private IReadOnlyList<RecordItem> _pending = [];
+    private IReadOnlyList<(RecurringRuleItem Rule, int Index, DateOnly Date)> _upcoming = [];
+    private bool _busy;
+    private WalletSnapshot? _loadedFor;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var wallet = WalletState.Current;
+        if (wallet is null || ReferenceEquals(wallet, _loadedFor))
+        {
+            return;
+        }
+
+        _loadedFor = wallet;
+
+        // Warms the cache, so the record form opens with suggestions.
+        _ = WalletState.GetSuggestionsAsync();
+        var result = await Api.GetAsync<DashboardData>($"api/wallets/{wallet.Id}/dashboard?today={DateTime.Now:yyyy-MM-dd}");
+        if (result.Value is not { } data)
+        {
+            return;
+        }
+
+        var until = DateOnly.FromDateTime(DateTime.Now).AddDays(30);
+        _upcoming = data.Recurring
+            .SelectMany(r => RecurringText.Upcoming(r, until).Select(o => (r, o.Index, o.Date)))
+            .OrderBy(o => o.Date)
+            .Take(10)
+            .ToList();
+        _pending = data.Pending;
+        _planned = data.Planned;
+        _recent = data.Recent;
+        _pins = data.PinnedCharts;
+        _templates = data.PinnedTemplates;
+        _month = data.Month;
+        _budgets = data.Budgets;
+    }
+
+    private RecordItem? _confirmOne;
+
+    // Always asks first: planned records choose completed or pending, pending ones confirm.
+    private void Check(RecordItem r)
+    {
+        if (r.Status == RecordStatus.Planned)
+        {
+            _choiceFor = r;
+        }
+        else
+        {
+            _confirmOne = r;
+        }
+    }
+
+    private Task ConfirmAllAsync()
+    {
+        _confirmAll = false;
+        return ConfirmManyAsync(_pending.ToList());
+    }
+
+    private async Task UnpinAsync(PinnedChartItem pin)
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{WalletState.Current!.Id}/pinned-charts/{pin.Id}");
+        if (result.Ok)
+        {
+            _pins = _pins.Where(p => p.Id != pin.Id).ToList();
+            Toasts.Show($"Unpinned: {pin.Title}");
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
+    {
+        _choiceFor = null;
+        _confirmOne = null;
+        _busy = true;
+        var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records, status);
+        _busy = false;
+        var done = status == RecordStatus.Pending ? "pending" : "completed";
+        Toasts.Show(failed == 0 ? (records.Count == 1 ? $"Marked as {done}." : $"{records.Count} records marked as {done}.") : $"{failed} couldn't be changed.",
+            failed == 0 ? ToastKind.Success : ToastKind.Error);
+        await WalletState.RefreshAsync();
+    }
+}

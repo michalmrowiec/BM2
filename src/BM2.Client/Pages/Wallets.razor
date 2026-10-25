@@ -1,0 +1,134 @@
+@page "/wallets"
+@attribute [Authorize]
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>Wallets · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Wallets</h1>
+    <button type="button" class="btn btn-primary btn-sm" @onclick="OpenCreate"><Icon Name="plus" /> New</button>
+</header>
+
+@if (!WalletState.IsLoaded)
+{
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+}
+else
+{
+    <ul class="list">
+        @foreach (var wallet in WalletState.Wallets)
+        {
+            <li>
+                <ListRow Title="@wallet.Name" Subtitle="@($"{Options.RoleLabel(wallet.Role)} · {wallet.BaseCurrency}")"
+                         OnClick="() => OpenEdit(wallet)">
+                    <Leading><Icon Name="wallet" /></Leading>
+                    <Trailing>
+                        @if (wallet.Id == WalletState.Current?.Id)
+                        {
+                            <span class="tag">Current</span>
+                        }
+                        <Icon Name="chevron-right" />
+                    </Trailing>
+                </ListRow>
+            </li>
+        }
+    </ul>
+}
+
+<Sheet Open="_sheetOpen" OpenChanged="v => _sheetOpen = v" Title="@(_editing?.Name ?? "New wallet")">
+    @if (_editing is null)
+    {
+        <WalletForm OnSaved="OnCreatedAsync" />
+    }
+    else
+    {
+        @if (_editing.Id != WalletState.Current?.Id)
+        {
+            <button type="button" class="btn btn-secondary btn-block" @onclick="() => UseAsync(_editing.Id)">Use this wallet</button>
+        }
+
+        @if (_editing.Role == MemberRole.Owner)
+        {
+            <WalletForm @key="_editing.Id" WalletId="_editing.Id" Name="@_editing.Name" BaseCurrency="@_editing.BaseCurrency"
+                        OnSaved="OnUpdatedAsync" />
+            <button type="button" class="btn btn-ghost btn-block danger-text" @onclick="AskDelete">
+                <Icon Name="trash" /> Delete wallet
+            </button>
+        }
+        else
+        {
+            <p class="muted">Only owners can rename or delete this wallet.</p>
+        }
+    }
+</Sheet>
+
+<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete wallet?" ConfirmLabel="Delete wallet"
+               Danger="true" RequireText="@_editing?.Name" OnConfirm="DeleteAsync">
+    <p>
+        All accounts, categories, tags and records in <strong>@_editing?.Name</strong> will be deleted for every member.
+        This can't be undone.
+    </p>
+</ConfirmDialog>
+
+@code {
+    private bool _sheetOpen;
+    private bool _confirmDelete;
+    private WalletListItem? _editing;
+
+    private void OpenCreate()
+    {
+        _editing = null;
+        _sheetOpen = true;
+    }
+
+    private void OpenEdit(WalletListItem wallet)
+    {
+        _editing = wallet;
+        _sheetOpen = true;
+    }
+
+    private async Task UseAsync(Guid walletId)
+    {
+        _sheetOpen = false;
+        await WalletState.SelectAsync(walletId);
+    }
+
+    private async Task OnCreatedAsync(Guid walletId)
+    {
+        _sheetOpen = false;
+        await WalletState.SelectAsync(walletId);
+        Toasts.Show("Wallet created.", ToastKind.Success);
+    }
+
+    private async Task OnUpdatedAsync(Guid walletId)
+    {
+        _sheetOpen = false;
+        await WalletState.RefreshAsync();
+        Toasts.Show("Wallet saved.", ToastKind.Success);
+    }
+
+    private void AskDelete()
+    {
+        _sheetOpen = false;
+        _confirmDelete = true;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await Api.DeleteAsync($"api/wallets/{_editing!.Id}");
+        _confirmDelete = false;
+        if (result.Ok)
+        {
+            await WalletState.RefreshAsync();
+            Toasts.Show("Wallet deleted.");
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+}

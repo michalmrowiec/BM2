@@ -1,0 +1,66 @@
+@using BM2.Client.Components.Wallets
+@inherits WalletComponentBase
+
+@if (WalletState.Current is { } current)
+{
+    <button type="button" class="wallet-switcher" aria-haspopup="dialog" @onclick="() => _open = true">
+        <span class="wallet-switcher__name">@current.Name</span>
+        <Icon Name="chevron-down" />
+    </button>
+
+    <Sheet Open="_open" OpenChanged="OnOpenChanged" Title="@(_creating ? "New wallet" : "Wallets")">
+        @if (_creating)
+        {
+            <WalletForm OnSaved="OnCreatedAsync" />
+        }
+        else
+        {
+            <ul class="list">
+                @foreach (var wallet in WalletState.Wallets)
+                {
+                    var isCurrent = wallet.Id == current.Id;
+                    <li aria-current="@(isCurrent ? "true" : null)">
+                        <ListRow Title="@wallet.Name" Subtitle="@($"{Options.RoleLabel(wallet.Role)} · {wallet.BaseCurrency}")"
+                                 OnClick="() => SelectAsync(wallet.Id)">
+                            <Leading><Icon Name="wallet" /></Leading>
+                            <Trailing>
+                                @if (isCurrent)
+                                {
+                                    <Icon Name="check" />
+                                    <span class="sr-only">Current wallet</span>
+                                }
+                            </Trailing>
+                        </ListRow>
+                    </li>
+                }
+            </ul>
+            <button type="button" class="btn btn-secondary btn-block" @onclick="() => _creating = true">
+                <Icon Name="plus" /> New wallet
+            </button>
+        }
+    </Sheet>
+}
+
+@code {
+    private bool _open;
+    private bool _creating;
+
+    private void OnOpenChanged(bool open)
+    {
+        _open = open;
+        _creating &= open;
+    }
+
+    private async Task SelectAsync(Guid walletId)
+    {
+        _open = false;
+        await WalletState.SelectAsync(walletId);
+    }
+
+    private async Task OnCreatedAsync(Guid walletId)
+    {
+        _open = false;
+        _creating = false;
+        await WalletState.SelectAsync(walletId);
+    }
+}

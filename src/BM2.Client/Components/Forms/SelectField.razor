@@ -1,0 +1,43 @@
+@typeparam TValue
+@inherits FieldBase<TValue>
+
+<div class="field">
+    <label class="field__label" for="@FieldId">@Label</label>
+    <div class="field__select">
+        <select @attributes="AdditionalAttributes" id="@FieldId" class="field__control" value="@CurrentValueAsString"
+                @onchange="e => CurrentValueAsString = e.Value?.ToString()"
+                aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy">
+            @foreach (var option in Options)
+            {
+                <option value="@Format(option.Value)">@option.Label</option>
+            }
+        </select>
+        <Icon Name="chevron-down" Class="field__select-icon" />
+    </div>
+    <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<(TValue Value, string Label)> Options { get; set; } = [];
+
+    protected override string? FormatValueAsString(TValue? value) => Format(value);
+
+    protected override bool TryParseValueFromString(string? value, out TValue result, out string validationErrorMessage)
+    {
+        foreach (var option in Options)
+        {
+            if (Format(option.Value) == value)
+            {
+                result = option.Value;
+                validationErrorMessage = "";
+                return true;
+            }
+        }
+
+        result = default!;
+        validationErrorMessage = "Choose one of the options.";
+        return false;
+    }
+
+    private static string Format(TValue? value) => value?.ToString() ?? "";
+}

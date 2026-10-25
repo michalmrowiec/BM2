@@ -1,0 +1,36 @@
+@using BM2.Contracts.Categories
+@using BM2.Contracts.Records
+
+@* Round badge: the category icon, else its first letter; transfers show an arrow. *@
+<span class="avatar avatar--@Kind" aria-hidden="true">
+    @if (Category?.Icon is { } icon)
+    {
+        <Icon Name="@icon" />
+    }
+    else if (Type == RecordType.Transfer)
+    {
+        <Icon Name="transfer" />
+    }
+    else
+    {
+        @Initial
+    }
+</span>
+
+@code {
+    [Parameter] public CategoryItem? Category { get; set; }
+
+    [Parameter] public RecordType Type { get; set; }
+
+    /// <summary>Its first letter is shown when there is no category.</summary>
+    [Parameter] public string? Fallback { get; set; }
+
+    private string Kind => Type switch
+    {
+        RecordType.Income => "income",
+        RecordType.Transfer => "transfer",
+        _ => "expense",
+    };
+
+    private string Initial => (Category?.Name ?? Fallback) is { Length: > 0 } text ? text[..1].ToUpperInvariant() : "·";
+}

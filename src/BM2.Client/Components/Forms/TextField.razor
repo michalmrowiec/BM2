@@ -1,0 +1,20 @@
+@inherits FieldBase<string?>
+
+<div class="field">
+    <label class="field__label" for="@FieldId">@Label</label>
+    <input @attributes="AdditionalAttributes" id="@FieldId" class="field__control" type="@Type" value="@CurrentValueAsString"
+           @onchange="e => CurrentValueAsString = e.Value?.ToString()"
+           aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
+    <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
+</div>
+
+@code {
+    [Parameter] public string Type { get; set; } = "text";
+
+    protected override bool TryParseValueFromString(string? value, out string? result, out string validationErrorMessage)
+    {
+        result = value;
+        validationErrorMessage = "";
+        return true;
+    }
+}

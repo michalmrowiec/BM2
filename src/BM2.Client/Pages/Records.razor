@@ -1,0 +1,397 @@
+@page "/records"
+@attribute [Authorize]
+@using System.Globalization
+@using BM2.Client.Components.Records
+@using BM2.Contracts.Records
+@using BM2.Contracts.Wallets
+@using BM2.Client.Components.Wallets
+@inherits WalletComponentBase
+@implements IAsyncDisposable
+@inject ApiClient Api
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Records · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Records</h1>
+    <div class="page-header__actions">
+        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _exportOpen = true">
+            <Icon Name="share" /> Export
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _filtersOpen = true">
+            <Icon Name="filter" /> Filters
+            @if (ActiveFilters.Count > 0)
+            {
+                <span class="badge" aria-label="@($"{ActiveFilters.Count} active")">@ActiveFilters.Count</span>
+            }
+        </button>
+    </div>
+</header>
+
+<div class="records-toolbar">
+    <div class="month-switcher" role="group" aria-label="Period">
+        @if (IsAllTime)
+        {
+            <span class="month-switcher__label">All time</span>
+        }
+        else
+        {
+            <a class="icon-button" href="@MonthUrl(-1)" aria-label="Previous month"><Icon Name="arrow-left" /></a>
+            <span class="month-switcher__label" aria-live="polite">@MonthStart.ToString("MMMM yyyy", CultureInfo.CurrentCulture)</span>
+            <a class="icon-button" href="@MonthUrl(1)" aria-label="Next month"><Icon Name="arrow-right" /></a>
+        }
+        <a class="chip chip--sm" aria-pressed="@(IsAllTime ? "true" : "false")" href="@AllTimeUrl">All time</a>
+    </div>
+    <label class="search-field">
+        <Icon Name="search" />
+        <span class="sr-only">Search records</span>
+        <input type="search" placeholder="Search" value="@_search" @oninput="OnSearchInput" />
+    </label>
+</div>
+
+@if (ActiveFilters.Count > 0)
+{
+    <div class="chip-group active-filters" aria-label="Active filters">
+        @foreach (var (key, label) in ActiveFilters)
+        {
+            <a class="chip chip--sm" href="@Navigation.GetUriWithQueryParameter(key, (string?)null)" aria-label="@($"Remove filter {label}")">
+                @label <Icon Name="close" />
+            </a>
+        }
+    </div>
+}
+
+@if (_summary?.Totals.Count > 0)
+{
+    <div class="summary-bar" aria-label="Totals">
+        @foreach (var total in _summary.Totals)
+        {
+            <div class="summary-bar__item">
+                <span class="summary-bar__label">In</span>
+                <Amount Value="total.Income" Currency="@total.Currency" Sign="AmountSign.Plus" />
+            </div>
+            <div class="summary-bar__item">
+                <span class="summary-bar__label">Out</span>
+                <Amount Value="total.Expense" Currency="@total.Currency" Sign="AmountSign.Minus" />
+            </div>
+        }
+    </div>
+}
+
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else if (_loading)
+{
+    <div aria-busy="true">
+        <span class="skeleton skeleton--line"></span>
+        <span class="skeleton skeleton--line"></span>
+        <span class="sr-only">Loading…</span>
+    </div>
+}
+else if (_failed)
+{
+    <EmptyState IconName="list" Title="Couldn't load records">Check your connection and try again.</EmptyState>
+}
+else if (_items.Count == 0)
+{
+    <EmptyState IconName="list" Title="Nothing here">
+        <ChildContent>No records match this period and these filters.</ChildContent>
+        <Actions><a class="btn btn-primary" href="records/new"><Icon Name="plus" /> Add record</a></Actions>
+    </EmptyState>
+}
+else
+{
+    <RecordList Items="_items" Wallet="Wallet" AccountId="AccountId" Selectable="true" />
+    @if (_nextCursor is not null)
+    {
+        <div class="load-more" @ref="_sentinel">
+            <button type="button" class="btn btn-secondary" disabled="@_loadingMore" @onclick="LoadMoreAsync">Load more</button>
+        </div>
+    }
+}
+
+@if (Wallet is not null)
+{
+    <RecordFilterSheet Open="_filtersOpen" OpenChanged="v => _filtersOpen = v" Wallet="Wallet" Value="CurrentFilter"
+                       ValueChanged="ApplyFilters" />
+
+    <Sheet Open="_exportOpen" OpenChanged="v => _exportOpen = v" Title="Export records">
+        <SegmentedControl Label="Records to export" Options="ExportScopes" @bind-Value="_exportAll" Class="segmented--block" />
+        <p class="muted">
+            @(_exportAll
+                ? "Every record in this wallet you can see, from all time, ignoring the period and filters."
+                : $"The records shown: {(IsAllTime ? "all time" : MonthStart.ToString("MMMM yyyy"))}{(ActiveFilters.Count > 0 ? $", {ActiveFilters.Count} active filters" : ", no filters")}.")
+            Newest first, up to 50,000. Expenses and transfers out are negative. The file name includes the wallet name.
+        </p>
+        <div class="export-options">
+            <a class="btn btn-primary" href="@ExportUrl("xlsx")" download @onclick="() => _exportOpen = false">Excel (.xlsx)</a>
+            <a class="btn btn-secondary" href="@ExportUrl("csv")" download @onclick="() => _exportOpen = false">CSV (semicolon, UTF-8)</a>
+        </div>
+    </Sheet>
+}
+
+@code {
+    private List<RecordItem> _items = [];
+    private RecordSummary? _summary;
+    private string? _nextCursor;
+    private string? _loadedKey;
+    private int _version;
+    private WalletSnapshot? _loadedSnapshot;
+    private bool _loading = true;
+    private bool _loadingMore;
+    private bool _failed;
+    private bool _filtersOpen;
+    private bool _exportOpen;
+    private bool _exportAll;
+    private static readonly IReadOnlyList<(bool, string)> ExportScopes = [(false, "Current view"), (true, "All records")];
+    private string? _search;
+    private CancellationTokenSource? _debounce;
+    private ElementReference _sentinel;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _observer;
+    private DotNetObjectReference<Records>? _self;
+
+    [SupplyParameterFromQuery] public string? Month { get; set; }
+
+    [SupplyParameterFromQuery] public bool? All { get; set; }
+
+    [SupplyParameterFromQuery] public Guid? AccountId { get; set; }
+
+    [SupplyParameterFromQuery] public Guid? CategoryId { get; set; }
+
+    [SupplyParameterFromQuery] public Guid? TagId { get; set; }
+
+    [SupplyParameterFromQuery] public string? Type { get; set; }
+
+    [SupplyParameterFromQuery] public string? Status { get; set; }
+
+    [SupplyParameterFromQuery(Name = "q")] public string? Search { get; set; }
+
+    [SupplyParameterFromQuery] public Guid? RuleId { get; set; }
+
+    [SupplyParameterFromQuery] public bool? Recurring { get; set; }
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool IsAllTime => All == true;
+
+    private DateOnly MonthStart => DateOnly.TryParseExact(Month, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var month)
+        ? month
+        : new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+    private string ExportUrl(string format)
+    {
+        var query = _exportAll ? "" : CurrentFilter.ToQueryString();
+        return $"api/wallets/{Wallet!.Id}/records/export{query}{(query.Length == 0 ? "?" : "&")}format={format}";
+    }
+
+    private RecordFilter CurrentFilter => new()
+    {
+        From = IsAllTime ? null : MonthStart,
+        To = IsAllTime ? null : MonthStart.AddMonths(1),
+        AccountId = AccountId,
+        CategoryId = CategoryId,
+        TagId = TagId,
+        Type = Enum.TryParse<RecordType>(Type, out var type) ? type : null,
+        Status = Enum.TryParse<RecordStatus>(Status, out var status) ? status : null,
+        Search = Search,
+        RuleId = RuleId,
+        Recurring = Recurring,
+    };
+
+    private List<(string Key, string Label)> ActiveFilters
+    {
+        get
+        {
+            var filters = new List<(string, string)>();
+            if (Wallet is null)
+            {
+                return filters;
+            }
+
+            Add(filters, "accountId", Wallet.Accounts.FirstOrDefault(a => a.Id == AccountId)?.Name);
+            Add(filters, "categoryId", Wallet.Categories.FirstOrDefault(c => c.Id == CategoryId)?.Name);
+            Add(filters, "tagId", Wallet.Tags.FirstOrDefault(t => t.Id == TagId)?.Name);
+            Add(filters, "type", CurrentFilter.Type?.ToString());
+            Add(filters, "status", CurrentFilter.Status?.ToString());
+            Add(filters, "ruleId", RuleId is null ? null : "One recurring rule");
+            Add(filters, "recurring", Recurring == true ? "Added by recurring rules" : null);
+            return filters;
+        }
+    }
+
+    private string AllTimeUrl => Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+    {
+        ["all"] = IsAllTime ? null : true,
+        ["month"] = null,
+    });
+
+    protected override void OnInitialized() => _self = DotNetObjectReference.Create(this);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _search = Search;
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_nextCursor is not null && _observer is null && !_loading)
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Records.razor.js");
+            _observer = await _module.InvokeAsync<IJSObjectReference>("observe", _sentinel, _self);
+        }
+    }
+
+    private static void Add(List<(string, string)> filters, string key, string? label)
+    {
+        if (label is not null)
+        {
+            filters.Add((key, label));
+        }
+    }
+
+    private string MonthUrl(int offset) => Navigation.GetUriWithQueryParameter(
+        "month", MonthStart.AddMonths(offset).ToString("yyyy-MM", CultureInfo.InvariantCulture));
+
+    private async Task LoadAsync()
+    {
+        var wallet = Wallet;
+        var key = CurrentFilter.ToQueryString();
+        if (wallet is null || (ReferenceEquals(wallet, _loadedSnapshot) && key == _loadedKey))
+        {
+            return;
+        }
+
+        _loadedSnapshot = wallet;
+        _loadedKey = key;
+        _loading = true;
+        var version = ++_version;
+        await StopObservingAsync();
+
+        var baseUrl = $"api/wallets/{wallet.Id}/records";
+        var page = Api.GetAsync<RecordPage>(baseUrl + key);
+        var summary = Api.GetAsync<RecordSummary>($"{baseUrl}/summary{key}");
+        await Task.WhenAll(page, summary);
+
+        // A newer month or filter started loading meanwhile: its result wins.
+        if (version != _version)
+        {
+            return;
+        }
+
+        _failed = !page.Result.Ok;
+        _items = page.Result.Value?.Items.ToList() ?? [];
+        _nextCursor = page.Result.Value?.NextCursor;
+        _summary = summary.Result.Value;
+        _loading = false;
+    }
+
+    [JSInvokable]
+    public async Task LoadMoreAsync()
+    {
+        if (_nextCursor is null || _loadingMore || Wallet is null)
+        {
+            return;
+        }
+
+        _loadingMore = true;
+        StateHasChanged();
+        var version = _version;
+        var filter = CurrentFilter;
+        var query = new RecordFilter
+        {
+            From = filter.From, To = filter.To, AccountId = filter.AccountId, CategoryId = filter.CategoryId, TagId = filter.TagId,
+            Type = filter.Type, Status = filter.Status, Search = filter.Search, Cursor = _nextCursor,
+        }.ToQueryString();
+        var page = await Api.GetAsync<RecordPage>($"api/wallets/{Wallet.Id}/records{query}");
+        if (version != _version)
+        {
+            _loadingMore = false;
+            return;
+        }
+
+        if (page.Ok)
+        {
+            _items.AddRange(page.Value!.Items);
+            _nextCursor = page.Value.NextCursor;
+            if (_nextCursor is null)
+            {
+                await StopObservingAsync();
+            }
+        }
+
+        _loadingMore = false;
+        StateHasChanged();
+    }
+
+    private void ApplyFilters(RecordFilter filter) => Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(
+        new Dictionary<string, object?>
+        {
+            ["accountId"] = filter.AccountId,
+            ["categoryId"] = filter.CategoryId,
+            ["tagId"] = filter.TagId,
+            ["type"] = filter.Type?.ToString(),
+            ["status"] = filter.Status?.ToString(),
+            ["recurring"] = filter.Recurring == true ? true : null,
+        }));
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString();
+        if (_debounce is not null)
+        {
+            await _debounce.CancelAsync();
+            _debounce.Dispose();
+        }
+
+        _debounce = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(300, _debounce.Token);
+            var term = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim();
+            Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("q", term), replace: true);
+        }
+        catch (TaskCanceledException)
+        {
+            // A newer keystroke replaced this search.
+        }
+    }
+
+    private async Task StopObservingAsync()
+    {
+        if (_observer is not null)
+        {
+            await _observer.InvokeVoidAsync("disconnect");
+            await _observer.DisposeAsync();
+            _observer = null;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await StopObservingAsync();
+            if (_module is not null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Page unloaded; the browser cleans up.
+        }
+
+        _debounce?.Dispose();
+        _self?.Dispose();
+    }
+}

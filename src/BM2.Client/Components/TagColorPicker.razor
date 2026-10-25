@@ -1,0 +1,19 @@
+@using BM2.Contracts.Tags
+
+<div class="color-picker @(Small ? "color-picker--sm" : null)" role="group" aria-label="Tag color">
+    <button type="button" class="color-dot color-dot--none" aria-label="No color" aria-pressed="@(Value is null ? "true" : "false")"
+            @onclick="() => ValueChanged.InvokeAsync(null)"></button>
+    @foreach (var color in TagColors.All)
+    {
+        <button type="button" class="color-dot @TagPalette.ClassFor(color)" aria-label="@color"
+                aria-pressed="@(Value == color ? "true" : "false")" @onclick="() => ValueChanged.InvokeAsync(color)"></button>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter] public bool Small { get; set; }
+}

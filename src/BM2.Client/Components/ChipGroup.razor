@@ -1,0 +1,48 @@
+@typeparam TValue
+
+<div class="chip-group @Class" role="group" aria-label="@Label" aria-describedby="@DescribedBy">
+    @foreach (var option in Options)
+    {
+        var pressed = Selected.Contains(option.Value);
+        <button type="button" class="chip" aria-pressed="@(pressed ? "true" : "false")" @onclick="() => ToggleAsync(option.Value)">
+            @if (IconOf?.Invoke(option.Value) is { } icon)
+            {
+                <Icon Name="@icon" />
+            }
+            @option.Label
+        </button>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<(TValue Value, string Label)> Options { get; set; } = [];
+
+    [Parameter] public IReadOnlyCollection<TValue> Selected { get; set; } = [];
+
+    [Parameter] public EventCallback<IReadOnlyCollection<TValue>> SelectedChanged { get; set; }
+
+    /// <summary>Many chips can be on at once; otherwise a tap picks exactly one.</summary>
+    [Parameter] public bool Multiple { get; set; }
+
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Optional icon key shown before an option's label.</summary>
+    [Parameter] public Func<TValue, string?>? IconOf { get; set; }
+
+    /// <summary>Id of the message (e.g. a validation error) that describes the group.</summary>
+    [Parameter] public string? DescribedBy { get; set; }
+
+    /// <summary>Extra chips after the options, e.g. "All…".</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task ToggleAsync(TValue value)
+    {
+        IReadOnlyCollection<TValue> next = !Multiple
+            ? [value]
+            : Selected.Contains(value) ? Selected.Where(v => !EqualityComparer<TValue>.Default.Equals(v, value)).ToList() : [.. Selected, value];
+        return SelectedChanged.InvokeAsync(next);
+    }
+}

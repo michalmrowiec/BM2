@@ -1,0 +1,44 @@
+@using BM2.Client.Components.Records
+@using BM2.Contracts.Stats
+@using BM2.Contracts.Wallets
+
+@* Category totals as text: icon, share, record count and amount; optional color swatches matching a donut. *@
+<ul class="stats-list">
+    @for (var i = 0; i < Items.Count; i++)
+    {
+        var item = Items[i];
+        var swatch = StatsCharts.SwatchOf(i);
+        var selectable = OnSelect.HasDelegate && item.CategoryId is not null;
+        <li @key="(item.CategoryId, item.Type)">
+            <ListRow Title="@StatsCharts.NameOf(Wallet, item.CategoryId)"
+                     Subtitle="@($"{StatsCharts.Share(item.Total, Total)} · {StatsCharts.Records(item.Count)}")"
+                     Class="@(selectable && item.CategoryId == SelectedId ? "stats-list__row is-selected" : "stats-list__row")"
+                     OnClick="@(selectable ? EventCallback.Factory.Create(this, () => OnSelect.InvokeAsync(item.CategoryId!.Value)) : default)">
+                <Leading>
+                    @if (Swatches)
+                    {
+                        <span class="stats-swatch stats-swatch--@swatch" aria-hidden="true"></span>
+                    }
+                    <RecordAvatar Category="StatsCharts.CategoryOf(Wallet, item.CategoryId)" Type="item.Type" Fallback="?" />
+                </Leading>
+                <Trailing><Amount Value="StatsCharts.Signed(item.Total, item.Type)" Currency="@Currency" /></Trailing>
+            </ListRow>
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<CategoryTotal> Items { get; set; } = [];
+
+    [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
+
+    [Parameter, EditorRequired] public string Currency { get; set; } = "";
+
+    [Parameter] public bool Swatches { get; set; }
+
+    [Parameter] public Guid? SelectedId { get; set; }
+
+    [Parameter] public EventCallback<Guid> OnSelect { get; set; }
+
+    private decimal Total => Items.Sum(i => i.Total);
+}

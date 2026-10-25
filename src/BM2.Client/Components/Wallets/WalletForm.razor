@@ -1,0 +1,73 @@
+@using BM2.Contracts.Wallets
+@inject ApiClient Api
+@inject ToastService Toasts
+
+@* Creates a wallet, or edits one when WalletId is set. *@
+<EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
+    <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToCreateRequest()" />
+    <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
+    <SelectField Label="Currency" @bind-Value="_model.BaseCurrency" Options="Options.Currencies"
+                 Hint="Totals and reports for this wallet use this currency." />
+    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(WalletId is null ? "Create wallet" : "Save")</button>
+</EditForm>
+
+@code {
+    private static readonly CreateWalletRequestValidator Validator = new();
+    private FormModel _model = new();
+    private FluentValidator? _validator;
+    private bool _busy;
+
+    [Parameter] public Guid? WalletId { get; set; }
+
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public string? BaseCurrency { get; set; }
+
+    /// <summary>Called with the wallet id after a successful save.</summary>
+    [Parameter] public EventCallback<Guid> OnSaved { get; set; }
+
+    // Once: re-rendering the parent must not wipe what the user typed (callers use @key to reset).
+    protected override void OnInitialized() =>
+        _model = new FormModel { Name = Name ?? (WalletId is null ? "Personal" : ""), BaseCurrency = BaseCurrency ?? "PLN" };
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        ApiResult result;
+        Guid savedId;
+        if (WalletId is { } id)
+        {
+            result = await Api.PutAsync($"api/wallets/{id}", new UpdateWalletRequest(_model.Name ?? "", _model.BaseCurrency));
+            savedId = id;
+        }
+        else
+        {
+            var created = await Api.PostAsync<WalletListItem>("api/wallets", _model.ToCreateRequest());
+            result = created;
+            savedId = created.Value?.Id ?? Guid.Empty;
+        }
+
+        _busy = false;
+        if (result.Ok)
+        {
+            await OnSaved.InvokeAsync(savedId);
+        }
+        else if (result.Problem!.HasFieldErrors)
+        {
+            _validator?.ShowServerErrors(result.Problem);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private sealed class FormModel
+    {
+        public string? Name { get; set; }
+
+        public string BaseCurrency { get; set; } = "PLN";
+
+        public CreateWalletRequest ToCreateRequest() => new(Name ?? "", BaseCurrency);
+    }
+}

@@ -1,0 +1,806 @@
+@using BM2.Contracts.Accounts
+@using BM2.Contracts.Categories
+@using BM2.Contracts.Records
+@using BM2.Contracts.Recurring
+@using BM2.Contracts.Tags
+@using BM2.Contracts.Templates
+@using BM2.Contracts.Wallets
+@inject ApiClient Api
+@inject ToastService Toasts
+
+@* Quick add, edit and copy: amount, name with suggestions, then one tap per choice; status and currency under "More". *@
+<EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync" class="record-form">
+    <FluentValidator @ref="_validator" Validator="Validator" ToRequest="_ => BuildRequest()" />
+
+    <SegmentedControl TValue="RecordType" Options="TypeOptions" Value="_model.Type" ValueChanged="OnTypeChanged" Label="Record type"
+                      Class="segmented--block" />
+
+    <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null || Template?.Amount > 0)"
+                Currency="@AccountCurrency" @bind-Value="_model.Amount" @bind-Value:after="Recalculate" />
+
+    @if (_model.Type == RecordType.Transfer)
+    {
+        <div class="record-form__route">
+            <SelectField id="record-account" Label="From account" Options="AccountOptions" @bind-Value="_model.AccountId"
+                         @bind-Value:after="OnAccountChanged" />
+            <button type="button" class="icon-button record-form__swap" aria-label="Swap from and to accounts"
+                    disabled="@(_model.TransferAccountId is null)" @onclick="SwapAccounts">
+                <Icon Name="transfer" />
+            </button>
+            <SelectField id="record-target" Label="To account" Options="TargetOptions" @bind-Value="_model.TransferAccountId" />
+        </div>
+        @if (NeedsTransferAmount)
+        {
+            <MoneyInput id="record-transfer-amount" Label="@($"Amount received in {TargetCurrency}")" Currency="@TargetCurrency"
+                        @bind-Value="_model.TransferAmount" />
+        }
+    }
+    else
+    {
+        <SelectField id="record-account" Label="@(_model.Type == RecordType.Income ? "To account" : "From account")"
+                     Options="AccountOptions" @bind-Value="_model.AccountId" @bind-Value:after="OnAccountChanged" />
+    }
+
+    <div class="field name-field">
+        <label class="field__label" for="record-name">Name</label>
+        @* Combobox: arrows move through the suggestions, Enter picks, Escape closes. *@
+        @{ var listOpen = _nameFocused && !_suggestionsClosed && NameMatches.Count > 0; }
+        <input id="record-name" class="field__control" value="@_model.Name" placeholder="Where or what, e.g. Lidl" autocomplete="off"
+               maxlength="100" aria-invalid="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "true")"
+               aria-describedby="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "record-name-error")"
+               role="combobox" aria-autocomplete="list" aria-controls="record-name-list" aria-expanded="@(listOpen ? "true" : "false")"
+               aria-activedescendant="@(listOpen && _activeSuggestion >= 0 ? $"record-name-option-{_activeSuggestion}" : null)"
+               @oninput="OnNameInput" @onfocus="() => _nameFocused = true" @onblur="OnNameBlur"
+               @onkeydown="OnNameKeyDown" />
+        @if (listOpen)
+        {
+            <ul class="suggestions" id="record-name-list" role="listbox" aria-label="Suggestions">
+                @for (var i = 0; i < NameMatches.Count; i++)
+                {
+                    var suggestion = NameMatches[i];
+                    var active = i == _activeSuggestion;
+                    @* Mousedown keeps focus in the input, so the list stays until the click lands. *@
+                    <li id="@($"record-name-option-{i}")" role="option" aria-selected="@(active ? "true" : "false")"
+                        class="suggestions__item @(active ? "is-active" : null)"
+                        @onmousedown:preventDefault="true" @onclick="() => PickName(suggestion)">
+                        <span>@suggestion.Name</span>
+                        @if (FindCategory(suggestion.CategoryId) is { } category)
+                        {
+                            <span class="suggestions__meta">
+                                @if (category.Icon is { } icon)
+                                {
+                                    <Icon Name="@icon" />
+                                }
+                                @category.Name
+                            </span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        <FieldMessages Error="@ErrorFor(nameof(FormModel.Name))" ErrorId="record-name-error" HintId="record-name-hint" />
+    </div>
+
+    @if (_model.Type != RecordType.Transfer)
+    {
+        @* The most used categories as chips; the rest through All, with search. *@
+        <div class="field record-form__categories">
+            <span class="field__label" id="record-category-label">Category</span>
+            <ChipGroup TValue="Guid" Options="ShownCategories" Selected="SelectedCategory" SelectedChanged="OnCategoryChanged"
+                       Label="Category" Class="chip-group--categories" IconOf="id => FindCategory(id)?.Icon"
+                       DescribedBy="@(ErrorFor(nameof(FormModel.CategoryId)) is null ? null : "record-category-error")">
+                @if (CategoryOptions.Count > ShownCategories.Count)
+                {
+                    <button type="button" class="chip chip--add" @onclick="OpenCategoryPicker">
+                        <Icon Name="search" /> All @CategoryOptions.Count
+                    </button>
+                }
+            </ChipGroup>
+            <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint" />
+        </div>
+
+        <Sheet Open="_pickCategory" OpenChanged="v => _pickCategory = v" Title="Category">
+            @* Enter picks the first match; data-enter-picks keeps it from saving the record. *@
+            <input type="search" class="field__control" form="record-category-search" data-enter-picks placeholder="Search categories"
+                   aria-label="Search categories" autocomplete="off" value="@_categoryTerm"
+                   @oninput="e => _categoryTerm = e.Value?.ToString()" @onkeydown="OnCategorySearchKeyDown" />
+            <ul class="menu-list category-picker">
+                @foreach (var (id, name) in CategoryMatches)
+                {
+                    <li>
+                        <button type="button" aria-pressed="@(_model.CategoryId == id ? "true" : "false")" @onclick="() => PickCategory(id)">
+                            <Icon Name="@(FindCategory(id)?.Icon ?? "category")" /><span>@name</span>
+                            @if (_model.CategoryId == id)
+                            {
+                                <Icon Name="check" Class="menu-list__trail" />
+                            }
+                        </button>
+                    </li>
+                }
+            </ul>
+            @if (CategoryMatches.Count == 0)
+            {
+                <p class="muted">No category matches “@_categoryTerm”.</p>
+            }
+        </Sheet>
+    }
+
+    @if (TemplateMode)
+    {
+        @* A template has no date, schedule or status; the record gets them when the template is used. *@
+    }
+    else if (Rule is { RecordCount: > 0 })
+    {
+        @* Moving the start would renumber and shift dates of records already added, so it is fixed. *@
+        <div class="field">
+            <span class="field__label">Starts</span>
+            <p class="field__static">@_model.OccurredOn.ToString("d MMM yyyy")</p>
+            <p class="field__hint">Fixed once records were added. To start on another day, create a new rule.</p>
+        </div>
+    }
+    else
+    {
+        <DateField id="record-date" Label="@(RuleMode ? "Starts" : "Date")" @bind-Value="_model.OccurredOn" />
+    }
+
+    @if (TemplateMode)
+    {
+    }
+    else if (RuleMode)
+    {
+        <RepeatFields Model="_repeat" Start="_model.OccurredOn" Existing="Rule" FirstStatus="@(Rule is null && Initial is not null ? Initial.Status : null)"
+                      FirstExists="true" />
+    }
+    else if (Initial is null || IsCopy)
+    {
+        <label class="check">
+            <input type="checkbox" checked="@_repeatOn" @onchange="OnRepeatChanged" />
+            <span><Icon Name="repeat" /> Repeat – save this record now and add the next ones automatically</span>
+        </label>
+        @if (_repeatOn)
+        {
+            <RepeatFields Model="_repeat" Start="_model.OccurredOn" FirstStatus="_model.Status" />
+        }
+    }
+
+    @if (TagOptions.Count > 0 || CanCreateTags)
+    {
+        <div class="field">
+            <span class="field__label" id="record-tags-label">Tags</span>
+            <div class="chip-group" role="group" aria-labelledby="record-tags-label">
+                @foreach (var tag in TagOptions)
+                {
+                    var on = _model.TagIds.Contains(tag.Id);
+                    <button type="button" class="chip chip--sm @TagPalette.ClassFor(tag.Color)" aria-pressed="@(on ? "true" : "false")"
+                            @onclick="() => ToggleTag(tag.Id)">
+                        #@tag.Name
+                    </button>
+                }
+                @if (CanCreateTags)
+                {
+                    @if (_newTag is null)
+                    {
+                        <button type="button" class="chip chip--sm chip--add" @onclick="OpenNewTag">
+                            <Icon Name="plus" /> New tag
+                        </button>
+                    }
+                    else
+                    {
+                        @* form="" detaches the input from the record form, so Enter adds the tag instead of saving. *@
+                        <span class="new-tag">
+                            <input class="field__control new-tag__input" form="record-new-tag" value="@_newTag" placeholder="Tag name"
+                                   aria-label="New tag name" maxlength="30" autocomplete="off" @ref="_newTagInput"
+                                   @oninput="e => _newTag = e.Value?.ToString()" @onkeydown="OnNewTagKeyDown" />
+                            <button type="button" class="btn btn-secondary btn-sm" disabled="@_creatingTag" @onclick="CreateTagAsync">Add</button>
+                            <TagColorPicker Small="true" Value="@_newTagColor" ValueChanged="c => _newTagColor = c" />
+                        </span>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    <details class="record-form__more" open="@_moreOpen">
+        <summary>More</summary>
+        <div class="form-stack">
+            @if (!RuleMode && !TemplateMode)
+            {
+                <SelectField id="record-status" Label="@(_repeatOn ? "Status of this record" : "Status")" Options="StatusOptions"
+                             @bind-Value="_model.Status" @bind-Value:after="SyncRepeatMode" />
+            }
+            @if (_model.Type != RecordType.Transfer)
+            {
+                <SelectField id="record-currency" Label="Currency" Options="Options.Currencies" @bind-Value="_model.Currency"
+                             @bind-Value:after="Recalculate" />
+            }
+        </div>
+    </details>
+
+    @if (IsForeign && !TemplateMode)
+    {
+        <div class="record-form__fx">
+            <MoneyInput id="record-rate" Label="@($"Rate {_model.Currency} → {AccountCurrency}")" Decimals="6"
+                        @bind-Value="_model.Rate" @bind-Value:after="Recalculate" />
+            <MoneyInput id="record-account-amount" Label="@($"Amount in {AccountCurrency}")" Currency="@AccountCurrency"
+                        @bind-Value="_model.AccountAmount" @bind-Value:after="OnAccountAmountChanged" />
+        </div>
+    }
+
+    @if (TemplateMode)
+    {
+        @* Template fields are optional, so the record rules (e.g. a required category) don't apply here. *@
+        <button type="button" class="btn btn-primary btn-block record-form__submit" disabled="@Busy" @onclick="SaveTemplateAsync">
+            Save template
+        </button>
+    }
+    else
+    {
+        @if (OnSaveTemplate.HasDelegate && !_repeatOn)
+        {
+            <button type="button" class="btn btn-ghost btn-block" disabled="@Busy" @onclick="SaveTemplateAsync">
+                <Icon Name="bolt" /> Save as template
+            </button>
+        }
+
+        <button type="submit" class="btn btn-primary btn-block record-form__submit" disabled="@Busy">Save</button>
+    }
+</EditForm>
+
+@code {
+    private const int MaxNameMatches = 5;
+
+    private static readonly SaveRecordRequestValidator Validator = new();
+
+    private static readonly IReadOnlyList<(RecordType Value, string Label)> TypeOptions =
+        [(RecordType.Expense, "Expense"), (RecordType.Income, "Income"), (RecordType.Transfer, "Transfer")];
+
+    private static readonly IReadOnlyList<(RecordStatus Value, string Label)> StatusOptions =
+        [
+            (RecordStatus.Completed, "Completed – done and checked"),
+            (RecordStatus.Pending, "Pending – happened, waiting for your ✓ (counts in balances)"),
+            (RecordStatus.Planned, "Planned – not counted yet, shown as a forecast"),
+        ];
+
+    private readonly List<TagItem> _createdTags = [];
+    private FormModel _model = new();
+    private RepeatModel _repeat = new();
+    private bool _repeatOn;
+    private EditContext _editContext = null!;
+    private FluentValidator? _validator;
+    private bool _moreOpen;
+    private bool _nameFocused;
+    private string? _newTag;
+    private string? _newTagColor;
+    private bool _creatingTag;
+    private bool _focusNewTag;
+    private ElementReference _newTagInput;
+
+    [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
+
+    /// <summary>The record being edited or copied; null for a new record.</summary>
+    [Parameter] public RecordItem? Initial { get; set; }
+
+    [Parameter] public bool IsCopy { get; set; }
+
+    /// <summary>Prefills a new record; empty template fields keep the defaults.</summary>
+    [Parameter] public TemplateItem? Template { get; set; }
+
+    [Parameter] public RecordSuggestions? Suggestions { get; set; }
+
+    /// <summary>Edits a recurring rule: the date is the schedule start and the schedule is always shown.</summary>
+    [Parameter] public bool RuleMode { get; set; }
+
+    /// <summary>Edits <see cref="Template"/>: no date, repeat or status; Save sends <see cref="OnSaveTemplate"/>.</summary>
+    [Parameter] public bool TemplateMode { get; set; }
+
+    /// <summary>The schedule to start from in <see cref="RuleMode"/>.</summary>
+    [Parameter] public RecurringRuleItem? Rule { get; set; }
+
+    [Parameter] public Guid? DefaultAccountId { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public EventCallback<SaveRecordRequest> OnSubmit { get; set; }
+
+    [Parameter] public EventCallback<SaveTemplateRequest> OnSaveTemplate { get; set; }
+
+    public void ShowServerErrors(ApiProblem problem) => _validator?.ShowServerErrors(problem);
+
+    /// <summary>The rule to save with the record, or null when Repeat is off.</summary>
+    public SaveRecurringRuleRequest? BuildRuleRequest(Guid? fromRecordId) =>
+        RuleMode || _repeatOn ? _repeat.ToRequest(BuildRequest(), fromRecordId) : null;
+
+    private string? AccountCurrency => FindAccount(_model.AccountId)?.Currency;
+
+    private string? TargetCurrency => FindAccount(_model.TransferAccountId)?.Currency;
+
+    private bool IsForeign => _model.Type != RecordType.Transfer && AccountCurrency is not null && _model.Currency != AccountCurrency;
+
+    private bool NeedsTransferAmount => TargetCurrency is not null && TargetCurrency != AccountCurrency;
+
+    private bool CanCreateTags => Wallet.Permissions.ManageCategories;
+
+    private IReadOnlyList<(Guid Value, string Label)> AccountOptions => Wallet.Accounts
+        .Where(a => a.CanWrite && (!a.IsArchived || a.Id == Initial?.AccountId))
+        .Select(a => (a.Id, a.Name))
+        .ToList();
+
+    private IReadOnlyList<(Guid? Value, string Label)> TargetOptions => Wallet.Accounts
+        .Where(a => a.CanWrite && a.Id != _model.AccountId && (!a.IsArchived || a.Id == Initial?.TransferAccountId))
+        .Select(a => ((Guid?)a.Id, a.Name))
+        .ToList();
+
+    // Most used in the wallet first, then by name.
+    private IReadOnlyList<(Guid Value, string Label)> CategoryOptions => Wallet.Categories
+        .Where(c => c.Type == (_model.Type == RecordType.Income ? CategoryType.Income : CategoryType.Expense)
+            && (!c.IsArchived || c.Id == Initial?.CategoryId))
+        .OrderBy(c => Rank(Suggestions?.CategoryIds, c.Id)).ThenBy(c => c.Name)
+        .Select(c => (c.Id, c.Name))
+        .ToList();
+
+    private IReadOnlyList<TagItem> TagOptions => Wallet.Tags
+        .Concat(_createdTags.Where(c => Wallet.Tags.All(t => t.Id != c.Id)))
+        .Where(t => !t.IsArchived || _model.TagIds.Contains(t.Id))
+        .OrderBy(t => Rank(Suggestions?.TagIds, t.Id)).ThenBy(t => t.Name)
+        .ToList();
+
+    private IReadOnlyCollection<Guid> SelectedCategory => _model.CategoryId is { } id ? [id] : [];
+
+    private IReadOnlyList<NameSuggestion> NameMatches
+    {
+        get
+        {
+            var term = _model.Name?.Trim();
+            if (string.IsNullOrEmpty(term) || Suggestions is null)
+            {
+                return [];
+            }
+
+            var sameType = Suggestions.Names.Where(n => n.Type == _model.Type).ToList();
+            if (sameType.Exists(n => string.Equals(n.Name, term, StringComparison.OrdinalIgnoreCase)))
+            {
+                return [];
+            }
+
+            return sameType
+                .Where(n => n.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(n => n.Name.StartsWith(term, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .Take(MaxNameMatches)
+                .ToList();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        if (Initial is { } record)
+        {
+            _model = new FormModel
+            {
+                Type = record.Type,
+                Status = IsCopy ? RecordStatus.Completed : record.Status,
+                OccurredOn = IsCopy ? today : record.OccurredOn,
+                AccountId = record.AccountId,
+                Amount = record.Amount,
+                Currency = record.Currency,
+                AccountAmount = record.AccountAmount,
+                CategoryId = record.CategoryId,
+                TransferAccountId = record.TransferAccountId,
+                TransferAmount = record.TransferAmount,
+                Name = record.Name,
+                TagIds = record.TagIds.ToList(),
+            };
+            if (IsForeign && record.Amount > 0)
+            {
+                _model.Rate = ExchangeMath.RateOf(record.Amount, record.AccountAmount);
+            }
+        }
+        else
+        {
+            var template = Template;
+            var accountId = AccountOptions.Any(a => a.Value == template?.AccountId) ? template!.AccountId!.Value : DefaultAccount();
+            var accountCurrency = FindAccount(accountId)?.Currency ?? Wallet.BaseCurrency;
+            _model = new FormModel
+            {
+                Type = template?.Type ?? RecordType.Expense,
+                OccurredOn = today,
+                AccountId = accountId,
+                // A template amount of 0 means "type it each time": the field stays empty.
+                Amount = template?.Amount > 0 ? template.Amount : null,
+                Currency = template is { Amount: > 0, Currency: { } currency } ? currency : accountCurrency,
+                CategoryId = template?.CategoryId,
+                TransferAccountId = template?.TransferAccountId,
+                Name = template?.Name,
+                TagIds = template?.TagIds.ToList() ?? [],
+            };
+
+            if (CategoryOptions.All(c => c.Value != _model.CategoryId))
+            {
+                _model.CategoryId = null;
+            }
+
+            if (_model.Type == RecordType.Transfer && TargetOptions.All(t => t.Value != _model.TransferAccountId))
+            {
+                _model.TransferAccountId = TargetOptions.FirstOrDefault().Value;
+            }
+        }
+
+        _repeat = Rule is { } rule ? RepeatModel.From(rule) : new RepeatModel();
+        _moreOpen = !RuleMode && _model.Status != RecordStatus.Completed || IsForeign;
+        _model.PreviousAccountCurrency = AccountCurrency;
+        _editContext = new EditContext(_model);
+    }
+
+    private static int Rank(IReadOnlyList<Guid>? order, Guid id)
+    {
+        for (var i = 0; i < (order?.Count ?? 0); i++)
+        {
+            if (order![i] == id)
+            {
+                return i;
+            }
+        }
+
+        return int.MaxValue;
+    }
+
+    private Guid DefaultAccount()
+    {
+        var account = AccountOptions.FirstOrDefault(a => a.Value == DefaultAccountId);
+        return account.Value != Guid.Empty ? account.Value : AccountOptions.FirstOrDefault().Value;
+    }
+
+    private AccountItem? FindAccount(Guid? id) => Wallet.Accounts.FirstOrDefault(a => a.Id == id);
+
+    private CategoryItem? FindCategory(Guid? id) => id is null ? null : Wallet.Categories.FirstOrDefault(c => c.Id == id);
+
+    private string? ErrorFor(string field)
+    {
+        var messages = _editContext.GetValidationMessages(_editContext.Field(field)).ToList();
+        return messages.Count == 0 ? null : string.Join(" ", messages);
+    }
+
+    private void OnRepeatChanged(ChangeEventArgs e)
+    {
+        _repeatOn = e.Value is true;
+        SyncRepeatMode();
+    }
+
+    // The next records default to the status picked for this one; the user can still change them separately.
+    private void SyncRepeatMode() => _repeat.Confirm = _model.Status == RecordStatus.Pending;
+
+    private void OnTypeChanged(RecordType type)
+    {
+        _model.Type = type;
+        _model.CategoryId = null;
+        if (type == RecordType.Transfer)
+        {
+            _model.Currency = AccountCurrency ?? _model.Currency;
+            _model.TransferAccountId = TargetOptions.FirstOrDefault().Value;
+        }
+        else
+        {
+            _model.TransferAccountId = null;
+            _model.TransferAmount = null;
+        }
+
+        _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
+    }
+
+    private int _activeSuggestion = -1;
+    private bool _suggestionsClosed;
+
+    private void OnNameBlur()
+    {
+        _nameFocused = false;
+        _activeSuggestion = -1;
+    }
+
+    private void OnNameKeyDown(KeyboardEventArgs e)
+    {
+        var count = NameMatches.Count;
+        switch (e.Key)
+        {
+            case "ArrowDown" when count > 0:
+                _suggestionsClosed = false;
+                _activeSuggestion = (_activeSuggestion + 1) % count;
+                break;
+            case "ArrowUp" when count > 0:
+                _suggestionsClosed = false;
+                _activeSuggestion = _activeSuggestion <= 0 ? count - 1 : _activeSuggestion - 1;
+                break;
+            case "Enter" when !_suggestionsClosed && _activeSuggestion >= 0 && _activeSuggestion < count:
+                PickName(NameMatches[_activeSuggestion]);
+                break;
+            case "Escape":
+                _suggestionsClosed = true;
+                _activeSuggestion = -1;
+                break;
+        }
+    }
+
+    private void OnNameInput(ChangeEventArgs e)
+    {
+        _activeSuggestion = -1;
+        _suggestionsClosed = false;
+        _model.Name = e.Value?.ToString();
+        _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.Name)));
+
+        // Typing a known name in full works like picking it, unless a category is already chosen.
+        var term = _model.Name?.Trim();
+        var exact = Suggestions?.Names.FirstOrDefault(n =>
+            n.Type == _model.Type && string.Equals(n.Name, term, StringComparison.OrdinalIgnoreCase));
+        if (exact is not null && _model.CategoryId is null)
+        {
+            ApplySuggestion(exact);
+        }
+    }
+
+    private void PickName(NameSuggestion suggestion)
+    {
+        _activeSuggestion = -1;
+        _model.Name = suggestion.Name;
+        ApplySuggestion(suggestion);
+        _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.Name)));
+    }
+
+    // The category and tags of the last record with this name, when they can still be chosen.
+    private void ApplySuggestion(NameSuggestion suggestion)
+    {
+        if (CategoryOptions.Any(c => c.Value == suggestion.CategoryId))
+        {
+            _model.CategoryId = suggestion.CategoryId;
+            _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
+        }
+
+        var tags = TagOptions.Where(t => !t.IsArchived).Select(t => t.Id).ToHashSet();
+        _model.TagIds = suggestion.TagIds.Where(tags.Contains).ToList();
+    }
+
+    private void OnCategoryChanged(IReadOnlyCollection<Guid> selected)
+    {
+        _model.CategoryId = selected.FirstOrDefault();
+        _editContext.NotifyFieldChanged(_editContext.Field(nameof(FormModel.CategoryId)));
+    }
+
+    private const int MaxCategoryChips = 7;
+    private bool _pickCategory;
+    private string? _categoryTerm;
+
+    // The top used ones, plus the chosen one when it isn't among them.
+    private IReadOnlyList<(Guid Value, string Label)> ShownCategories
+    {
+        get
+        {
+            var all = CategoryOptions;
+            var top = all.Take(MaxCategoryChips).ToList();
+            if (_model.CategoryId is { } id && top.All(c => c.Value != id))
+            {
+                top.AddRange(all.Where(c => c.Value == id));
+            }
+
+            return top;
+        }
+    }
+
+    private IReadOnlyList<(Guid Value, string Label)> CategoryMatches => string.IsNullOrWhiteSpace(_categoryTerm)
+        ? CategoryOptions
+        : CategoryOptions.Where(c => c.Label.Contains(_categoryTerm.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
+
+    // No autofocus: on phones the keyboard would cover the list.
+    private void OpenCategoryPicker()
+    {
+        _categoryTerm = null;
+        _pickCategory = true;
+    }
+
+    private void PickCategory(Guid id)
+    {
+        OnCategoryChanged([id]);
+        _pickCategory = false;
+    }
+
+    private void OnCategorySearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && CategoryMatches.Count > 0)
+        {
+            PickCategory(CategoryMatches[0].Value);
+        }
+    }
+
+    private void SwapAccounts()
+    {
+        if (_model.TransferAccountId is not { } target)
+        {
+            return;
+        }
+
+        var from = _model.AccountId;
+        _model.AccountId = target;
+        _model.TransferAccountId = from;
+        if (_model.TransferAmount is { } received)
+        {
+            (_model.Amount, _model.TransferAmount) = (received, _model.Amount);
+        }
+
+        OnAccountChanged();
+    }
+
+    private void ToggleTag(Guid id)
+    {
+        if (!_model.TagIds.Remove(id))
+        {
+            _model.TagIds.Add(id);
+        }
+    }
+
+    private void OpenNewTag()
+    {
+        _newTag = string.Empty;
+        _newTagColor = null;
+        _focusNewTag = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusNewTag && _newTag is not null)
+        {
+            _focusNewTag = false;
+            await _newTagInput.FocusAsync();
+        }
+    }
+
+    private async Task OnNewTagKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await CreateTagAsync();
+        }
+        else if (e.Key == "Escape")
+        {
+            _newTag = null;
+        }
+    }
+
+    private async Task CreateTagAsync()
+    {
+        var name = _newTag?.Trim();
+        if (string.IsNullOrEmpty(name) || _creatingTag)
+        {
+            _newTag = null;
+            return;
+        }
+
+        var existing = TagOptions.FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            Select(existing.Id);
+            return;
+        }
+
+        _creatingTag = true;
+        var result = await Api.PostAsync<TagItem>($"api/wallets/{Wallet.Id}/tags", new CreateTagRequest(name, _newTagColor));
+        _creatingTag = false;
+        if (result.Ok)
+        {
+            _createdTags.Add(result.Value!);
+            Select(result.Value!.Id);
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't add the tag.", ToastKind.Error);
+        }
+    }
+
+    private void Select(Guid tagId)
+    {
+        if (!_model.TagIds.Contains(tagId))
+        {
+            _model.TagIds.Add(tagId);
+        }
+
+        _newTag = null;
+    }
+
+    private void OnAccountChanged()
+    {
+        // The transaction currency follows the account unless the user picked a foreign one.
+        if (_model.Currency == _model.PreviousAccountCurrency || _model.Type == RecordType.Transfer)
+        {
+            _model.Currency = AccountCurrency ?? _model.Currency;
+        }
+
+        if (_model.TransferAccountId == _model.AccountId)
+        {
+            _model.TransferAccountId = TargetOptions.FirstOrDefault().Value;
+        }
+
+        _model.PreviousAccountCurrency = AccountCurrency;
+        Recalculate();
+    }
+
+    private void Recalculate()
+    {
+        if (IsForeign && _model.Amount is { } amount && _model.Rate is { } rate)
+        {
+            _model.AccountAmount = ExchangeMath.ToAccountAmount(amount, rate);
+        }
+    }
+
+    private void OnAccountAmountChanged()
+    {
+        if (_model.Amount is > 0 and var amount && _model.AccountAmount is { } accountAmount)
+        {
+            _model.Rate = ExchangeMath.RateOf(amount, accountAmount);
+        }
+    }
+
+    private SaveRecordRequest BuildRequest()
+    {
+        var amount = _model.Amount ?? 0;
+        var isTransfer = _model.Type == RecordType.Transfer;
+        return new SaveRecordRequest(
+            _model.Type,
+            _model.Status,
+            _model.OccurredOn,
+            _model.AccountId,
+            amount,
+            isTransfer ? AccountCurrency ?? _model.Currency : _model.Currency,
+            IsForeign ? _model.AccountAmount ?? 0 : amount,
+            isTransfer ? null : _model.CategoryId,
+            isTransfer ? _model.TransferAccountId : null,
+            isTransfer && NeedsTransferAmount ? _model.TransferAmount : null,
+            string.IsNullOrWhiteSpace(_model.Name) ? null : _model.Name.Trim(),
+            _model.TagIds.ToList());
+    }
+
+    private Task SubmitAsync() => TemplateMode ? SaveTemplateAsync() : OnSubmit.InvokeAsync(BuildRequest());
+
+    private Task SaveTemplateAsync()
+    {
+        var request = BuildRequest();
+        var hasAmount = request.Amount > 0;
+        return OnSaveTemplate.InvokeAsync(new SaveTemplateRequest(
+            request.Type,
+            request.AccountId == Guid.Empty ? null : request.AccountId,
+            request.CategoryId,
+            request.TransferAccountId,
+            hasAmount ? request.Amount : null,
+            hasAmount ? request.Currency : null,
+            request.Name,
+            request.TagIds,
+            IsPinned: !TemplateMode || Template?.IsPinned != false));
+    }
+
+    // Property names match SaveRecordRequest so validation messages land on the right fields.
+    private sealed class FormModel
+    {
+        public RecordType Type { get; set; } = RecordType.Expense;
+
+        public RecordStatus Status { get; set; } = RecordStatus.Completed;
+
+        public DateOnly OccurredOn { get; set; }
+
+        public Guid AccountId { get; set; }
+
+        public decimal? Amount { get; set; }
+
+        public string Currency { get; set; } = "";
+
+        public decimal? AccountAmount { get; set; }
+
+        public decimal? Rate { get; set; }
+
+        public Guid? CategoryId { get; set; }
+
+        public Guid? TransferAccountId { get; set; }
+
+        public decimal? TransferAmount { get; set; }
+
+        public string? Name { get; set; }
+
+        public List<Guid> TagIds { get; set; } = [];
+
+        public string? PreviousAccountCurrency { get; set; }
+    }
+}

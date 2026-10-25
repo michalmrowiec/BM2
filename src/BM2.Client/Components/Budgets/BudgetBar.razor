@@ -1,0 +1,56 @@
+@using System.Globalization
+@using BM2.Contracts.Budgets
+@using BM2.Contracts.Categories
+
+@* One budget: spent of limit, what is left or over (said in text), and a bar. *@
+<div class="budget @(Over ? "budget--over" : null)">
+    <div class="budget__head">
+        <span class="budget__name">
+            <Icon Name="@(Category?.Icon ?? "category")" />
+            @(Category?.Name ?? "Deleted category")
+        </span>
+        <span class="budget__state">
+            @if (Over)
+            {
+                <Icon Name="alert" /> @($"Over by {Format(Item.Spent - Item.Limit)}")
+            }
+            else
+            {
+                @($"{Format(Item.Limit - Item.Spent)} left")
+            }
+        </span>
+    </div>
+    <progress class="budget__bar" max="100" value="@Percent.ToString(CultureInfo.InvariantCulture)" aria-hidden="true"></progress>
+    <span class="budget__numbers num">@Format(Item.Spent) of @Format(Item.Limit) @Currency</span>
+    @if (Item.Planned > 0)
+    {
+        <span class="budget__note">
+            Planned: @Format(Item.Planned) more.
+            @(Item.Spent + Item.Planned > Item.Limit ? $"With it you'd be over by {Format(Item.Spent + Item.Planned - Item.Limit)}." : "Still within the limit.")
+        </span>
+    }
+    @if (Item.OtherSpent.Count > 0)
+    {
+        <span class="budget__note">
+            Not counted: @string.Join(", ", Item.OtherSpent.Select(o => $"{Format(o.Amount)} {o.Currency}")) on accounts in other currencies.
+        </span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public BudgetItem Item { get; set; } = default!;
+
+    [Parameter, EditorRequired] public string Currency { get; set; } = "";
+
+    [Parameter] public CategoryItem? Category { get; set; }
+
+    private bool Over => Item.Spent > Item.Limit;
+
+    private decimal Percent => Item.Limit <= 0 ? 100 : Math.Min(100, Math.Round(Item.Spent / Item.Limit * 100, 1));
+
+    private static string Format(decimal value) => value.ToString("N2", CultureInfo.CurrentCulture);
+
+    /// <summary>Closest to the limit first.</summary>
+    public static IEnumerable<BudgetItem> ByUsage(IEnumerable<BudgetItem> items) =>
+        items.OrderByDescending(b => b.Limit <= 0 ? decimal.MaxValue : b.Spent / b.Limit);
+}

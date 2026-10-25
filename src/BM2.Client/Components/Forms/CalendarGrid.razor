@@ -1,0 +1,135 @@
+@using System.Globalization
+
+@* Calendar for DateField: days, or tap the title for months, then again for years. *@
+<div class="calendar">
+    <div class="calendar__head">
+        <button type="button" class="icon-button" aria-label="@($"Previous {Unit}")" @onclick="() => Move(-1)">
+            <Icon Name="arrow-left" />
+        </button>
+        <button type="button" class="calendar__title" aria-live="polite" disabled="@(_view == View.Years)" @onclick="ZoomOut">
+            @Title
+        </button>
+        <button type="button" class="icon-button" aria-label="@($"Next {Unit}")" @onclick="() => Move(1)">
+            <Icon Name="arrow-right" />
+        </button>
+    </div>
+
+    @switch (_view)
+    {
+        case View.Days:
+            @* A new key per page re-inserts the grid, so it animates in from the side it came from. *@
+            <div class="calendar__grid @Motion" @key="@($"d{_month}")">
+                @foreach (var name in DayNames)
+                {
+                    <span class="calendar__weekday" aria-hidden="true">@name</span>
+                }
+                @foreach (var day in Days)
+                {
+                    <button type="button" class="calendar__day @(day.Month == _month.Month ? null : "is-outside")"
+                            aria-pressed="@(day == Value ? "true" : "false")" aria-current="@(day == Today ? "date" : null)"
+                            aria-label="@day.ToString("D", Culture)" @onclick="() => ValueChanged.InvokeAsync(day)">
+                        @day.Day
+                    </button>
+                }
+            </div>
+            break;
+        case View.Months:
+            <div class="calendar__grid calendar__grid--wide @Motion" @key="@($"m{_month.Year}")">
+                @for (var m = 1; m <= 12; m++)
+                {
+                    var month = new DateOnly(_month.Year, m, 1);
+                    <button type="button" class="calendar__cell" aria-pressed="@(Value.Year == month.Year && Value.Month == m ? "true" : "false")"
+                            aria-current="@(Today.Year == month.Year && Today.Month == m ? "date" : null)"
+                            @onclick="() => { _month = month; _view = View.Days; _motion = null; }">
+                        @month.ToString("MMM", Culture)
+                    </button>
+                }
+            </div>
+            break;
+        default:
+            <div class="calendar__grid calendar__grid--wide @Motion" @key="@($"y{FirstYear}")">
+                @foreach (var year in Enumerable.Range(FirstYear, 12))
+                {
+                    <button type="button" class="calendar__cell" aria-pressed="@(Value.Year == year ? "true" : "false")"
+                            aria-current="@(Today.Year == year ? "date" : null)"
+                            @onclick="() => { _month = new DateOnly(year, _month.Month, 1); _view = View.Months; _motion = null; }">
+                        @year
+                    </button>
+                }
+            </div>
+            break;
+    }
+
+    @if (Value != Today)
+    {
+        <button type="button" class="btn btn-secondary btn-block" @onclick="() => ValueChanged.InvokeAsync(Today)">
+            Today, @Today.ToString("d MMM", Culture)
+        </button>
+    }
+</div>
+
+@code {
+    private enum View { Days, Months, Years }
+
+    private View _view;
+    private DateOnly _month;
+
+    [Parameter] public DateOnly Value { get; set; }
+
+    [Parameter] public EventCallback<DateOnly> ValueChanged { get; set; }
+
+    private static CultureInfo Culture => CultureInfo.CurrentCulture;
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
+
+    private static DayOfWeek FirstDay => Culture.DateTimeFormat.FirstDayOfWeek;
+
+    private static IEnumerable<string> DayNames =>
+        Enumerable.Range(0, 7).Select(i => Culture.DateTimeFormat.ShortestDayNames[((int)FirstDay + i) % 7]);
+
+    // Years come in pages of 12 that contain the shown year.
+    private int FirstYear => _month.Year - (_month.Year % 12);
+
+    private string Unit => _view switch { View.Days => "month", View.Months => "year", _ => "years" };
+
+    private string Title => _view switch
+    {
+        View.Days => _month.ToString("MMMM yyyy", Culture),
+        View.Months => _month.Year.ToString(Culture),
+        _ => $"{FirstYear}–{FirstYear + 11}",
+    };
+
+    // Six full weeks, so the grid keeps its height from month to month.
+    private IEnumerable<DateOnly> Days
+    {
+        get
+        {
+            var start = _month.AddDays(-(((int)_month.DayOfWeek - (int)FirstDay + 7) % 7));
+            return Enumerable.Range(0, 42).Select(start.AddDays);
+        }
+    }
+
+    protected override void OnInitialized() => _month = new DateOnly(Value.Year, Value.Month, 1);
+
+    // Animation of the next grid: slides from the arrow's side, or zooms when the view changes.
+    private string? _motion = "is-still";
+
+    private string? Motion => _motion ?? "is-zoom";
+
+    private void Move(int step)
+    {
+        _motion = step > 0 ? "is-next" : "is-prev";
+        _month = _view switch
+        {
+            View.Days => _month.AddMonths(step),
+            View.Months => _month.AddYears(step),
+            _ => _month.AddYears(12 * step),
+        };
+    }
+
+    private void ZoomOut()
+    {
+        _motion = null;
+        _view = _view == View.Days ? View.Months : View.Years;
+    }
+}

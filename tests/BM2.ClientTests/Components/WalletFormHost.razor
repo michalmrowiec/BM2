@@ -1,0 +1,26 @@
+@using BM2.Client.Components.Forms
+@using BM2.Contracts.Wallets
+@using Microsoft.AspNetCore.Components.Forms
+
+<EditForm Model="Model" OnValidSubmit="() => Submitted = true">
+    <FluentValidator @ref="Validator" Validator="_validator" ToRequest="m => ((FormModel)m).ToRequest()" />
+    <TextField Label="Name" @bind-Value="Model.Name" />
+    <button type="submit">Save</button>
+</EditForm>
+
+@code {
+    private readonly CreateWalletRequestValidator _validator = new();
+
+    public FormModel Model { get; } = new();
+
+    public FluentValidator? Validator { get; private set; }
+
+    public bool Submitted { get; private set; }
+
+    public sealed class FormModel
+    {
+        public string? Name { get; set; }
+
+        public CreateWalletRequest ToRequest() => new(Name ?? "", "PLN");
+    }
+}

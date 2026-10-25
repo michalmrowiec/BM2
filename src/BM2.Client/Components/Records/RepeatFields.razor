@@ -1,0 +1,88 @@
+@using System.Globalization
+@using BM2.Contracts.Records
+@using BM2.Contracts.Recurring
+
+@* Schedule part of the record form: every N days/weeks/months/years, an optional end and the confirm mode. *@
+<div class="repeat-fields">
+    <div class="repeat-fields__every">
+        <label class="field__label" for="repeat-interval">Every</label>
+        <input id="repeat-interval" class="field__control repeat-fields__interval" type="number" inputmode="numeric" min="1" max="366"
+               value="@Model.Interval" @onchange="e => Model.Interval = ParseInt(e.Value, 1)" />
+        <select class="field__control" aria-label="Repeat unit" value="@Model.Frequency"
+                @onchange="e => Model.Frequency = Enum.Parse<RecurrenceFrequency>(e.Value!.ToString()!)">
+            @foreach (var (value, label) in Units)
+            {
+                <option value="@value">@(Model.Interval == 1 ? label : label + "s")</option>
+            }
+        </select>
+    </div>
+
+    <div class="field">
+        <span class="field__label" aria-hidden="true">Ends</span>
+        <SegmentedControl TValue="RecurrenceEnd" Options="EndOptions" Value="Model.End" ValueChanged="v => Model.End = v" Label="Ends" />
+    </div>
+
+    @if (Model.End == RecurrenceEnd.OnDate)
+    {
+        <div class="field">
+            <label class="field__label" for="repeat-until">Last date</label>
+            <input id="repeat-until" class="field__control" type="date" value="@Model.EndDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                   @onchange="e => Model.EndDate = DateOnly.TryParse(e.Value?.ToString(), CultureInfo.InvariantCulture, out var d) ? d : null" />
+        </div>
+    }
+    else if (Model.End == RecurrenceEnd.AfterCount)
+    {
+        <div class="field">
+            <label class="field__label" for="repeat-count">Times (installments get "k/N" in the name)</label>
+            <input id="repeat-count" class="field__control" type="number" inputmode="numeric" min="1" max="1000" value="@Model.Count"
+                   @onchange="e => Model.Count = ParseInt(e.Value, 12)" />
+        </div>
+    }
+
+    <div class="field">
+        <label class="field__label" for="repeat-mode">Next records are added as</label>
+        <div class="field__select">
+            <select id="repeat-mode" class="field__control" value="@(Model.Confirm ? "pending" : "completed")"
+                    @onchange="SetMode">
+                <option value="completed">Completed – counted in the balance right away</option>
+                <option value="pending">Pending – wait for your ✓ in To confirm on Home</option>
+            </select>
+            <Icon Name="chevron-down" Class="field__select-icon" />
+        </div>
+    </div>
+
+    <div class="repeat-fields__effect" role="status">
+        <p class="repeat-fields__rule">@Model.Describe(Start)</p>
+        @foreach (var line in Model.Effect(Start, FirstStatus, FirstExists, Existing, DateOnly.FromDateTime(DateTime.Now)))
+        {
+            <p>@line</p>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly IReadOnlyList<(RecurrenceFrequency Value, string Label)> Units =
+        [(RecurrenceFrequency.Daily, "day"), (RecurrenceFrequency.Weekly, "week"), (RecurrenceFrequency.Monthly, "month"), (RecurrenceFrequency.Yearly, "year")];
+
+    private static readonly IReadOnlyList<(RecurrenceEnd Value, string Label)> EndOptions =
+        [(RecurrenceEnd.Never, "Never"), (RecurrenceEnd.OnDate, "On date"), (RecurrenceEnd.AfterCount, "After N times")];
+
+    [Parameter, EditorRequired] public RepeatModel Model { get; set; } = null!;
+
+    /// <summary>The first occurrence (the record date or the rule start).</summary>
+    [Parameter] public DateOnly Start { get; set; }
+
+    /// <summary>Status of the record saved now as the first occurrence; null when only the rule is saved.</summary>
+    [Parameter] public RecordStatus? FirstStatus { get; set; }
+
+    /// <summary>The first occurrence is an existing record ("Make recurring"), not one saved now.</summary>
+    [Parameter] public bool FirstExists { get; set; }
+
+    /// <summary>The rule being edited.</summary>
+    [Parameter] public RecurringRuleItem? Existing { get; set; }
+
+    private void SetMode(ChangeEventArgs e) => Model.Confirm = e.Value?.ToString() == "pending";
+
+    private static int ParseInt(object? value, int fallback) =>
+        int.TryParse(value?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) && n > 0 ? n : fallback;
+}

@@ -1,0 +1,73 @@
+@using System.Diagnostics.CodeAnalysis
+@using System.Globalization
+@inherits FieldBase<DateOnly>
+
+<div class="field">
+    <label class="field__label" for="@FieldId">@Label</label>
+    <div class="date-field">
+        @* Type the date (culture format, "25.10" means this year) or pick it in the app's calendar. *@
+        <div class="date-field__input">
+            <input @attributes="AdditionalAttributes" id="@FieldId" class="field__control" type="text" autocomplete="off"
+                   placeholder="@Pattern.ToLowerInvariant()" value="@CurrentValueAsString"
+                   @onchange="e => CurrentValueAsString = e.Value?.ToString()"
+                   aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
+            <button type="button" class="icon-button date-field__open" aria-label="@($"Choose {Label.ToLowerInvariant()} in a calendar")"
+                    aria-haspopup="dialog" @onclick="OpenCalendar">
+                <Icon Name="calendar" />
+            </button>
+        </div>
+        <div class="date-field__shortcuts">
+            <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">Today</button>
+            <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">Yesterday</button>
+        </div>
+    </div>
+    <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
+</div>
+
+@* A new key per opening starts the calendar on the current value; it stays rendered while the sheet animates out. *@
+<Sheet Open="_open" OpenChanged="v => _open = v" Title="@Label">
+    <CalendarGrid @key="_openings" Value="CurrentValue" ValueChanged="Pick" />
+</Sheet>
+
+@code {
+    private bool _open;
+    private int _openings;
+
+    private void OpenCalendar()
+    {
+        _openings++;
+        _open = true;
+    }
+
+    // The user's calendar day, from the device clock.
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
+
+    /// <summary>The culture's short date pattern, e.g. dd.MM.yyyy.</summary>
+    public static string Pattern => CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+
+    private string Pressed(DateOnly day) => CurrentValue == day ? "true" : "false";
+
+    private void Pick(DateOnly day)
+    {
+        CurrentValue = day;
+        _open = false;
+    }
+
+    protected override string FormatValueAsString(DateOnly value) => value.ToString(Pattern, CultureInfo.CurrentCulture);
+
+    protected override bool TryParseValueFromString(
+        string? value, out DateOnly result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        // Culture format (also without the year), or ISO.
+        var text = value?.Trim();
+        if (DateOnly.TryParse(text, CultureInfo.CurrentCulture, DateTimeStyles.AllowWhiteSpaces, out result)
+            || DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
+        {
+            validationErrorMessage = null;
+            return true;
+        }
+
+        validationErrorMessage = $"Enter a date like {Today.ToString(Pattern, CultureInfo.CurrentCulture)}.";
+        return false;
+    }
+}

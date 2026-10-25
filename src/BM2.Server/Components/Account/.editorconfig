@@ -1,0 +1,5 @@
+[*.cs]
+# Template code from the .NET 10 Blazor Identity scaffold.
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1873.severity = none

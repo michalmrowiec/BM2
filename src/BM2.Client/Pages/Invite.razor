@@ -1,0 +1,96 @@
+@page "/invite/{Token}"
+@using BM2.Contracts.Invitations
+@inject ApiClient Api
+@inject WalletState WalletState
+@inject NavigationManager Navigation
+
+<PageTitle>Invitation · BM2</PageTitle>
+
+<section class="invite">
+    <span class="invite__icon" aria-hidden="true"><Icon Name="users" /></span>
+    <AuthorizeView>
+        <NotAuthorized>
+            <h1 class="page-title">You're invited</h1>
+            <p class="lead">Someone shared a wallet with you on BM2. Create an account or log in to see it.</p>
+            <div class="invite__actions">
+                <a class="btn btn-primary" href="@($"Account/Register?invite={Token}")">Create account</a>
+                <a class="btn btn-secondary" href="@LoginUrl">Log in</a>
+            </div>
+        </NotAuthorized>
+        <Authorized>
+            @if (_preview is { } preview)
+            {
+                <h1 class="page-title">Join @preview.WalletName</h1>
+                <p class="lead">
+                    <strong>@preview.InvitedBy</strong> invited you as <strong>@preview.Role.ToString().ToLowerInvariant()</strong>
+                    @(preview.AccountName is null ? "of the whole wallet." : $"of the account {preview.AccountName}.")
+                </p>
+                <div class="invite__actions">
+                    <button type="button" class="btn btn-primary" disabled="@_busy" @onclick="JoinAsync">Join</button>
+                    <a class="btn btn-secondary" href="">Not now</a>
+                </div>
+            }
+            else if (_problem is { Status: 410 })
+            {
+                <h1 class="page-title">Invitation unavailable</h1>
+                <p class="lead">This invitation has expired or was already used. Ask for a new link.</p>
+            }
+            else if (_problem is { Status: 0 })
+            {
+                <h1 class="page-title">Couldn't load the invitation</h1>
+                <p class="lead">Check your connection and try again.</p>
+            }
+            else if (_problem is not null)
+            {
+                <h1 class="page-title">Invitation not found</h1>
+                <p class="lead">This invitation doesn't exist. Check that you opened the whole link.</p>
+            }
+            else
+            {
+                <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+            }
+        </Authorized>
+    </AuthorizeView>
+</section>
+
+@code {
+    private InvitationPreview? _preview;
+    private ApiProblem? _problem;
+    private bool _busy;
+
+    [Parameter] public string Token { get; set; } = "";
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private string LoginUrl => $"Account/Login?ReturnUrl={Uri.EscapeDataString("/invite/" + Token)}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var signedIn = AuthenticationState is not null && (await AuthenticationState).User.Identity?.IsAuthenticated == true;
+        if (!RendererInfo.IsInteractive || !signedIn)
+        {
+            return;
+        }
+
+        var result = await Api.GetAsync<InvitationPreview>($"api/invitations/{Uri.EscapeDataString(Token)}");
+        _preview = result.Value;
+        _problem = result.Problem;
+    }
+
+    private async Task JoinAsync()
+    {
+        _busy = true;
+        var result = await Api.PostAsync<AcceptedInvitation>($"api/invitations/{Uri.EscapeDataString(Token)}/accept", new { });
+        _busy = false;
+        if (result.Ok)
+        {
+            await WalletState.SelectAsync(result.Value!.WalletId);
+            Navigation.NavigateTo("");
+        }
+        else
+        {
+            _preview = null;
+            _problem = result.Problem;
+        }
+    }
+}

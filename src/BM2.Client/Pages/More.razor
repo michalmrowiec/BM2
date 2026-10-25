@@ -1,0 +1,94 @@
+@page "/more"
+@attribute [Authorize]
+
+<PageTitle>More · BM2</PageTitle>
+
+<h1 class="page-title">More</h1>
+
+@if (RendererInfo.IsInteractive)
+{
+    <MeGreeting />
+}
+
+<ul class="menu-list">
+    <li>
+        <a href="wallets">
+            <Icon Name="wallet" />
+            <span>Wallets</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="accounts">
+            <Icon Name="bank" />
+            <span>Accounts</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="members">
+            <Icon Name="users" />
+            <span>Members and invitations</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="categories">
+            <Icon Name="category" />
+            <span>Categories</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="budgets">
+            <Icon Name="piggy" />
+            <span>Budgets</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="templates">
+            <Icon Name="bolt" />
+            <span>Templates</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="recurring">
+            <Icon Name="repeat" />
+            <span>Recurring</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="tags">
+            <Icon Name="tag" />
+            <span>Tags</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="Account/Manage">
+            <Icon Name="user" />
+            <span>Account and security</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <button type="button" data-theme-toggle>
+            <Icon Name="contrast" />
+            <span>Switch theme</span>
+            <span class="menu-list__trail">System · Light · Dark</span>
+        </button>
+    </li>
+    <li>
+        <form action="Account/Logout" method="post">
+            <AntiforgeryToken />
+            <input type="hidden" name="ReturnUrl" value="" />
+            <button type="submit">
+                <Icon Name="logout" />
+                <span>Log out</span>
+            </button>
+        </form>
+    </li>
+</ul>

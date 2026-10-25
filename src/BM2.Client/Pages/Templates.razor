@@ -1,0 +1,113 @@
+@page "/templates"
+@attribute [Authorize]
+@using BM2.Client.Components.Records
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Templates
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject ToastService Toasts
+
+<PageTitle>Templates · BM2</PageTitle>
+
+<header class="page-header">
+    <h1 class="page-title">Templates</h1>
+</header>
+
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else if (_templates is null)
+{
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+}
+else if (_templates.Count == 0)
+{
+    <EmptyState IconName="list" Title="No templates yet">
+        Open a record's menu (⋯) or the record form and choose Save as template. Pinned templates show on Home.
+    </EmptyState>
+}
+else
+{
+    <ul class="list stagger">
+        @foreach (var template in _templates)
+        {
+            var label = TemplateText.Label(template, Wallet);
+            <li class="template-row" @key="template.Id">
+                <ListRow Title="@label" Subtitle="@Subtitle(template)" Href="@(CanWrite ? $"templates/{template.Id}" : null)">
+                    <Leading>
+                        <RecordAvatar Category="TemplateText.CategoryOf(template, Wallet)" Type="template.Type" Fallback="@label" />
+                    </Leading>
+                    <Trailing>
+                        @if (template.Amount is { } amount)
+                        {
+                            <Amount Value="amount" Currency="@TemplateText.Currency(template, Wallet)" Sign="TemplateText.Sign(template.Type)" />
+                        }
+                    </Trailing>
+                </ListRow>
+                @if (CanWrite)
+                {
+                    <button type="button" class="icon-button pin-toggle" aria-pressed="@(template.IsPinned ? "true" : "false")"
+                            aria-label="@($"Pin {label} on Home")" @onclick="() => TogglePinAsync(template)">
+                        <Icon Name="pin" />
+                    </button>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private List<TemplateItem>? _templates;
+    private WalletSnapshot? _loadedFor;
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private bool CanWrite => Wallet?.Accounts.Any(a => a.CanWrite) == true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync(bool force = false)
+    {
+        var wallet = Wallet;
+        if (wallet is null || (!force && ReferenceEquals(wallet, _loadedFor)))
+        {
+            return;
+        }
+
+        _loadedFor = wallet;
+        var result = await Api.GetAsync<List<TemplateItem>>($"api/wallets/{wallet.Id}/templates");
+        _templates = result.Value ?? [];
+    }
+
+    private string Subtitle(TemplateItem template)
+    {
+        var account = Wallet!.Accounts.FirstOrDefault(a => a.Id == template.AccountId)?.Name;
+        var parts = new[] { template.Type.ToString(), account, template.IsPinned ? "Pinned" : null };
+        return string.Join(" · ", parts.OfType<string>());
+    }
+
+    private async Task TogglePinAsync(TemplateItem t)
+    {
+        var request = new SaveTemplateRequest(
+            t.Type, t.AccountId, t.CategoryId, t.TransferAccountId, t.Amount, t.Currency, t.Name, t.TagIds, !t.IsPinned);
+        var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/templates/{t.Id}", request);
+        if (result.Ok)
+        {
+            await LoadAsync(force: true);
+        }
+        else
+        {
+            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+        }
+    }
+}
