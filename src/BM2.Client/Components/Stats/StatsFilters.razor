@@ -1,0 +1,90 @@
+@using System.Globalization
+@using BM2.Contracts.Wallets
+@inject StatsState State
+
+@* Period, account and currency filters shared by the stats screens. *@
+<EditForm Model="State" class="stats-filters card">
+    @if (Mode == StatsFilterMode.Period)
+    {
+        <SegmentedControl Label="Period" Options="PeriodOptions" Value="State.Period" ValueChanged="(StatsPeriod p) => SetPeriodAsync(p)" />
+    }
+    @if (Mode == StatsFilterMode.Period && State.Period == StatsPeriod.Custom)
+    {
+        <div class="stats-filters__row">
+            <DateField Label="From" @bind-Value="State.From" @bind-Value:after="() => OnChanged.InvokeAsync()" />
+            <DateField Label="To (inclusive)" @bind-Value="State.To" @bind-Value:after="() => OnChanged.InvokeAsync()" />
+        </div>
+    }
+    else
+    {
+        <div class="month-nav">
+            <button type="button" class="icon-button" aria-label="@($"Previous {Noun}")" @onclick="() => MoveAsync(-1)"><Icon Name="arrow-left" /></button>
+            <span class="month-nav__label">@NavLabel</span>
+            <button type="button" class="icon-button" aria-label="@($"Next {Noun}")" @onclick="() => MoveAsync(1)"><Icon Name="arrow-right" /></button>
+        </div>
+    }
+    <div class="stats-filters__row">
+        <SelectField Label="Account" Options="AccountOptions" @bind-Value="State.AccountId" @bind-Value:after="() => OnChanged.InvokeAsync()" />
+        @if (Currencies.Count > 1)
+        {
+            <SelectField Label="Currency" Options="Currencies" @bind-Value="State.Currency" @bind-Value:after="ChangeCurrencyAsync"
+                         Hint="Only accounts in this currency are counted." />
+        }
+    </div>
+    @ChildContent
+</EditForm>
+
+@code {
+    private static readonly IReadOnlyList<(StatsPeriod, string)> PeriodOptions =
+        [(StatsPeriod.Month, "Month"), (StatsPeriod.Year, "Year"), (StatsPeriod.Custom, "Custom")];
+
+    [Parameter, EditorRequired] public WalletSnapshot Wallet { get; set; } = null!;
+
+    [Parameter] public StatsFilterMode Mode { get; set; }
+
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    /// <summary>Extra fields of the screen, inside the same card.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool ByYear => Mode == StatsFilterMode.Year || (Mode == StatsFilterMode.Period && State.Period == StatsPeriod.Year);
+
+    private string Noun => ByYear ? "year" : "month";
+
+    private string NavLabel => Mode switch
+    {
+        _ when ByYear => State.Anchor.Year.ToString(CultureInfo.CurrentCulture),
+        StatsFilterMode.Months => $"12 months to {State.Anchor.ToString("MMM yyyy", CultureInfo.CurrentCulture)}",
+        _ => State.Anchor.ToString("MMMM yyyy", CultureInfo.CurrentCulture),
+    };
+
+    private IReadOnlyList<(string?, string)> Currencies =>
+        Wallet.Accounts.Select(a => a.Currency).Append(Wallet.BaseCurrency).Distinct().Order().Select(c => ((string?)c, c)).ToList();
+
+    private IReadOnlyList<(Guid?, string)> AccountOptions =>
+        [(null, "All accounts"), .. Wallet.Accounts.Where(a => a.Currency == State.Currency).Select(a => ((Guid?)a.Id, a.Name))];
+
+    private async Task SetPeriodAsync(StatsPeriod period)
+    {
+        if (period == StatsPeriod.Custom)
+        {
+            (State.From, State.To) = (State.Range.From, State.Range.To.AddDays(-1));
+        }
+
+        State.Period = period;
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task MoveAsync(int step)
+    {
+        State.Anchor = State.Anchor.AddMonths(ByYear ? 12 * step : step);
+        State.AverageMonths = null;
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task ChangeCurrencyAsync()
+    {
+        State.AccountId = null;
+        await OnChanged.InvokeAsync();
+    }
+}

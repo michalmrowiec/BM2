@@ -33,6 +33,7 @@ public class WalletEndpointAccessTests(IntegrationFixture fixture) : Integration
         new("GET", "/api/wallets/{w}/records/{r}", null, MemberRole.Viewer),
         new("GET", "/api/wallets/{w}/stats/categories", null, MemberRole.Viewer),
         new("GET", "/api/wallets/{w}/stats/monthly", null, MemberRole.Viewer),
+        new("GET", "/api/wallets/{w}/stats/category-months", null, MemberRole.Viewer),
         new("POST", "/api/wallets/{w}/records", ValidRecord, MemberRole.Editor),
         new("PUT", "/api/wallets/{w}/records/{r}", ValidRecord, MemberRole.Editor),
         new("DELETE", "/api/wallets/{w}/records/{r}", null, MemberRole.Editor),

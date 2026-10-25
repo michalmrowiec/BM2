@@ -1,0 +1,17 @@
+@* Title of a stats screen with a way back to the stats overview. *@
+<PageTitle>@Title · Stats · BM2</PageTitle>
+
+<header class="page-header page-header--back">
+    <a href="stats" class="icon-button" aria-label="All stats"><Icon Name="arrow-left" /></a>
+    <h1 class="page-title">@Title</h1>
+</header>
+@if (ChildContent is not null)
+{
+    <p class="muted">@ChildContent</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

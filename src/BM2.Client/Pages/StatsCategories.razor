@@ -1,0 +1,161 @@
+@page "/stats/categories"
+@attribute [Authorize]
+@using BM2.Client.Components.Stats
+@using BM2.Client.Components.Wallets
+@using BM2.Contracts.Categories
+@using BM2.Contracts.Records
+@using BM2.Contracts.Stats
+@using BM2.Contracts.Wallets
+@inherits WalletComponentBase
+@inject ApiClient Api
+@inject StatsState State
+
+<StatsHeader Title="By category">Tap a category in the list or the chart to see its last 12 months.</StatsHeader>
+
+@if (Wallet is null)
+{
+    <WalletPlaceholder />
+}
+else
+{
+    <StatsFilters Wallet="Wallet" OnChanged="ReloadAsync">
+        <SegmentedControl Label="Record type" Options="TypeOptions" Value="State.Type" ValueChanged="(RecordType t) => SetTypeAsync(t)" />
+    </StatsFilters>
+
+    @if (_totals is null)
+    {
+        <p class="muted">Loading…</p>
+    }
+    else if (Slices.Count == 0)
+    {
+        <EmptyState IconName="chart" Title="@($"No {TypeNoun} in this period")">Try another period, account or currency.</EmptyState>
+    }
+    else
+    {
+        var total = Slices.Sum(s => s.Total);
+        <div class="stats-split">
+            <Chart Class="chart--donut" Options="_donut" OnItemClick="SelectAsync"
+                   Label="@($"{TypeNoun} by category, {total:N2} {Currency} in total. The list shows every amount.")" />
+            <CategoryTotalsList Items="Slices" Wallet="Wallet" Currency="@Currency" Swatches="true"
+                                SelectedId="_trendId" OnSelect="id => SelectAsync(id.ToString())" />
+        </div>
+        <p class="stats-total">Total <Amount Value="StatsCharts.Signed(total, State.Type)" Currency="@Currency" /></p>
+    }
+
+    @if (_trendId is { } trendId && _trend is not null)
+    {
+        <section class="stats-trend card" aria-labelledby="stats-trend-title">
+            <div class="stats-section__head">
+                <h2 class="stats-trend__title" id="stats-trend-title">@StatsCharts.NameOf(Wallet, trendId) · last 12 months</h2>
+                <button type="button" class="icon-button" aria-label="Close category trend" @onclick="CloseTrend"><Icon Name="close" /></button>
+            </div>
+            <Chart Options="_trendChart" Label="@($"Monthly {TypeNoun} for {StatsCharts.NameOf(Wallet, trendId)}. The table lists every month.")" />
+            <MonthTable Items="_trend.Items" Currency="@Currency" Only="State.Type" />
+        </section>
+    }
+}
+
+@code {
+    private static readonly IReadOnlyList<(RecordType, string)> TypeOptions =
+        [(RecordType.Expense, "Expenses"), (RecordType.Income, "Income")];
+
+    private WalletSnapshot? _loadedFor;
+    private CategoryTotals? _totals;
+    private Guid? _trendId;
+    private MonthlyTotals? _trend;
+    private object _donut = new();
+    private object _trendChart = new();
+
+    private WalletSnapshot? Wallet => WalletState.Current;
+
+    private string Currency => State.Currency ?? "";
+
+    private string TypeNoun => State.Type == RecordType.Income ? "income" : "expenses";
+
+    private List<CategoryTotal> Slices => _totals?.Items.Where(i => i.Type == State.Type).ToList() ?? [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override Task OnWalletChangedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        if (Wallet is null || ReferenceEquals(Wallet, _loadedFor))
+        {
+            return;
+        }
+
+        if (_loadedFor?.Id != Wallet.Id)
+        {
+            _trendId = null;
+        }
+
+        _loadedFor = Wallet;
+        State.Use(Wallet);
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Wallet is null || !State.IsValid)
+        {
+            return;
+        }
+
+        var (from, to) = State.Range;
+        _totals = (await Api.GetAsync<CategoryTotals>(State.Url(Wallet.Id, "categories", from, to))).Value;
+        BuildDonut();
+        await LoadTrendAsync();
+    }
+
+    private async Task SetTypeAsync(RecordType type)
+    {
+        State.Type = type;
+        BuildDonut();
+        await LoadTrendAsync();
+    }
+
+    private async Task SelectAsync(string key)
+    {
+        if (Guid.TryParse(key, out var id))
+        {
+            _trendId = id;
+            await LoadTrendAsync();
+        }
+    }
+
+    private void CloseTrend()
+    {
+        _trendId = null;
+        _trend = null;
+    }
+
+    private async Task LoadTrendAsync()
+    {
+        // A category of the other type has no bars to show.
+        var category = StatsCharts.CategoryOf(Wallet!, _trendId);
+        if (_trendId is not { } id
+            || category is not null && (category.Type == CategoryType.Income ? RecordType.Income : RecordType.Expense) != State.Type)
+        {
+            CloseTrend();
+            return;
+        }
+
+        var (from, to) = State.TrendRange;
+        _trend = (await Api.GetAsync<MonthlyTotals>(State.Url(Wallet!.Id, "monthly", from, to, categoryId: id))).Value;
+        if (_trend is not null)
+        {
+            _trendChart = StatsCharts.Months(_trend.Items, State.Type);
+        }
+    }
+
+    private void BuildDonut() => _donut = StatsCharts.Donut(
+        Slices.Select(s => (s.CategoryId?.ToString() ?? "", StatsCharts.NameOf(Wallet!, s.CategoryId), s.Total)).ToList(),
+        Currency);
+}

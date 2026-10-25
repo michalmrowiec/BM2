@@ -12,6 +12,7 @@ public static class ClientServices
         services.AddScoped<BrowserStorage>();
         services.AddScoped<ToastService>();
         services.AddScoped<WalletState>();
+        services.AddScoped<StatsState>();
         services.AddScoped<AppNavigation>();
         return services;
     }

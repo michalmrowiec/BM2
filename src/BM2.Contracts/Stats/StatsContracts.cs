@@ -19,7 +19,8 @@ public sealed class StatsFilter
 
     public Guid? CategoryId { get; init; }
 
-    public Guid? TagId { get; init; }
+    /// <summary>Records with any of these tags.</summary>
+    public Guid[]? TagIds { get; init; }
 
     public string ToQueryString()
     {
@@ -29,7 +30,11 @@ public sealed class StatsFilter
         Add(parts, "accountId", AccountId?.ToString());
         Add(parts, "currency", Currency);
         Add(parts, "categoryId", CategoryId?.ToString());
-        Add(parts, "tagId", TagId?.ToString());
+        foreach (var tagId in TagIds ?? [])
+        {
+            Add(parts, "tagIds", tagId.ToString());
+        }
+
         return parts.Count == 0 ? "" : "?" + string.Join("&", parts);
     }
 
@@ -52,3 +57,9 @@ public sealed record MonthTotal(DateOnly Month, decimal Income, decimal Expense)
 
 /// <summary>Every month of the range, oldest first, including empty ones.</summary>
 public sealed record MonthlyTotals(string Currency, IReadOnlyList<MonthTotal> Items);
+
+/// <param name="Month">First day of the month.</param>
+public sealed record CategoryMonthTotal(Guid? CategoryId, RecordType Type, DateOnly Month, decimal Total);
+
+/// <summary>Totals per category and month; months without records are left out.</summary>
+public sealed record CategoryMonthTotals(string Currency, IReadOnlyList<CategoryMonthTotal> Items);

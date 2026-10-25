@@ -73,7 +73,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Wykresy:** komponent `Chart` (opcje ECharts, kolory jako `"var(--token)"`, przerysowanie po zmianie motywu, bez
   animacji przy `prefers-reduced-motion`); ECharts 5.6.0 lokalnie w `BM2.Server/wwwroot/lib/echarts`, ładowany leniwie
   przez `Chart.razor.js`. Przy wykresie zawsze te same liczby tekstem (lista/tabela). Statystyki: `stats/categories`,
-  `stats/monthly` (rekordy `Completed`, bez transferów, jedna waluta kont).
+  `stats/monthly`, `stats/category-months` (rekordy `Completed`, bez transferów, jedna waluta kont, `tagIds` = dowolny
+  z tagów); filtry ekranów Stats współdzieli scoped `StatsState` + komponent `StatsFilters`.
 - **Klient:** strony korzystające z portfela dziedziczą `WalletComponentBase` (`WalletState` z migawką portfela,
   ostatni wybór w `localStorage`); API przez `ApiClient` (`ApiResult`/`ApiProblem`, 401 → logowanie); formularze to
   `EditForm` na modyfikowalnym modelu z nazwami pól jak w requeście + `FluentValidator` (ten sam walidator co serwer,
