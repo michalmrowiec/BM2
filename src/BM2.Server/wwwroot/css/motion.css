@@ -162,8 +162,31 @@ html.theme-switching::view-transition-new(root) {
     .sheet[open] { animation-name: sheet-pop; }
 }
 
+/* Closing (Sheet.razor.js adds .is-closing, then closes when it ends). */
+.sheet.is-closing { animation: sheet-down 220ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+.sheet.is-closing::backdrop { animation: fade-out 220ms ease-in forwards; }
+
+@media (min-width: 48rem) {
+    .sheet.is-closing { animation-name: sheet-out; }
+}
+
 @keyframes sheet-up {
     from { transform: translateY(100%); }
+}
+
+@keyframes sheet-down {
+    to { transform: translateY(100%); }
+}
+
+@keyframes sheet-out {
+    to {
+        opacity: 0;
+        transform: translateY(0.75rem) scale(0.98);
+    }
+}
+
+@keyframes fade-out {
+    to { opacity: 0; }
 }
 
 @keyframes sheet-pop {

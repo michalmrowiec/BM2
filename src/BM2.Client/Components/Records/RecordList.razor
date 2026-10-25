@@ -27,7 +27,7 @@
                 @* Right click and Android long press open the same menu as the dots button. *@
                 var selected = _selected.Contains(item.Id);
                 var open = item.Status != RecordStatus.Completed;
-                <li @key="item.Id" class="record-row @(open ? $"record-row--{item.Status.ToString().ToLowerInvariant()}" : null) @(selected ? "is-selected" : null)" @oncontextmenu="() => _menuFor = item" @oncontextmenu:preventDefault="true">
+                <li @key="item.Id" class="record-row @(open ? $"record-row--{item.Status.ToString().ToLowerInvariant()}" : null) @(selected ? "is-selected" : null)" @oncontextmenu="() => OpenMenu(item)" @oncontextmenu:preventDefault="true">
                     @if (Selectable)
                     {
                         @* Tapping the icon selects; the rest of the row opens the record. *@
@@ -83,7 +83,7 @@
                         </button>
                     }
                     <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {view.Title}")"
-                            @onclick="() => _menuFor = item">
+                            @onclick="() => OpenMenu(item)">
                         <Icon Name="dots" />
                     </button>
                 </li>
@@ -92,8 +92,8 @@
     </section>
 }
 
-<Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuFor is null ? "Record" : View(_menuFor).Title)">
-    @if (_menuFor is { } record)
+<Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuShown is null ? "Record" : View(_menuShown).Title)">
+    @if (_menuShown is { } record)
     {
         <ul class="menu-list">
             <li>
@@ -192,6 +192,11 @@
 
 @code {
     private RecordItem? _menuFor;
+
+    // The last opened record, kept so the menu has content while it animates out.
+    private RecordItem? _menuShown;
+
+    private void OpenMenu(RecordItem item) => _menuFor = _menuShown = item;
     private RecordItem? _deleting;
     private readonly HashSet<Guid> _selected = [];
     private bool _confirmBulk;

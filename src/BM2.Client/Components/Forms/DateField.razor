@@ -12,7 +12,7 @@
                    @onchange="e => CurrentValueAsString = e.Value?.ToString()"
                    aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
             <button type="button" class="icon-button date-field__open" aria-label="@($"Choose {Label.ToLowerInvariant()} in a calendar")"
-                    aria-haspopup="dialog" @onclick="() => _open = true">
+                    aria-haspopup="dialog" @onclick="OpenCalendar">
                 <Icon Name="calendar" />
             </button>
         </div>
@@ -24,15 +24,20 @@
     <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
 </div>
 
+@* A new key per opening starts the calendar on the current value; it stays rendered while the sheet animates out. *@
 <Sheet Open="_open" OpenChanged="v => _open = v" Title="@Label">
-    @if (_open)
-    {
-        <CalendarGrid Value="CurrentValue" ValueChanged="Pick" />
-    }
+    <CalendarGrid @key="_openings" Value="CurrentValue" ValueChanged="Pick" />
 </Sheet>
 
 @code {
     private bool _open;
+    private int _openings;
+
+    private void OpenCalendar()
+    {
+        _openings++;
+        _open = true;
+    }
 
     // The user's calendar day, from the device clock.
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);

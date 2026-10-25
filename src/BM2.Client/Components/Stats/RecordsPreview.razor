@@ -5,10 +5,10 @@
 @inject ApiClient Api
 
 @* The records behind a chart bar or a list row: same filters as the stats (no planned, one currency). *@
-<Sheet Open="Query is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(Query?.Title ?? "Records")">
-    @if (Query is null)
+@* Renders the last query (_loaded), so the content stays while the sheet animates out. *@
+<Sheet Open="Query is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(_loaded?.Title ?? "Records")">
+    @if (_loaded is null)
     {
-        @* Closing: nothing to show. *@
     }
     else if (_items is null)
     {
@@ -22,7 +22,7 @@
     {
         <p class="records-preview__total">
             @StatsCharts.Records(_items.Count)
-            <Amount Value="_items.Sum(i => i.AccountAmount)" Currency="@Query!.Currency" Sign="TemplateText.Sign(Query.Type)" />
+            <Amount Value="_items.Sum(i => i.AccountAmount)" Currency="@_loaded.Currency" Sign="TemplateText.Sign(_loaded.Type)" />
         </p>
         <ul class="list records-preview">
             @foreach (var item in _items)
@@ -32,7 +32,7 @@
                 <li @key="item.Id">
                     <ListRow Title="@title" Subtitle="@Subtitle(item, category?.Name)" Href="@($"records/{item.Id}")">
                         <Leading><RecordAvatar Category="category" Type="item.Type" Fallback="@title" /></Leading>
-                        <Trailing><Amount Value="item.AccountAmount" Currency="@Query!.Currency" Sign="TemplateText.Sign(item.Type)" /></Trailing>
+                        <Trailing><Amount Value="item.AccountAmount" Currency="@_loaded.Currency" Sign="TemplateText.Sign(item.Type)" /></Trailing>
                     </ListRow>
                 </li>
             }
@@ -59,14 +59,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Query is null)
-        {
-            _loaded = null;
-            _items = null;
-            return;
-        }
-
-        if (ReferenceEquals(Query, _loaded))
+        if (Query is null || ReferenceEquals(Query, _loaded))
         {
             return;
         }
