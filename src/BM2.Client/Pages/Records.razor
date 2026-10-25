@@ -119,9 +119,12 @@ else
                        ValueChanged="ApplyFilters" />
 
     <Sheet Open="_exportOpen" OpenChanged="v => _exportOpen = v" Title="Export records">
+        <SegmentedControl Label="Records to export" Options="ExportScopes" @bind-Value="_exportAll" Class="segmented--block" />
         <p class="muted">
-            Downloads the records shown with the current period and filters@(ActiveFilters.Count > 0 ? $" ({ActiveFilters.Count} active)" : ""),
-            newest first, up to 50,000. Expenses and transfers out are negative.
+            @(_exportAll
+                ? "Every record in this wallet you can see, from all time, ignoring the period and filters."
+                : $"The records shown: {(IsAllTime ? "all time" : MonthStart.ToString("MMMM yyyy"))}{(ActiveFilters.Count > 0 ? $", {ActiveFilters.Count} active filters" : ", no filters")}.")
+            Newest first, up to 50,000. Expenses and transfers out are negative. The file name includes the wallet name.
         </p>
         <div class="export-options">
             <a class="btn btn-primary" href="@ExportUrl("xlsx")" download @onclick="() => _exportOpen = false">Excel (.xlsx)</a>
@@ -142,6 +145,8 @@ else
     private bool _failed;
     private bool _filtersOpen;
     private bool _exportOpen;
+    private bool _exportAll;
+    private static readonly IReadOnlyList<(bool, string)> ExportScopes = [(false, "Current view"), (true, "All records")];
     private string? _search;
     private CancellationTokenSource? _debounce;
     private ElementReference _sentinel;
@@ -179,7 +184,7 @@ else
 
     private string ExportUrl(string format)
     {
-        var query = CurrentFilter.ToQueryString();
+        var query = _exportAll ? "" : CurrentFilter.ToQueryString();
         return $"api/wallets/{Wallet!.Id}/records/export{query}{(query.Length == 0 ? "?" : "&")}format={format}";
     }
 

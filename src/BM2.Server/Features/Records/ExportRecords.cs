@@ -62,10 +62,30 @@ internal static class ExportRecords
                 sign * r.Amount, r.Currency, sign * r.AccountAmount, r.Status);
         }).ToList();
 
-        var name = $"bm2-records-{DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime):yyyy-MM-dd}";
+        var wallet = await db.Wallets.Where(w => w.Id == walletId).Select(w => w.Name).SingleAsync(ct);
+        var name = $"bm2-{Slug(wallet)}-records-{DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime):yyyy-MM-dd}";
         return xlsx
             ? TypedResults.File(Xlsx(rows), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name + ".xlsx")
             : TypedResults.File(Csv(rows), "text/csv; charset=utf-8", name + ".csv");
+    }
+
+    // Letters and digits of the wallet name, other characters as single dashes.
+    private static string Slug(string name)
+    {
+        var slug = new StringBuilder();
+        foreach (var c in name.Trim().ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                slug.Append(c);
+            }
+            else if (slug.Length > 0 && slug[^1] != '-')
+            {
+                slug.Append('-');
+            }
+        }
+
+        return slug.Length == 0 ? "wallet" : slug.ToString().TrimEnd('-');
     }
 
     private static string AccountText(Row row) => row.TransferAccount is null ? row.Account : $"{row.Account} → {row.TransferAccount}";
