@@ -17,7 +17,8 @@ body {
     line-height: 1.55;
     color: var(--ink);
     background:
-        radial-gradient(120% 50% at 50% -10%, var(--sheet) 0%, transparent 70%) no-repeat,
+        /* Fixed height: a percentage would stretch the glow down long pages. */
+        radial-gradient(120% 32rem at 50% -6rem, var(--sheet) 0%, transparent 70%) no-repeat,
         var(--paper);
     -webkit-font-smoothing: antialiased;
 }

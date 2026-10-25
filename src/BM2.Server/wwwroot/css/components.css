@@ -1141,7 +1141,9 @@ button.list-row:hover { background: var(--wash); }
     gap: var(--space-3);
     margin: 0 0 var(--space-2);
     padding: var(--space-2) var(--space-1);
-    background: var(--paper);
+    /* Translucent like the app header, so it blends with the page glow and still covers rows when stuck. */
+    background: color-mix(in srgb, var(--paper) 72%, transparent);
+    backdrop-filter: blur(12px);
     font-family: var(--font-ui);
     font-size: var(--text-s);
     font-weight: 600;
