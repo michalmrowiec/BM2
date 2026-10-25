@@ -872,6 +872,16 @@ button.list-row:hover { background: var(--wash); }
     box-shadow: var(--shadow);
 }
 
+/* Record and category types: the selected one takes its color (text on a tint, like tags) */
+.segmented__option[aria-checked="true"]:is([data-value="Expense"], [data-value="Income"], [data-value="Transfer"]) {
+    background: color-mix(in srgb, var(--type-color) 16%, var(--sheet-raised));
+    color: var(--type-color);
+}
+
+.segmented__option[data-value="Expense"] { --type-color: var(--tag-red); }
+.segmented__option[data-value="Income"] { --type-color: var(--tag-green); }
+.segmented__option[data-value="Transfer"] { --type-color: var(--tag-blue); }
+
 /* Chips */
 .chip-group {
     display: flex;

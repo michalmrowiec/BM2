@@ -5,7 +5,8 @@
     {
         var index = i;
         var selected = EqualityComparer<TValue>.Default.Equals(Options[i].Value, Value);
-        <button type="button" role="radio" class="segmented__option" aria-checked="@(selected ? "true" : "false")"
+        @* data-value lets CSS color some options, e.g. Expense / Income / Transfer. *@
+        <button type="button" role="radio" class="segmented__option" aria-checked="@(selected ? "true" : "false")" data-value="@Options[i].Value"
                 tabindex="@(selected ? 0 : -1)" @ref="_buttons[index]"
                 @onclick="() => SelectAsync(index, focus: false)" @onkeydown="e => OnKeyDownAsync(e, index)">
             @Options[i].Label
