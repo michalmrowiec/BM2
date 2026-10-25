@@ -1,4 +1,10 @@
-// Blazor JS initializer. WebAssembly replaces the prerendered markup when it starts; that swap must not animate.
+// Blazor JS initializer. Registers the service worker (fast start, see wwwroot/service-worker.js) on every page.
+export function afterWebStarted() {
+    navigator.serviceWorker?.register("/service-worker.js", { scope: "/" })
+        .catch(error => console.warn("Service worker registration failed", error));
+}
+
+// WebAssembly replaces the prerendered markup when it starts; that swap must not animate.
 // Afterwards new page content inside <main> gets .page-enter (entrance animation in css/motion.css).
 export function afterWebAssemblyStarted() {
     document.addEventListener("beforeinput", blockInvalidMoney);
