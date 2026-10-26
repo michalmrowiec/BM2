@@ -189,6 +189,11 @@ public static class RecurringEndpoints
             return Error.Validation("Schedule.StartDate", $"Start at most {WalletLimits.RuleStartYearsBack} years back.");
         }
 
+        if (request.Record.Pair is { } pair && await RecordPairs.CheckAsync(db, userId, access.WalletId, pair, ct) is { } pairError)
+        {
+            return pairError;
+        }
+
         var draft = (request.Record with { OccurredOn = request.Schedule.StartDate, Status = RecordStatus.Completed }).ToDraft();
         var context = await RecordContextLoader.LoadAsync(db, access.WalletId, draft, ct);
         if (RecordAccess.CheckWrite(access, draft, context) is { } denied)
@@ -232,7 +237,7 @@ public static class RecurringEndpoints
         r.Id,
         new SaveRecordRequest(
             r.Type, RecordStatus.Completed, r.StartDate, r.AccountId, r.Amount, r.Currency, r.AccountAmount, r.CategoryId,
-            r.TransferAccountId, r.TransferAmount, r.Name, r.Tags.Select(t => t.TagId).ToList()),
+            r.TransferAccountId, r.TransferAmount, r.Name, r.Tags.Select(t => t.TagId).ToList(), r.Pair),
         r.Schedule,
         r.Mode,
         r.IsPaused,

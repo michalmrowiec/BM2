@@ -17,7 +17,22 @@ public sealed class WalletAccessFilter(AppDbContext db, ICurrentUser currentUser
             return Error.NotFound().ToProblem();
         }
 
-        var userId = currentUser.UserId;
+        var access = await WalletAccessLoader.LoadAsync(db, currentUser.UserId, walletId, context.HttpContext.RequestAborted);
+        if (access is not { HasAnyAccess: true })
+        {
+            return Error.NotFound().ToProblem();
+        }
+
+        currentWallet.Access = access;
+        return await next(context);
+    }
+}
+
+public static class WalletAccessLoader
+{
+    /// <summary>The user's access to the wallet; null when the wallet doesn't exist.</summary>
+    public static async Task<WalletAccess?> LoadAsync(AppDbContext db, Guid userId, Guid walletId, CancellationToken ct)
+    {
         var wallet = await db.Wallets
             .AsNoTracking()
             .Where(w => w.Id == walletId)
@@ -33,17 +48,8 @@ public sealed class WalletAccessFilter(AppDbContext db, ICurrentUser currentUser
                     })
                     .ToList(),
             })
-            .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
+            .SingleOrDefaultAsync(ct);
 
-        var access = wallet is null
-            ? null
-            : WalletAccess.Create(walletId, wallet.Role, wallet.Accounts.Select(a => (a.Id, a.ShareRole)));
-        if (access is not { HasAnyAccess: true })
-        {
-            return Error.NotFound().ToProblem();
-        }
-
-        currentWallet.Access = access;
-        return await next(context);
+        return wallet is null ? null : WalletAccess.Create(walletId, wallet.Role, wallet.Accounts.Select(a => (a.Id, a.ShareRole)));
     }
 }

@@ -26,7 +26,9 @@ internal static class RecordQueries
         r.TransferAmount,
         r.Name,
         r.Tags.Select(t => t.TagId).ToList(),
-        r.RecurringRuleId);
+        r.RecurringRuleId,
+        r.PairWalletId,
+        r.PairWalletId != null && r.PairId == null);
 
     /// <summary>Records touching an account the user can read (either side of a transfer).</summary>
     public static IQueryable<Record> Visible(this IQueryable<Record> records, IReadOnlyCollection<Guid> readableAccountIds) =>
@@ -117,5 +119,6 @@ internal static class RecordQueries
         request.TransferAccountId,
         request.TransferAmount,
         request.Name,
-        request.TagIds);
+        request.TagIds,
+        request.Pair);
 }

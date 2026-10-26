@@ -58,6 +58,13 @@
                             </span>
                             <span class="record-row__meta">
                                 <span class="record-row__where">@view.Meta</span>
+                                @if (item.PairWalletId is { } pairWallet)
+                                {
+                                    <span aria-hidden="true"> · </span>
+                                    <span class="record-row__pair">
+                                        @(item.PairPending ? $"→ {PairWalletName(pairWallet)} on confirm" : $"↔ {PairWalletName(pairWallet)}")
+                                    </span>
+                                }
                                 @foreach (var tag in view.Tags)
                                 {
                                     <span aria-hidden="true"> · </span>
@@ -286,6 +293,8 @@
 
     /// <summary>The account the list is filtered by; transfers into it read as incoming.</summary>
     [Parameter] public Guid? AccountId { get; set; }
+
+    private string PairWalletName(Guid walletId) => WalletState.Wallets.FirstOrDefault(w => w.Id == walletId)?.Name ?? "another wallet";
 
     private string? CurrencyOf(Guid accountId) => Wallet.Accounts.FirstOrDefault(a => a.Id == accountId)?.Currency;
 

@@ -16,7 +16,8 @@ public sealed record RecordDraft(
     Guid? TransferAccountId,
     decimal? TransferAmount,
     string? Name,
-    IReadOnlyList<Guid> TagIds);
+    IReadOnlyList<Guid> TagIds,
+    RecordPair? Pair = null);
 
 public sealed record AccountRef(Guid Id, Guid WalletId, string Currency, bool IsArchived);
 

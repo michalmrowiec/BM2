@@ -77,6 +77,14 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   Duża liczba na Home = cały portfel (gotówka + wartości inwestycji, rozbicie „Cash · Investments”); prognoza tylko
   gotówka. `ValuationSheet` (Home i Accounts): szybka wycena na dziś, wykres wartość vs wpłacone (`PaidIn` w historii). `stats/monthly` ma `Invested` =
   transfery gotówka → inwestycje minus z powrotem. Wyceny: odczyt z dostępem do konta, zapis `CanWriteAccount`.
+- **Send money (między portfelami):** nie transfer, tylko para rekordów: wydatek tu + przychód w innym portfelu, wspólny
+  `PairId` (każdy ma `PairWalletId` = drugi portfel). `SaveRecordRequest.Pair` (`RecordPair`: portfel, konto, kategoria
+  przychodu, kwota w walucie konta docelowego) tylko przy tworzeniu wydatku; druga strona powstaje, gdy wydatek jest
+  `Completed` (`RecordPairs.SendAsync`, dostęp do drugiego portfela sprawdzany w tej chwili przez `WalletAccessLoader`;
+  bez dostępu rekord zostaje z oczekującą parą). Reguła z parą jest zawsze `Confirm`, a wystąpienia Pending wysyłają
+  przy potwierdzeniu. `UpdatePair` (edycja) przenosi datę, nazwę i kwotę (przy tej samej walucie); `DELETE ?pair=true`
+  usuwa obie strony. UI: menu ⋯ przy portfelu w `WalletSwitcher` → `SendMoneyForm`; sekcja „Sent to other wallets”
+  w Recurring; znaczek „↔ / → portfel” na liście rekordów.
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne
   waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Home ładuje wszystko jednym `GET dashboard`.

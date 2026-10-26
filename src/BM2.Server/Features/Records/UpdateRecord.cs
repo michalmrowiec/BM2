@@ -14,7 +14,8 @@ internal static class UpdateRecord
         records.MapPut("/{recordId:guid}", HandleAsync).Validate<SaveRecordRequest>();
 
     private static async Task<Results<NoContent, ProblemHttpResult>> HandleAsync(
-        Guid recordId, SaveRecordRequest request, CurrentWallet current, AppDbContext db, TimeProvider time, CancellationToken ct)
+        Guid recordId, SaveRecordRequest request, CurrentWallet current, ICurrentUser currentUser, AppDbContext db, TimeProvider time,
+        CancellationToken ct)
     {
         var access = current.Access;
         var record = await db.Records.Include(r => r.Tags).SingleOrDefaultAsync(r => r.Id == recordId, ct);
@@ -40,6 +41,14 @@ internal static class UpdateRecord
         if (!result.IsSuccess)
         {
             return result.Error!.ToProblem();
+        }
+
+        // Completing a "Send money" expense adds the income in the other wallet; an edit may carry over to it.
+        var now = time.GetUtcNow();
+        await RecordPairs.SendAsync(db, currentUser.UserId, current.Id, record, now, ct);
+        if (request.UpdatePair)
+        {
+            await RecordPairs.UpdatePartnerAsync(db, currentUser.UserId, record, now, ct);
         }
 
         await db.SaveChangesAsync(ct);

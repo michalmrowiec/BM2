@@ -266,6 +266,22 @@ namespace BM2.Server.Data.Migrations
                     b.Property<DateOnly?>("OccurrenceDate")
                         .HasColumnType("date");
 
+                    b.Property<Guid?>("PairAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PairAmount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid?>("PairCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PairId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PairWalletId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("RecurringRuleId")
                         .HasColumnType("uniqueidentifier");
 
@@ -288,6 +304,9 @@ namespace BM2.Server.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("PairId")
+                        .HasFilter("[PairId] IS NOT NULL");
 
                     b.HasIndex("AccountId", "OccurredOn");
 
@@ -379,6 +398,19 @@ namespace BM2.Server.Data.Migrations
 
                     b.Property<int>("NextIndex")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("PairAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PairAmount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid?>("PairCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PairWalletId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");

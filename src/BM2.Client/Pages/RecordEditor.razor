@@ -78,11 +78,19 @@
 <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete record?" ConfirmLabel="Delete"
                Danger="true" OnConfirm="DeleteAsync">
     <p>This can't be undone.</p>
+    @if (_record is { PairWalletId: { } pairWallet, PairPending: false })
+    {
+        <label class="check">
+            <input type="checkbox" checked="@_deletePair" @onchange="e => _deletePair = e.Value is true" />
+            <span>Also delete the linked record in @(WalletState.Wallets.FirstOrDefault(w => w.Id == pairWallet)?.Name ?? "the other wallet")</span>
+        </label>
+    }
 </ConfirmDialog>
 
 @code {
     private RecordForm? _form;
     private RecordItem? _record;
+    private bool _deletePair = true;
     private TemplateItem? _template;
     private RecordSuggestions? _suggestions;
     private Guid? _lastAccount;
@@ -219,7 +227,7 @@
 
     private async Task DeleteAsync()
     {
-        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/records/{Id}");
+        var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/records/{Id}{(_deletePair ? "?pair=true" : null)}");
         _confirmDelete = false;
         if (result.Ok)
         {
