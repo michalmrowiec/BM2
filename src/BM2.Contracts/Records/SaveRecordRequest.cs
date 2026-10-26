@@ -16,7 +16,15 @@ public sealed record SaveRecordRequest(
     Guid? TransferAccountId,
     decimal? TransferAmount,
     string? Name,
-    IReadOnlyList<Guid> TagIds);
+    IReadOnlyList<Guid> TagIds,
+    RecordPair? Pair = null,
+    bool UpdatePair = false);
+
+/// <summary>
+/// "Send money": an expense here that, once completed, adds an income to <see cref="AccountId"/> in another wallet.
+/// Set on create only; <see cref="Amount"/> is in the target account's currency.
+/// </summary>
+public sealed record RecordPair(Guid WalletId, Guid AccountId, Guid CategoryId, decimal Amount);
 
 public sealed class SaveRecordRequestValidator : AbstractValidator<SaveRecordRequest>
 {
@@ -41,6 +49,10 @@ public sealed class SaveRecordRequestValidator : AbstractValidator<SaveRecordReq
         RuleFor(x => x.Name)
             .Must(name => name is null || name.Trim().Length <= Limits.RecordName)
             .WithMessage($"Use at most {Limits.RecordName} characters.");
+        RuleFor(x => x.Pair)
+            .Must((request, pair) => request.Type == RecordType.Expense && MoneyRules.IsValidAmount(pair!.Amount))
+            .When(x => x.Pair is not null)
+            .WithMessage("Only an expense can send money, with a valid amount received.");
         RuleFor(x => x.TagIds)
             .NotNull()
             .Must(ids => ids.Distinct().Count() == ids.Count).WithMessage("Each tag can be added once.");

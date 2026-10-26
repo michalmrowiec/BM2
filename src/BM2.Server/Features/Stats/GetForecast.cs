@@ -1,3 +1,5 @@
+using BM2.Contracts.Accounts;
+using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Contracts.Stats;
 using BM2.Server.Data;
@@ -31,7 +33,7 @@ internal static class GetForecast
             : query.Currency.Trim().ToUpperInvariant();
 
         var accounts = (await db.Accounts
-                .Where(a => a.WalletId == walletId && a.Currency == currency)
+                .Where(a => a.WalletId == walletId && a.Currency == currency && a.Kind == AccountKind.Cash)
                 .Select(a => new { a.Id, a.OpeningBalance })
                 .ToListAsync(ct))
             .Where(a => access.CanReadAccount(a.Id))
@@ -116,11 +118,12 @@ internal static class GetForecast
         {
             var covered = rules.Where(r => r.Type == RecordType.Expense && r.CategoryId != null).Select(r => r.CategoryId!.Value).Distinct().ToList();
             var spent = await db.Records.AsNoTracking()
-                .Where(r => ids.Contains(r.AccountId) && r.Type == RecordType.Expense && r.Status != RecordStatus.Planned
+                .Where(r => ids.Contains(r.AccountId) && r.Status != RecordStatus.Planned
                     && r.RecurringRuleId == null && r.OccurredOn >= averageFrom && r.OccurredOn < monthStart
-                    && (r.CategoryId == null || !covered.Contains(r.CategoryId.Value)))
+                    && (r.CategoryId == null || !covered.Contains(r.CategoryId.Value))
+                    && (r.Type == RecordType.Expense || (r.Type == RecordType.Income && r.Category!.Type == CategoryType.Expense)))
                 .GroupBy(r => r.CategoryId)
-                .Select(g => g.Sum(r => r.AccountAmount))
+                .Select(g => g.Sum(r => r.Type == RecordType.Income ? -r.AccountAmount : r.AccountAmount))
                 .ToListAsync(ct);
             averagedCategories = spent.Count;
             dailyAverage = Math.Round(spent.Sum() / (monthStart.DayNumber - averageFrom.DayNumber), 2);

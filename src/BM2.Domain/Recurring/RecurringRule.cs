@@ -40,6 +40,19 @@ public sealed class RecurringRule
 
     public string? Name { get; private set; }
 
+    /// <summary>"Send money" rules: each occurrence is pending and adds the income in the other wallet on completion.</summary>
+    public Guid? PairWalletId { get; private set; }
+
+    public Guid? PairAccountId { get; private set; }
+
+    public Guid? PairCategoryId { get; private set; }
+
+    public decimal? PairAmount { get; private set; }
+
+    public RecordPair? Pair => PairWalletId is { } walletId
+        ? new RecordPair(walletId, PairAccountId!.Value, PairCategoryId!.Value, PairAmount!.Value)
+        : null;
+
     public RecurrenceFrequency Frequency { get; private set; }
 
     public int Interval { get; private set; }
@@ -108,7 +121,8 @@ public sealed class RecurringRule
             TransferAccountId,
             TransferAmount,
             name,
-            _tags.Select(t => t.TagId).ToList());
+            _tags.Select(t => t.TagId).ToList(),
+            Pair);
     }
 
     public void Advance() => MoveTo(NextIndex + 1);
@@ -135,6 +149,20 @@ public sealed class RecurringRule
         TransferAmount = isTransfer ? record.TransferAmount : null;
         Name = string.IsNullOrWhiteSpace(record.Name) ? null : record.Name.Trim();
 
+        // An edit without the pair (the plain rule editor) keeps it; a pair always needs confirming.
+        if (record.Pair is { } pair && record.Type == RecordType.Expense)
+        {
+            PairWalletId = pair.WalletId;
+            PairAccountId = pair.AccountId;
+            PairCategoryId = pair.CategoryId;
+            PairAmount = pair.Amount;
+        }
+        else if (record.Type != RecordType.Expense)
+        {
+            PairWalletId = PairAccountId = PairCategoryId = null;
+            PairAmount = null;
+        }
+
         var schedule = request.Schedule;
         Frequency = schedule.Frequency;
         Interval = schedule.Interval;
@@ -142,7 +170,7 @@ public sealed class RecurringRule
         End = schedule.End;
         EndDate = schedule.End == RecurrenceEnd.OnDate ? schedule.EndDate : null;
         Count = schedule.End == RecurrenceEnd.AfterCount ? schedule.Count : null;
-        Mode = request.Mode;
+        Mode = PairWalletId is null ? request.Mode : RecurringMode.Confirm;
         IsPaused = request.IsPaused;
 
         var wanted = record.TagIds.ToHashSet();

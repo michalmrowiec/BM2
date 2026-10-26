@@ -27,13 +27,13 @@ internal static class CreateAccount
             return AccountNames.TakenError.ToProblem();
         }
 
-        var account = Account.Create(current.Id, request.Name, request.Currency, request.OpeningBalance, time.GetUtcNow());
+        var account = Account.Create(current.Id, request.Name, request.Currency, request.OpeningBalance, time.GetUtcNow(), request.Kind);
         db.Accounts.Add(account);
         await db.SaveChangesAsync(ct);
 
         return TypedResults.Created(
             $"{ApiPaths.Prefix}/wallets/{current.Id}/accounts/{account.Id}",
-            new AccountItem(account.Id, account.Name, account.Currency, account.OpeningBalance, account.OpeningBalance, account.OpeningBalance, false, true));
+            new AccountItem(account.Id, account.Name, account.Currency, account.OpeningBalance, account.OpeningBalance, account.OpeningBalance, false, true, account.Kind));
     }
 }
 

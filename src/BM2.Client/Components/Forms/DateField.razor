@@ -16,10 +16,13 @@
                 <Icon Name="calendar" />
             </button>
         </div>
-        <div class="date-field__shortcuts">
-            <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">Today</button>
-            <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">Yesterday</button>
-        </div>
+        @if (Shortcuts)
+        {
+            <div class="date-field__shortcuts">
+                <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">Today</button>
+                <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">Yesterday</button>
+            </div>
+        }
     </div>
     <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
 </div>
@@ -38,6 +41,9 @@
         _openings++;
         _open = true;
     }
+
+    /// <summary>Today and Yesterday chips; off for dates that are rarely recent, like an end date.</summary>
+    [Parameter] public bool Shortcuts { get; set; } = true;
 
     // The user's calendar day, from the device clock.
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);

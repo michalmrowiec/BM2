@@ -1,3 +1,4 @@
+using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Domain.Common;
 using BM2.Server.Data;
@@ -31,8 +32,10 @@ internal static class GetRecordSummary
             .OrderBy(g => g.Key)
             .Select(g => new CurrencyTotals(
                 g.Key,
-                g.Sum(r => r.Type == RecordType.Income ? r.AccountAmount : 0m),
-                g.Sum(r => r.Type == RecordType.Expense ? r.AccountAmount : 0m)))
+                g.Sum(r => r.Type == RecordType.Income && r.Category!.Type != CategoryType.Expense ? r.AccountAmount : 0m),
+                // Refunds (income in an expense category) lower expenses.
+                g.Sum(r => r.Type == RecordType.Expense ? r.AccountAmount
+                    : r.Category!.Type == CategoryType.Expense ? -r.AccountAmount : 0m)))
             .ToListAsync(ct);
 
         return new RecordSummary(totals);

@@ -64,8 +64,16 @@ else
         }
     </Sheet>
 
+    <ValuationSheet WalletId="Wallet.Id" Account="@Wallet.Accounts.FirstOrDefault(a => a.Id == _valuing)"
+                    Open="_valuing is not null" OpenChanged="v => { if (!v) _valuing = null; }" OnChanged="WalletState.RefreshAsync">
+        @if (Wallet.Permissions.ManageAccounts)
+        {
+            <button type="button" class="btn btn-ghost btn-block" @onclick="EditValued"><Icon Name="edit" /> Edit account</button>
+        }
+    </ValuationSheet>
+
     <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@($"Delete {_editing?.Name}?")"
-                   ConfirmLabel="Delete account" Danger="true" OnConfirm="DeleteAsync">
+                   ConfirmLabel="Delete account" Danger="true" RequireText="@_editing?.Name" OnConfirm="DeleteAsync">
         <p>The account and all its records will be deleted, including transfers to other accounts. This can't be undone.</p>
         <p class="muted">To keep the history, archive the account instead.</p>
     </ConfirmDialog>
@@ -75,15 +83,41 @@ else
     private bool _editorOpen;
     private bool _confirmDelete;
     private AccountItem? _editing;
+    private Guid? _valuing;
+
+    /// <summary>Opens the valuation sheet of this investment account (linked from Home).</summary>
+    [SupplyParameterFromQuery(Name = "account")] public Guid? ValuingId { get; set; }
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _valuing = ValuingId;
+    }
+
     private RenderFragment Row(AccountItem account) =>
-        @<ListRow Title="@account.Name" Subtitle="@(account.IsArchived ? $"{account.Currency} · Archived" : account.Currency)"
-                  OnClick="@(Wallet!.Permissions.ManageAccounts ? EventCallback.Factory.Create(this, () => OpenEditor(account)) : default)">
-            <Leading><Icon Name="bank" /></Leading>
-            <Trailing><Amount Value="account.Balance" Currency="@account.Currency" /></Trailing>
+        @<ListRow Title="@account.Name" Subtitle="@Subtitle(account)" OnClick="@ClickOf(account)">
+            <Leading><Icon Name="@(account.Kind == AccountKind.Investment ? "trend" : "bank")" /></Leading>
+            <Trailing><Amount Value="account.Valuation ?? account.Balance" Currency="@account.Currency" /></Trailing>
         </ListRow>;
+
+    private static string Subtitle(AccountItem account) =>
+        string.Join(" · ", new[] { account.Currency, account.Kind == AccountKind.Investment ? "Investment" : null, account.IsArchived ? "Archived" : null }
+            .OfType<string>());
+
+    // Investment accounts open their value and valuations; others the editor.
+    private EventCallback ClickOf(AccountItem account) =>
+        account.Kind == AccountKind.Investment ? EventCallback.Factory.Create(this, () => _valuing = account.Id)
+        : Wallet!.Permissions.ManageAccounts ? EventCallback.Factory.Create(this, () => OpenEditor(account))
+        : default;
+
+    private void EditValued()
+    {
+        var account = Wallet!.Accounts.FirstOrDefault(a => a.Id == _valuing);
+        _valuing = null;
+        OpenEditor(account);
+    }
 
     private void OpenEditor(AccountItem? account)
     {

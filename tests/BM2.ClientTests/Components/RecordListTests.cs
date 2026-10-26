@@ -94,13 +94,14 @@ public class RecordListTests : BunitContext
     }
 
     [Fact]
-    public void Rows_link_to_the_record_editor()
+    public void Row_details_link_to_the_record_editor()
     {
         var expense = Expense();
 
         var cut = RenderList(Wallet(Cash), expense);
+        cut.Find(".record-row__main").Click();
 
-        cut.Find("a.record-row").GetAttribute("href").ShouldBe($"records/{expense.Id}");
+        cut.Find(".record-details__actions a").GetAttribute("href").ShouldBe($"records/{expense.Id}");
     }
 
     protected override void Dispose(bool disposing)

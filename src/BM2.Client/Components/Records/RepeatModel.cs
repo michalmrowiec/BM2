@@ -15,6 +15,13 @@ public sealed class RepeatModel
 
     public DateOnly? EndDate { get; set; }
 
+    /// <summary><see cref="EndDate"/> for the date field, which needs a value.</summary>
+    public DateOnly LastDate
+    {
+        get => EndDate ?? default;
+        set => EndDate = value;
+    }
+
     public int? Count { get; set; } = 12;
 
     public bool Confirm { get; set; }

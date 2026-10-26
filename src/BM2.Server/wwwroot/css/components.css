@@ -729,11 +729,15 @@ button.list-row:hover { background: var(--wash); }
 
 .sheet__title { font-size: var(--text-l); }
 
+/* The body shrinks inside the panel (min-height: 0) and scrolls; rows keep their content height. */
 .sheet__body {
     display: grid;
+    grid-auto-rows: max-content;
     gap: var(--space-4);
+    min-height: 0;
     padding: var(--space-2) var(--space-5) var(--space-5);
     overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .sheet__footer {
@@ -891,7 +895,9 @@ button.list-row:hover { background: var(--wash); }
 .amount--positive { color: var(--positive); }
 .amount--negative { color: var(--negative); }
 
+/* Big totals keep the display font even with plain amounts. */
 .amount--large {
+    font-family: var(--font-display);
     font-size: var(--text-2xl);
     font-weight: 700;
     line-height: 1.1;
@@ -963,6 +969,21 @@ button.list-row:hover { background: var(--wash); }
     color: var(--ink-muted);
 }
 
+/* Label and amount stay together; on a narrow screen a whole pair moves to the next line. */
+.balance__split {
+    flex-wrap: wrap;
+    column-gap: var(--space-4);
+    row-gap: 0;
+}
+
+.balance__split > span { white-space: nowrap; }
+
+/* One line per currency on the Wallets list. */
+.wallet-totals {
+    display: grid;
+    justify-items: end;
+}
+
 .account-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
@@ -973,6 +994,7 @@ button.list-row:hover { background: var(--wash); }
 }
 
 .account-card {
+    container-type: inline-size;
     display: grid;
     gap: var(--space-2);
     min-height: 5.5rem;
@@ -983,6 +1005,14 @@ button.list-row:hover { background: var(--wash); }
     color: inherit;
     text-decoration: none;
     transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+button.account-card {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
 .account-card:hover { border-color: var(--ink-muted); }
@@ -996,27 +1026,75 @@ button.list-row:hover { background: var(--wash); }
     white-space: nowrap;
 }
 
-.account-card .amount {
+.account-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    font-size: var(--text-s);
+    color: var(--ink-muted);
+}
+
+.account-card__meta .amount { font: inherit; }
+
+/* Shrinks with the card on narrow phones; a very long amount wraps only before the currency (digit groups use nbsp). */
+.account-card > .amount {
     font-family: var(--font-display);
-    font-size: var(--text-l);
+    font-size: clamp(0.875rem, 11.5cqi, var(--text-l));
     font-weight: 600;
+    white-space: normal;
 }
 
 /* Segmented control (radio group) */
+/* Options share one width, so the selected pill (::before) can slide between them. */
 .segmented {
-    display: inline-flex;
+    --n: 1;
+    --i: 0;
+    position: relative;
+    isolation: isolate;
+    display: inline-grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
     gap: var(--space-1);
     padding: var(--space-1);
     border-radius: var(--radius-pill);
     background: var(--wash);
 }
 
+.segmented::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: var(--space-1);
+    width: calc((100% - (var(--n) + 1) * var(--space-1)) / var(--n));
+    border-radius: var(--radius-pill);
+    background: var(--sheet-raised);
+    box-shadow: var(--shadow);
+    translate: calc(var(--i) * (100% + var(--space-1))) 0;
+    transition: translate 300ms var(--ease-out);
+}
+
+.segmented[data-index="-1"]::before { display: none; }
+.segmented[data-count="2"] { --n: 2; }
+.segmented[data-count="3"] { --n: 3; }
+.segmented[data-count="4"] { --n: 4; }
+.segmented[data-count="5"] { --n: 5; }
+.segmented[data-index="1"] { --i: 1; }
+.segmented[data-index="2"] { --i: 2; }
+.segmented[data-index="3"] { --i: 3; }
+.segmented[data-index="4"] { --i: 4; }
+
 .segmented--block {
-    display: flex;
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
     margin-bottom: var(--space-4);
 }
 
-.segmented--block .segmented__option { flex: 1; }
+.segmented--block .segmented__option {
+    min-width: 0;
+    padding: 0 var(--space-2);
+}
 
 .segmented__option {
     min-height: var(--tap);
@@ -1028,27 +1106,32 @@ button.list-row:hover { background: var(--wash); }
     font: inherit;
     font-weight: 500;
     cursor: pointer;
-    transition: background var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+    transition: color var(--dur) var(--ease);
 }
 
 .segmented__option:hover { color: var(--ink); }
 
 .segmented__option[aria-checked="true"] {
-    background: var(--sheet-raised);
     color: var(--ink);
     font-weight: 600;
-    box-shadow: var(--shadow);
 }
 
-/* Record and category types: the selected one takes its color (text on a tint, like tags) */
-.segmented__option[aria-checked="true"]:is([data-value="Expense"], [data-value="Income"], [data-value="Transfer"]) {
-    background: color-mix(in srgb, var(--type-color) 16%, var(--sheet-raised));
+/* Record and category types: the selected one's text takes its color */
+.segmented__option[aria-checked="true"]:is([data-value="Expense"], [data-value="Income"], [data-value="Refund"], [data-value="Transfer"]) {
     color: var(--type-color);
 }
 
 .segmented__option[data-value="Expense"] { --type-color: var(--tag-red); }
 .segmented__option[data-value="Income"] { --type-color: var(--tag-green); }
+.segmented__option[data-value="Refund"] { --type-color: var(--tag-amber); }
 .segmented__option[data-value="Transfer"] { --type-color: var(--tag-blue); }
+
+.record-form__refund {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    margin: 0 0 var(--space-2);
+}
 
 /* Chips */
 .chip-group {
@@ -1167,7 +1250,15 @@ button.list-row:hover { background: var(--wash); }
 .record-form__swap { margin-bottom: 2px; color: var(--ink-muted); }
 
 /* Category picker sheet: search on top, all categories below */
-.category-picker { margin-top: var(--space-3); }
+.category-picker { margin-top: calc(-1 * var(--space-1)); }
+
+/* The search stays on top while the list scrolls. */
+.category-search {
+    position: sticky;
+    top: calc(-1 * var(--space-2));
+    z-index: 1;
+    box-shadow: 0 calc(-1 * var(--space-2)) 0 var(--space-2) var(--sheet-raised);
+}
 .category-picker button[aria-pressed="true"] { font-weight: 600; }
 
 .record-form__fx {
@@ -1194,6 +1285,38 @@ button.list-row:hover { background: var(--wash); }
 }
 
 /* Records */
+.records-loading { animation: fade-in var(--dur) ease-out 120ms both; }
+
+.records-loading__day {
+    width: 9rem;
+    margin: var(--space-2) var(--space-1) var(--space-3);
+}
+
+.records-loading__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 3.75rem;
+    padding: var(--space-3) var(--space-4);
+}
+
+.records-loading__avatar {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-pill);
+}
+
+.records-loading__text {
+    display: grid;
+    flex: 1;
+    gap: var(--space-2);
+}
+
+.records-loading__text .skeleton:first-child { width: 60%; }
+.records-loading__text .skeleton:last-child { width: 40%; height: 0.75em; }
+.records-loading__amount { width: 5rem; }
+
 .records-toolbar {
     display: grid;
     gap: var(--space-3);
@@ -1208,10 +1331,26 @@ button.list-row:hover { background: var(--wash); }
 
 .month-switcher__label {
     flex: 1;
+    min-width: 0;
     font-family: var(--font-display);
     font-size: var(--text-l);
     font-weight: 600;
     text-align: center;
+    white-space: nowrap;
+}
+
+/* Phones: header buttons show only their icons (the label stays for screen readers), the month fits one line. */
+@media (max-width: 30rem) {
+    .month-switcher__label { font-size: var(--text-m); }
+
+    .page-header__actions .btn__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
 }
 
 .search-field {
@@ -1302,6 +1441,14 @@ button.list-row:hover { background: var(--wash); }
     gap: var(--space-3);
 }
 
+/* Today stands out, so planned rows above it don't hide where today starts. */
+.record-day__header--today { color: var(--ink); }
+
+.record-day__today {
+    margin-right: var(--space-1);
+    padding-inline: var(--space-2);
+}
+
 /* Round badge with a category emoji or initial (records, templates, categories) */
 .avatar {
     display: grid;
@@ -1337,8 +1484,13 @@ button.list-row:hover { background: var(--wash); }
     min-width: 0;
     min-height: 3.75rem;
     padding: var(--space-3) var(--space-2) var(--space-3) var(--space-4);
+    border: 0;
+    background: none;
     color: inherit;
+    font: inherit;
+    text-align: left;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .record-row__text {
@@ -1347,11 +1499,15 @@ button.list-row:hover { background: var(--wash); }
     min-width: 0;
 }
 
+/* Up to two lines, so names stay readable on phones; the details sheet shows everything. */
 .record-row__title {
+    display: -webkit-box;
     overflow: hidden;
     font-weight: 500;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
 }
 
 /* Line 2 is one run of text, so a narrow row cuts the tags at the end, not the category and account. */
@@ -1386,6 +1542,11 @@ button.list-row:hover { background: var(--wash); }
 .tag-color--blue { --tag: var(--tag-blue); }
 .tag-color--violet { --tag: var(--tag-violet); }
 .tag-color--pink { --tag: var(--tag-pink); }
+.tag-color--lime { --tag: var(--tag-lime); }
+.tag-color--cyan { --tag: var(--tag-cyan); }
+.tag-color--indigo { --tag: var(--tag-indigo); }
+.tag-color--brown { --tag: var(--tag-brown); }
+.tag-color--slate { --tag: var(--tag-slate); }
 
 .chip[class*="tag-color--"] {
     border-color: color-mix(in srgb, var(--tag) 45%, var(--rule));
@@ -1453,7 +1614,6 @@ button.list-row:hover { background: var(--wash); }
     gap: var(--space-1);
 }
 
-.record-row__menu { flex: none; color: var(--ink-muted); }
 
 /* Pending and planned records: accent edge, status chip with icon, muted amount until completed */
 .record-row--pending { box-shadow: inset 3px 0 0 var(--attention); }
@@ -1466,7 +1626,47 @@ button.list-row:hover { background: var(--wash); }
 .record-status .icon { width: 0.9em; height: 0.9em; }
 .record-row--pending .record-status { color: var(--attention); }
 
-.record-row__confirm { flex: none; color: var(--attention); }
+.record-row__confirm { flex: none; margin-right: var(--space-1); color: var(--attention); }
+
+/* Record details sheet: amount, a label/value list, then the actions */
+.record-details {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.record-details__amount {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-size: var(--text-xl);
+}
+
+.record-details__amount .muted { font-size: var(--text-s); }
+
+.record-details__list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+}
+
+.record-details__list > div { display: contents; }
+.record-details__list dt { color: var(--ink-muted); font-size: var(--text-s); line-height: 1.5rem; }
+.record-details__list dd { margin: 0; overflow-wrap: anywhere; }
+
+.record-details__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+}
+
+.record-details__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.record-details__actions .btn { flex: 1; }
 
 .section-header__actions {
     display: flex;
@@ -1519,10 +1719,14 @@ button.list-row:hover { background: var(--wash); }
     color: var(--ink-muted);
 }
 
+.stat { container-type: inline-size; }
+
+/* Same fit as the account cards. */
 .stat .amount {
     font-family: var(--font-display);
-    font-size: var(--text-l);
+    font-size: clamp(0.875rem, 11.5cqi, var(--text-l));
     font-weight: 600;
+    white-space: normal;
 }
 
 /* Members and invitations */
@@ -1831,27 +2035,56 @@ button.list-row:hover { background: var(--wash); }
 
 .avatar--selected .icon { color: var(--paper); }
 
+/* Phones: count and sums with a clear button on top, the actions below; one row on wider screens. */
 .selection-bar {
     position: fixed;
     z-index: 20;
     left: 50%;
     bottom: calc(var(--nav-h) + var(--space-4) + env(safe-area-inset-bottom));
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
     gap: var(--space-2);
     width: min(calc(100% - 2 * var(--space-4)), 40rem);
-    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-2) var(--space-3) var(--space-3);
     border: 1px solid var(--rule);
     border-radius: var(--radius-l);
     background: var(--sheet);
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
-    transform: translateX(-50%);
+    /* translate, not transform: the entrance animation animates transform. */
+    translate: -50% 0;
 }
 
 .selection-bar__info {
     display: grid;
-    flex: 1;
     min-width: 0;
+}
+
+.selection-bar__clear { grid-row: 1; grid-column: 2; }
+
+.selection-bar__actions {
+    display: flex;
+    grid-column: 1 / -1;
+    gap: var(--space-2);
+}
+
+.selection-bar__actions .btn {
+    flex: 1 1 auto;
+    padding-inline: var(--space-2);
+    white-space: nowrap;
+}
+
+.app-main:has(.selection-bar) { padding-bottom: calc(var(--nav-h) + 10rem + env(safe-area-inset-bottom)); }
+
+@media (min-width: 48rem) {
+    .selection-bar {
+        grid-template-columns: 1fr auto auto;
+        padding-bottom: var(--space-2);
+    }
+
+    .selection-bar__actions { grid-row: 1; grid-column: 2; }
+    .selection-bar__clear { grid-column: 3; }
+    .selection-bar__actions .btn { flex: none; }
 }
 
 .selection-bar__sums {
@@ -2052,6 +2285,22 @@ button.list-row:hover { background: var(--wash); }
 }
 
 .stats-swatch--vivid { background: var(--vivid); }
+
+/* Accent picker in More: each swatch shows its light and dark shade. */
+.accent-swatch {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+
+.accent-swatch--terracotta { background: linear-gradient(135deg, #d9481f 50%, #ff7a50 50%); }
+.accent-swatch--ochre { background: linear-gradient(135deg, #9c6210 50%, #f2b84b 50%); }
+.accent-swatch--ink { background: linear-gradient(135deg, #2c4a9e 50%, #8ea8ff 50%); }
+.accent-swatch--green { background: linear-gradient(135deg, #1f6b4f 50%, #6fcf9f 50%); }
+.accent-swatch--plum { background: linear-gradient(135deg, #8b2f5c 50%, #f08bb8 50%); }
+.accent-picker button[aria-pressed="true"] { font-weight: 600; }
 .stats-swatch--blue { background: var(--tag-blue); }
 .stats-swatch--green { background: var(--tag-green); }
 .stats-swatch--amber { background: var(--tag-amber); }
@@ -2241,4 +2490,74 @@ button.list-row:hover { background: var(--wash); }
 .page-header__actions {
     display: flex;
     gap: var(--space-2);
+}
+
+/* Investment account value (ValuationSheet) */
+.valuation-summary {
+    display: grid;
+    gap: var(--space-1);
+    margin-bottom: var(--space-4);
+}
+
+.valuation-summary__facts {
+    display: flex;
+    gap: var(--space-5);
+    margin: var(--space-2) 0 0;
+}
+
+.valuation-summary__facts dt {
+    font-size: var(--text-s);
+    color: var(--ink-muted);
+}
+
+.valuation-summary__facts dd { margin: 0; }
+
+/* Wallet switcher rows with a menu button; Send money form */
+.wallet-row {
+    display: flex;
+    align-items: center;
+}
+
+.wallet-row > .list-row {
+    flex: 1;
+    min-width: 0;
+}
+
+.send-money__effect {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    margin: 0 0 var(--space-4);
+}
+
+.send-money__side {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-l);
+}
+
+.send-money__side legend {
+    padding: 0 var(--space-1);
+    font-weight: 600;
+}
+
+.avatar--send {
+    background: color-mix(in srgb, var(--tag-blue) 16%, var(--sheet-raised));
+    color: var(--tag-blue);
+}
+
+.send-rules .list-row { border-left: 3px solid var(--tag-blue); }
+
+.send-rules__amount {
+    display: grid;
+    justify-items: end;
+    gap: var(--space-1);
+}
+
+.record-row__pair {
+    color: var(--tag-blue);
+    font-weight: 500;
 }

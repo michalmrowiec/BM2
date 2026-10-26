@@ -34,8 +34,42 @@ else if (_rules.Count == 0)
 }
 else
 {
+    var sends = _rules.Where(r => r.Record.Pair is not null).ToList();
+    if (sends.Count > 0)
+    {
+        @* "Send money" rules: each occurrence waits to be confirmed, then adds the income in the other wallet. *@
+        <h2 class="section-title">Sent to other wallets</h2>
+        <ul class="list stagger send-rules">
+            @foreach (var rule in sends)
+            {
+                var pair = rule.Record.Pair!;
+                var label = Label(rule);
+                <li class="template-row" @key="rule.Id">
+                    <ListRow Title="@($"To {WalletName(pair.WalletId)}{(rule.Record.Name is { } name ? $" · {name}" : null)}")"
+                             Subtitle="@($"{Wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name} · {Subtitle(rule)}")" OnClick="() => _menuFor = rule">
+                        <Leading><span class="avatar avatar--send" aria-hidden="true"><Icon Name="transfer" /></span></Leading>
+                        <Trailing>
+                            <span class="send-rules__amount">
+                                <Amount Value="rule.Record.Amount" Currency="@rule.Record.Currency" Sign="AmountSign.Minus" />
+                                <span class="tag record-status"><Icon Name="clock" />Confirm each</span>
+                            </span>
+                        </Trailing>
+                    </ListRow>
+                    <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {label}")"
+                            @onclick="() => _menuFor = rule">
+                        <Icon Name="dots" />
+                    </button>
+                </li>
+            }
+        </ul>
+        if (sends.Count < _rules.Count)
+        {
+            <h2 class="section-title">In this wallet</h2>
+        }
+    }
+
     <ul class="list stagger">
-        @foreach (var rule in _rules)
+        @foreach (var rule in _rules.Where(r => r.Record.Pair is null))
         {
             var label = Label(rule);
             <li class="template-row" @key="rule.Id" @oncontextmenu="() => _menuFor = rule" @oncontextmenu:preventDefault="true">
@@ -168,6 +202,8 @@ else
 
     private string Label(RecurringRuleItem rule) =>
         rule.Record.Name ?? Wallet!.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? rule.Record.Type.ToString();
+
+    private string WalletName(Guid walletId) => WalletState.Wallets.FirstOrDefault(w => w.Id == walletId)?.Name ?? "another wallet";
 
     private static string Subtitle(RecurringRuleItem rule)
     {

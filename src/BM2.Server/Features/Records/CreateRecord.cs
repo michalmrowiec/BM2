@@ -22,6 +22,11 @@ internal static class CreateRecord
             return denied.ToProblem();
         }
 
+        if (request.Pair is { } pair && await RecordPairs.CheckAsync(db, currentUser.UserId, current.Id, pair, ct) is { } pairError)
+        {
+            return pairError.ToProblem();
+        }
+
         var created = Record.Create(draft, context, currentUser.UserId, time.GetUtcNow());
         if (!created.IsSuccess)
         {
@@ -34,6 +39,7 @@ internal static class CreateRecord
         }
 
         db.Records.Add(created.Value);
+        await RecordPairs.SendAsync(db, currentUser.UserId, current.Id, created.Value, time.GetUtcNow(), ct);
         await db.SaveChangesAsync(ct);
 
         var item = await GetRecord.FindAsync(db, current, created.Value.Id, ct);

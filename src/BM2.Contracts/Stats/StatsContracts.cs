@@ -53,7 +53,8 @@ public sealed record CategoryTotal(Guid? CategoryId, RecordType Type, decimal To
 public sealed record CategoryTotals(string Currency, IReadOnlyList<CategoryTotal> Items);
 
 /// <param name="Month">First day of the month.</param>
-public sealed record MonthTotal(DateOnly Month, decimal Income, decimal Expense);
+/// <summary>Invested: transfers into investment accounts minus transfers out of them.</summary>
+public sealed record MonthTotal(DateOnly Month, decimal Income, decimal Expense, decimal Invested = 0);
 
 /// <summary>Every month of the range, oldest first, including empty ones.</summary>
 public sealed record MonthlyTotals(string Currency, IReadOnlyList<MonthTotal> Items);

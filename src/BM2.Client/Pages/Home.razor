@@ -1,4 +1,6 @@
 ﻿@page "/"
+@using BM2.Contracts.Accounts
+@using BM2.Client.Components.Accounts
 @using BM2.Client.Components.Budgets
 @using BM2.Client.Components.Records
 @using BM2.Contracts.Budgets
@@ -35,18 +37,32 @@
         }
         else if (WalletState.Current is { } wallet)
         {
-            <p class="eyebrow">@DateTime.Now.ToString("dddd, d MMMM")</p>
             <h1 class="page-title">@wallet.Name</h1>
 
-            var accounts = wallet.Accounts.Where(a => !a.IsArchived).ToList();
-            if (accounts.Count > 0)
+            var active = wallet.Accounts.Where(a => !a.IsArchived).ToList();
+            var accounts = active.Where(a => a.Kind == AccountKind.Cash).ToList();
+            var investments = active.Where(a => a.Kind == AccountKind.Investment).ToList();
+            if (active.Count > 0)
             {
                 <section class="balance" aria-label="Total balance">
-                    @foreach (var total in accounts.GroupBy(a => a.Currency)
-                                  .Select(g => (Currency: g.Key, Sum: g.Sum(a => a.Balance), WithPlanned: g.Sum(a => a.WithPlanned))))
+                    @* Whole wallet: cash balances plus investment values; the forecast stays cash only. *@
+                    @foreach (var total in active.GroupBy(a => a.Currency).Select(g => (
+                                  Currency: g.Key,
+                                  Cash: g.Where(a => a.Kind == AccountKind.Cash).Sum(a => a.Balance),
+                                  Invested: g.Where(a => a.Kind == AccountKind.Investment).Sum(a => a.Valuation ?? a.Balance),
+                                  HasInvestments: g.Any(a => a.Kind == AccountKind.Investment),
+                                  Sum: g.Sum(a => a.Valuation ?? a.Balance),
+                                  WithPlanned: g.Sum(a => a.Kind == AccountKind.Cash ? a.WithPlanned : a.Valuation ?? a.Balance))))
                     {
                         <Amount Value="total.Sum" Currency="@total.Currency" Large="true"
                                 Sign="@(total.Sum < 0 ? AmountSign.Minus : AmountSign.None)" />
+                        @if (total.HasInvestments)
+                        {
+                            <span class="balance__planned balance__split">
+                                <span>Cash <Amount Value="total.Cash" Currency="@total.Currency" Sign="@(total.Cash < 0 ? AmountSign.Minus : AmountSign.None)" /></span>
+                                <span>Investments <Amount Value="total.Invested" Currency="@total.Currency" Sign="@(total.Invested < 0 ? AmountSign.Minus : AmountSign.None)" /></span>
+                            </span>
+                        }
                         @if (total.WithPlanned != total.Sum)
                         {
                             <span class="balance__planned">
@@ -69,6 +85,29 @@
                         </li>
                     }
                 </ul>
+
+                @if (investments.Count > 0)
+                {
+                    <h2 class="section-title">Investments</h2>
+                    <ul class="account-cards">
+                        @foreach (var account in investments)
+                        {
+                            var value = account.Valuation ?? account.Balance;
+                            <li>
+                                <button type="button" class="account-card" @onclick="() => _valuing = account.Id">
+                                    <span class="account-card__name">@account.Name</span>
+                                    <Amount Value="value" Currency="@account.Currency" Sign="@(value < 0 ? AmountSign.Minus : AmountSign.None)" />
+                                    <span class="account-card__meta">
+                                        Gain <Amount Value="Math.Abs(value - account.Balance)" Currency="@account.Currency"
+                                                     Sign="@(value < account.Balance ? AmountSign.Minus : AmountSign.Plus)" />
+                                    </span>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                    <ValuationSheet WalletId="wallet.Id" Account="@investments.FirstOrDefault(a => a.Id == _valuing)"
+                                    Open="_valuing is not null" OpenChanged="v => { if (!v) _valuing = null; }" OnChanged="WalletState.RefreshAsync" />
+                }
 
                 @if (_month?.Totals.Count > 0)
                 {
@@ -113,7 +152,15 @@
                 {
                     <div class="section-header">
                         <h2 class="section-title">Planned</h2>
-                        <a class="link" href="records?status=Planned&all=true">All</a>
+                        <span class="section-header__actions">
+                            @if (_planned.Count > 1)
+                            {
+                                <button type="button" class="btn btn-secondary btn-sm" disabled="@_busy" @onclick="() => _choiceAll = true">
+                                    <Icon Name="check" /> Confirm all
+                                </button>
+                            }
+                            <a class="link" href="records?status=Planned&all=true">All</a>
+                        </span>
                     </div>
                     @OpenRecords(_planned, wallet)
                 }
@@ -254,13 +301,20 @@
     <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
 </ConfirmDialog>
 
-<PlannedChoice Record="_choiceFor" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
+<PlannedChoice Open="_choiceFor is not null" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
                Chosen="s => ConfirmManyAsync([_choiceFor!], s)" />
 
+@* Confirm all for Planned: the records shown there, all to one status. *@
+<PlannedChoice Open="_choiceAll" Count="_planned.Count" Closed="() => _choiceAll = false"
+               Chosen="s => ConfirmManyAsync(_planned.ToList(), s)" />
+
 @code {
+    private Guid? _valuing;
+
     private bool _confirmAll;
     private IReadOnlyList<RecordItem> _planned = [];
     private RecordItem? _choiceFor;
+    private bool _choiceAll;
 
     // Pending and planned records with a one-tap ✓; planned ones ask completed or pending.
     private RenderFragment OpenRecords(IReadOnlyList<RecordItem> records, WalletSnapshot wallet) =>
@@ -376,6 +430,7 @@
     private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
     {
         _choiceFor = null;
+        _choiceAll = false;
         _confirmOne = null;
         _busy = true;
         var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records, status);

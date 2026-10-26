@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Domain.Records;
 using BM2.Server.Data;
@@ -25,7 +26,9 @@ internal static class RecordQueries
         r.TransferAmount,
         r.Name,
         r.Tags.Select(t => t.TagId).ToList(),
-        r.RecurringRuleId);
+        r.RecurringRuleId,
+        r.PairWalletId,
+        r.PairWalletId != null && r.PairId == null);
 
     /// <summary>Records touching an account the user can read (either side of a transfer).</summary>
     public static IQueryable<Record> Visible(this IQueryable<Record> records, IReadOnlyCollection<Guid> readableAccountIds) =>
@@ -67,9 +70,16 @@ internal static class RecordQueries
             query = query.Where(r => r.Tags.Any(t => t.TagId == tag));
         }
 
+        // Refunds (income in an expense category) match expenses, like in stats.
         if (filter.Type is { } type)
         {
-            query = query.Where(r => r.Type == type);
+            query = type switch
+            {
+                RecordType.Expense => query.Where(r => r.Type == RecordType.Expense
+                    || (r.Type == RecordType.Income && r.Category!.Type == CategoryType.Expense)),
+                RecordType.Income => query.Where(r => r.Type == RecordType.Income && r.Category!.Type != CategoryType.Expense),
+                _ => query.Where(r => r.Type == type),
+            };
         }
 
         if (filter.Status is { } status)
@@ -109,5 +119,6 @@ internal static class RecordQueries
         request.TransferAccountId,
         request.TransferAmount,
         request.Name,
-        request.TagIds);
+        request.TagIds,
+        request.Pair);
 }

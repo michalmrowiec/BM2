@@ -17,10 +17,10 @@
     <h1 class="page-title">Records</h1>
     <div class="page-header__actions">
         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _exportOpen = true">
-            <Icon Name="share" /> Export
+            <Icon Name="share" /><span class="btn__label">Export</span>
         </button>
         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _filtersOpen = true">
-            <Icon Name="filter" /> Filters
+            <Icon Name="filter" /><span class="btn__label">Filters</span>
             @if (ActiveFilters.Count > 0)
             {
                 <span class="badge" aria-label="@($"{ActiveFilters.Count} active")">@ActiveFilters.Count</span>
@@ -85,9 +85,19 @@
 }
 else if (_loading)
 {
-    <div aria-busy="true">
-        <span class="skeleton skeleton--line"></span>
-        <span class="skeleton skeleton--line"></span>
+    @* Placeholder rows shaped like the list, so the page doesn't jump when records arrive. *@
+    <div class="records-loading" aria-busy="true">
+        <span class="skeleton records-loading__day"></span>
+        <ul class="list">
+            @for (var i = 0; i < 6; i++)
+            {
+                <li class="records-loading__row">
+                    <span class="skeleton records-loading__avatar"></span>
+                    <span class="records-loading__text"><span class="skeleton"></span><span class="skeleton"></span></span>
+                    <span class="skeleton records-loading__amount"></span>
+                </li>
+            }
+        </ul>
         <span class="sr-only">Loading…</span>
     </div>
 }
@@ -108,7 +118,7 @@ else
     @if (_nextCursor is not null)
     {
         <div class="load-more" @ref="_sentinel">
-            <button type="button" class="btn btn-secondary" disabled="@_loadingMore" @onclick="LoadMoreAsync">Load more</button>
+            <button type="button" class="btn btn-secondary" disabled="@_loadingMore" @onclick="LoadMoreAsync">@(_loadingMore ? "Loading…" : "Load more")</button>
         </div>
     }
 }

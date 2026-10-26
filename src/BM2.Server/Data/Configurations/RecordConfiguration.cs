@@ -26,6 +26,7 @@ internal sealed class RecordConfiguration : IEntityTypeConfiguration<Record>
         builder.HasIndex(r => new { r.RecurringRuleId, r.OccurrenceDate }).IsUnique().HasFilter("[RecurringRuleId] IS NOT NULL");
 
         builder.HasIndex(r => new { r.AccountId, r.OccurredOn });
+        builder.HasIndex(r => r.PairId).HasFilter("[PairId] IS NOT NULL");
         builder.HasIndex(r => new { r.TransferAccountId, r.OccurredOn }).HasFilter("[TransferAccountId] IS NOT NULL");
     }
 }

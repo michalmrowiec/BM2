@@ -34,9 +34,11 @@ internal static class GetWallet
             .AsNoTracking()
             .Where(a => readable.Contains(a.Id))
             .OrderBy(a => a.IsArchived).ThenBy(a => a.Name)
-            .Select(a => new { a.Id, a.Name, a.Currency, a.OpeningBalance, a.IsArchived })
+            .Select(a => new { a.Id, a.Name, a.Currency, a.OpeningBalance, a.IsArchived, a.Kind })
             .ToListAsync(ct);
         var balances = await AccountBalances.GetAsync(db, readable, ct);
+        var investmentIds = accounts.Where(a => a.Kind == AccountKind.Investment).Select(a => a.Id).ToList();
+        var valuations = await AccountBalances.LatestValuationsAsync(db, investmentIds, ct);
         var categories = await db.Categories
             .AsNoTracking()
             .Where(c => c.WalletId == access.WalletId)
@@ -63,7 +65,8 @@ internal static class GetWallet
                 access.Can(WalletPermission.ManageMembers)),
             accounts
                 .Select(a => new AccountItem(
-                    a.Id, a.Name, a.Currency, a.OpeningBalance, balances[a.Id].Balance, balances[a.Id].WithPlanned, a.IsArchived, access.CanWriteAccount(a.Id)))
+                    a.Id, a.Name, a.Currency, a.OpeningBalance, balances[a.Id].Balance, balances[a.Id].WithPlanned, a.IsArchived, access.CanWriteAccount(a.Id),
+                    a.Kind, valuations.GetValueOrDefault(a.Id)?.Value, valuations.GetValueOrDefault(a.Id)?.ValuedOn))
                 .ToList(),
             categories,
             tags));

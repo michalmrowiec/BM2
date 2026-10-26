@@ -21,6 +21,10 @@
                 {
                     <th scope="col">Net</th>
                 }
+                @if (ShowInvested)
+                {
+                    <th scope="col">Invested</th>
+                }
             </tr>
         </thead>
         <tbody>
@@ -40,6 +44,10 @@
                     {
                         <td><Amount Value="month.Income - month.Expense" Currency="@Currency" /></td>
                     }
+                    @if (ShowInvested)
+                    {
+                        <td><Amount Value="month.Invested" Currency="@Currency" /></td>
+                    }
                 </tr>
             }
         </tbody>
@@ -53,4 +61,6 @@
 
     /// <summary>Show only this type's column.</summary>
     [Parameter] public RecordType? Only { get; set; }
+
+    private bool ShowInvested => Only is null && Items.Any(m => m.Invested != 0);
 }

@@ -1,3 +1,4 @@
+@using BM2.Contracts.Wallets
 @using BM2.Client.Components.Wallets
 @inherits WalletComponentBase
 
@@ -8,10 +9,32 @@
         <Icon Name="chevron-down" />
     </button>
 
-    <Sheet Open="_open" OpenChanged="OnOpenChanged" Title="@(_creating ? "New wallet" : "Wallets")">
+    <Sheet Open="_open" OpenChanged="OnOpenChanged" Title="@SheetTitle">
         @if (_creating)
         {
             <WalletForm OnSaved="OnCreatedAsync" />
+        }
+        else if (_sendTo is { } target)
+        {
+            <SendMoneyForm Source="current" Target="target" OnSent="OnSentAsync" />
+            <button type="button" class="btn btn-ghost btn-block" @onclick="() => _sendTo = null">Back to wallets</button>
+        }
+        else if (_menuFor is { } menuWallet)
+        {
+            <ul class="list">
+                <li>
+                    <ListRow Title="Send money" Subtitle="@($"An expense in {current.Name}, an income in {menuWallet.Name}")"
+                             OnClick="() => { _sendTo = menuWallet; _menuFor = null; }">
+                        <Leading><Icon Name="transfer" /></Leading>
+                    </ListRow>
+                </li>
+                <li>
+                    <ListRow Title="@($"Open {menuWallet.Name}")" OnClick="() => SelectAsync(menuWallet.Id)">
+                        <Leading><Icon Name="wallet" /></Leading>
+                    </ListRow>
+                </li>
+            </ul>
+            <button type="button" class="btn btn-ghost btn-block" @onclick="() => _menuFor = null">Back to wallets</button>
         }
         else
         {
@@ -19,7 +42,7 @@
                 @foreach (var wallet in WalletState.Wallets)
                 {
                     var isCurrent = wallet.Id == current.Id;
-                    <li aria-current="@(isCurrent ? "true" : null)">
+                    <li class="wallet-row" aria-current="@(isCurrent ? "true" : null)">
                         <ListRow Title="@wallet.Name" Subtitle="@($"{Options.RoleLabel(wallet.Role)} · {wallet.BaseCurrency}")"
                                  OnClick="() => SelectAsync(wallet.Id)">
                             <Leading><Icon Name="wallet" /></Leading>
@@ -31,6 +54,12 @@
                                 }
                             </Trailing>
                         </ListRow>
+                        @if (!isCurrent)
+                        {
+                            <button type="button" class="icon-button" aria-label="@($"More for {wallet.Name}")" @onclick="() => _menuFor = wallet">
+                                <Icon Name="dots" />
+                            </button>
+                        }
                     </li>
                 }
             </ul>
@@ -44,17 +73,34 @@
 @code {
     private bool _open;
     private bool _creating;
+    private WalletListItem? _menuFor;
+    private WalletListItem? _sendTo;
+
+    private string SheetTitle => _creating ? "New wallet"
+        : _sendTo is { } target ? $"Send money to {target.Name}"
+        : _menuFor?.Name ?? "Wallets";
 
     private void OnOpenChanged(bool open)
     {
         _open = open;
         _creating &= open;
+        if (!open)
+        {
+            _menuFor = _sendTo = null;
+        }
     }
 
     private async Task SelectAsync(Guid walletId)
     {
         _open = false;
         await WalletState.SelectAsync(walletId);
+    }
+
+    private async Task OnSentAsync()
+    {
+        _open = false;
+        _sendTo = null;
+        await WalletState.RefreshAsync();
     }
 
     private async Task OnCreatedAsync(Guid walletId)

@@ -41,6 +41,11 @@ namespace BM2.Server.Data.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
 
+                    b.Property<int>("Kind")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -80,6 +85,33 @@ namespace BM2.Server.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("AccountMembers");
+                });
+
+            modelBuilder.Entity("BM2.Domain.Accounts.AccountValuation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<DateOnly>("ValuedOn")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "ValuedOn")
+                        .IsUnique();
+
+                    b.ToTable("AccountValuations");
                 });
 
             modelBuilder.Entity("BM2.Domain.Budgets.Budget", b =>
@@ -234,6 +266,22 @@ namespace BM2.Server.Data.Migrations
                     b.Property<DateOnly?>("OccurrenceDate")
                         .HasColumnType("date");
 
+                    b.Property<Guid?>("PairAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PairAmount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid?>("PairCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PairId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PairWalletId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("RecurringRuleId")
                         .HasColumnType("uniqueidentifier");
 
@@ -256,6 +304,9 @@ namespace BM2.Server.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("PairId")
+                        .HasFilter("[PairId] IS NOT NULL");
 
                     b.HasIndex("AccountId", "OccurredOn");
 
@@ -347,6 +398,19 @@ namespace BM2.Server.Data.Migrations
 
                     b.Property<int>("NextIndex")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("PairAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PairAmount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<Guid?>("PairCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PairWalletId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -822,6 +886,15 @@ namespace BM2.Server.Data.Migrations
                     b.HasOne("BM2.Server.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BM2.Domain.Accounts.AccountValuation", b =>
+                {
+                    b.HasOne("BM2.Domain.Accounts.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

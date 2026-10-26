@@ -56,6 +56,21 @@ public sealed class Record
     /// <summary>The scheduled date of the occurrence; unique per rule, so catch-up never adds it twice.</summary>
     public DateOnly? OccurrenceDate { get; private set; }
 
+    /// <summary>Shared by the two records of a "Send money" pair, one in each wallet.</summary>
+    public Guid? PairId { get; private set; }
+
+    /// <summary>The other wallet of a "Send money" pair; with no <see cref="PairId"/> yet, the income is still to add.</summary>
+    public Guid? PairWalletId { get; private set; }
+
+    public Guid? PairAccountId { get; private set; }
+
+    public Guid? PairCategoryId { get; private set; }
+
+    /// <summary>The amount the other side receives, in its account's currency.</summary>
+    public decimal? PairAmount { get; private set; }
+
+    public bool HasPendingPair => PairWalletId is not null && PairId is null && PairAccountId is not null;
+
     public Account Account { get; private set; } = null!;
 
     public Account? TransferAccount { get; private set; }
@@ -74,8 +89,28 @@ public sealed class Record
         }
 
         record.Apply(draft, context);
+        if (draft.Pair is { } pair)
+        {
+            record.PairWalletId = pair.WalletId;
+            record.PairAccountId = pair.AccountId;
+            record.PairCategoryId = pair.CategoryId;
+            record.PairAmount = pair.Amount;
+        }
+
         return record;
     }
+
+    /// <summary>Links the two records of a pair; <paramref name="otherWalletId"/> is the wallet of the other one.</summary>
+    public void LinkPair(Guid pairId, Guid otherWalletId)
+    {
+        PairId = pairId;
+        PairWalletId = otherWalletId;
+    }
+
+    /// <summary>The record as a draft, to change a few fields of it.</summary>
+    public RecordDraft ToDraft() => new(
+        Type, Status, OccurredOn, AccountId, Amount, Currency, AccountAmount, CategoryId, TransferAccountId, TransferAmount, Name,
+        _tags.Select(t => t.TagId).ToList());
 
     public Result Update(RecordDraft draft, RecordContext context, DateTimeOffset now)
     {
@@ -108,6 +143,12 @@ public sealed class Record
         if (account.IsArchived && (isNew || account.Id != AccountId))
         {
             return Error.Validation(nameof(AccountId), "This account is archived.");
+        }
+
+        // The pair is set on create only; later drafts (edits, rule changes) leave it as it is.
+        if (draft.Pair is { } pair && isNew && (draft.Type != RecordType.Expense || pair.WalletId == context.WalletId))
+        {
+            return Error.Validation("Pair", "Only a new expense can send money to another wallet.");
         }
 
         var typeError = draft.Type == RecordType.Transfer
@@ -178,10 +219,10 @@ public sealed class Record
             return Error.NotFound();
         }
 
-        var expected = draft.Type == RecordType.Income ? CategoryType.Income : CategoryType.Expense;
-        if (category.Type != expected)
+        // Income with an expense category is a refund of that category.
+        if (draft.Type == RecordType.Expense && category.Type != CategoryType.Expense)
         {
-            return Error.Validation(nameof(CategoryId), $"Choose an {expected.ToString().ToLowerInvariant()} category.");
+            return Error.Validation(nameof(CategoryId), "Choose an expense category.");
         }
 
         return category.IsArchived && (isNew || category.Id != CategoryId)

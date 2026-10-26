@@ -45,7 +45,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   FluentAssertions (nowe wersje są komercyjne).
 - **Projekty** (`BM2.slnx`): `BM2.Domain` (czysty C#, z BM2 zna tylko Contracts), `BM2.Contracts` (DTO/requesty,
   bez referencji do BM2), `BM2.Server` (host: Minimal API, EF Core, Identity, strony konta SSR), `BM2.Client`
-  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`.
+  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`. Narzędzia jednorazowe w `tools/`
+  (`BM2.Import` – import z MoneyManager, referencja do `BM2.Server`, `AppDbContext` budowany przez DI jak w serwerze).
 - **Serwer:** foldery per funkcja `Features/<Obszar>/<Akcja>.cs` z `Map<Obszar>Endpoints(this RouteGroupBuilder)`;
   bez MediatR i repozytoriów (endpoint używa `AppDbContext`); `TypedResults`; błędy API jako ProblemDetails;
   bieżący użytkownik przez `ICurrentUser`; wszystko pod `/api` wymaga logowania (wyjątki jawnie `AllowAnonymous()`).
@@ -67,6 +68,24 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Cykliczne:** `RecurringRule` pamięta `NextIndex`/`NextDate`; `RecurringCatchUp` (wołany w `GetWallet`) dodaje
   wystąpienia do dzisiaj, przyszłych rekordów nie tworzymy. Idempotencja przez unikalny indeks
   (`RecurringRuleId`, `OccurrenceDate`) – konflikt oznacza „już zrobione”.
+- **Zwroty:** przychód z kategorią wydatku = zwrot tej kategorii (domena dopuszcza, wydatek z kategorią przychodu
+  nie). Statystyki, budżety, średnia w prognozie, podsumowanie listy i filtr `type` liczą go jako ujemny wydatek
+  (filtr `Expense` obejmuje zwroty, `Income` ich nie obejmuje); wydatek netto może wyjść ujemny. Saldo konta bez zmian.
+  UI: w formularzu osobny typ „Refund” (tylko po stronie klienta; kategorie wydatków, zapis jako Income), etykieta
+  „Refund” na liście rekordów; wykres kołowy kategorii pomija wartości ujemne (lista pokazuje prawdziwe).
+- **Inwestycje:** `Account.Kind` (`Cash`/`Investment`). Konto inwestycyjne: `Balance` = wpłacone netto (z rekordów),
+  wartość = ostatnia `AccountValuation` (data, wartość; jedna na dzień, PUT nadpisuje), zysk = wartość − wpłacone.
+  Duża liczba na Home = cały portfel (gotówka + wartości inwestycji, rozbicie „Cash · Investments”); prognoza tylko
+  gotówka. `ValuationSheet` (Home i Accounts): szybka wycena na dziś, wykres wartość vs wpłacone (`PaidIn` w historii). `stats/monthly` ma `Invested` =
+  transfery gotówka → inwestycje minus z powrotem. Wyceny: odczyt z dostępem do konta, zapis `CanWriteAccount`.
+- **Send money (między portfelami):** nie transfer, tylko para rekordów: wydatek tu + przychód w innym portfelu, wspólny
+  `PairId` (każdy ma `PairWalletId` = drugi portfel). `SaveRecordRequest.Pair` (`RecordPair`: portfel, konto, kategoria
+  przychodu, kwota w walucie konta docelowego) tylko przy tworzeniu wydatku; druga strona powstaje, gdy wydatek jest
+  `Completed` (`RecordPairs.SendAsync`, dostęp do drugiego portfela sprawdzany w tej chwili przez `WalletAccessLoader`;
+  bez dostępu rekord zostaje z oczekującą parą). Reguła z parą jest zawsze `Confirm`, a wystąpienia Pending wysyłają
+  przy potwierdzeniu. `UpdatePair` (edycja) przenosi datę, nazwę i kwotę (przy tej samej walucie); `DELETE ?pair=true`
+  usuwa obie strony. UI: menu ⋯ przy portfelu w `WalletSwitcher` → `SendMoneyForm`; sekcja „Sent to other wallets”
+  w Recurring; znaczek „↔ / → portfel” na liście rekordów.
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne
   waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Home ładuje wszystko jednym `GET dashboard`.
@@ -140,7 +159,10 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   markup SVG, licencja w `BM2.Client/wwwroot/icons/LICENSE-lucide.txt`; nowe ikony dopisuj z tej samej wersji.
   Kwoty zawsze ze znakiem `+`/`−`.
 - Motyw jasny/ciemny/systemowy obsługuje `wwwroot/js/theme.js` (przycisk z atrybutem `data-theme-toggle`). Bez skryptów
-  inline (przyszły CSP).
+  inline (przyszły CSP). Tam też preferencje z More (`window.bm2Prefs`, `localStorage`, atrybuty na `<html>`): font kwot
+  (token `--font-num`, domyślnie Fraunces; `data-amounts="plain"` = Inter, duże sumy `.amount--large` zostają we
+  Fraunces) i kolor akcentu (`data-accent`: ochre/ink/green/plum, brak = terakota; wartości `--accent*` na końcu
+  `tokens.css`, z nich `--vivid`, `--link`, `--focus`).
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
 - Wszystkie teksty UI w zasobach (EN domyślnie, PL). Daty i kwoty formatowane wg kultury użytkownika.

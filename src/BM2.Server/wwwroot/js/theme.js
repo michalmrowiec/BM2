@@ -1,4 +1,4 @@
-// Applies the saved theme before first paint and handles [data-theme-toggle] buttons (system → light → dark).
+// Applies the saved theme, amount font and accent before first paint and handles [data-theme-toggle] buttons (system → light → dark).
 (() => {
     const storageKey = "bm2-theme";
     const modes = ["system", "light", "dark"];
@@ -29,6 +29,30 @@
 
     apply(read());
 
+    // Preferences set in More, as data-* on <html>: amounts ("plain" = UI font) and accent (none = terracotta).
+    const prefs = ["amounts", "accent"];
+    const readPref = name => {
+        try { return localStorage.getItem(`bm2-${name}`); } catch { return null; }
+    };
+    const applyPref = (name, value) => {
+        if (value) root.dataset[name] = value;
+        else delete root.dataset[name];
+    };
+    const applyPrefs = () => prefs.forEach(name => applyPref(name, readPref(name)));
+    applyPrefs();
+
+    window.bm2Prefs = {
+        get: name => (prefs.includes(name) ? root.dataset[name] ?? null : null),
+        set: (name, value) => {
+            if (!prefs.includes(name)) return;
+            try {
+                if (value) localStorage.setItem(`bm2-${name}`, value);
+                else localStorage.removeItem(`bm2-${name}`);
+            } catch { /* storage unavailable: the choice lasts for this page only */ }
+            applyPref(name, value);
+        },
+    };
+
     systemDark.addEventListener("change", () => apply(root.dataset.themeMode));
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -55,6 +79,9 @@
 
     // Enhanced navigation can patch <html> attributes; restore the theme afterwards.
     document.addEventListener("DOMContentLoaded", () => {
-        window.Blazor?.addEventListener?.("enhancedload", () => apply(read()));
+        window.Blazor?.addEventListener?.("enhancedload", () => {
+            apply(read());
+            applyPrefs();
+        });
     });
 })();

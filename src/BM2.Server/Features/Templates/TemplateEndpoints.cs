@@ -46,8 +46,10 @@ internal static class TemplateRules
 
         if (!isTransfer && request.CategoryId is { } categoryId)
         {
-            var type = request.Type == RecordType.Income ? CategoryType.Income : CategoryType.Expense;
-            if (!await db.Categories.AnyAsync(c => c.Id == categoryId && c.WalletId == access.WalletId && c.Type == type, ct))
+            // Income may use an expense category (refund).
+            var anyType = request.Type == RecordType.Income;
+            if (!await db.Categories.AnyAsync(
+                    c => c.Id == categoryId && c.WalletId == access.WalletId && (anyType || c.Type == CategoryType.Expense), ct))
             {
                 return Error.NotFound();
             }

@@ -5,7 +5,11 @@ using BM2.Contracts.Tags;
 namespace BM2.Contracts.Wallets;
 
 /// <param name="Role">Null when the user only has shared accounts in this wallet.</param>
-public sealed record WalletListItem(Guid Id, string Name, string BaseCurrency, MemberRole? Role);
+/// <param name="Totals">Per currency: cash balances plus investment values of the active accounts the user can read.</param>
+public sealed record WalletListItem(
+    Guid Id, string Name, string BaseCurrency, MemberRole? Role, IReadOnlyList<WalletTotal>? Totals = null);
+
+public sealed record WalletTotal(string Currency, decimal Amount);
 
 public sealed record WalletPermissions(
     bool ManageWallet, bool ManageAccounts, bool ManageCategories, bool ViewMembers, bool ManageMembers);

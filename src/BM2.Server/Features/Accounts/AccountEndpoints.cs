@@ -8,6 +8,7 @@ public static class AccountEndpoints
         CreateAccount.Map(accounts);
         UpdateAccount.Map(accounts);
         DeleteAccount.Map(accounts);
+        AccountValuations.Map(accounts);
         return wallet;
     }
 }
