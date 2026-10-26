@@ -8,13 +8,16 @@
         <label class="field__label" for="repeat-interval">Every</label>
         <input id="repeat-interval" class="field__control repeat-fields__interval" type="number" inputmode="numeric" min="1" max="366"
                value="@Model.Interval" @onchange="e => Model.Interval = ParseInt(e.Value, 1)" />
-        <select class="field__control" aria-label="Repeat unit" value="@Model.Frequency"
-                @onchange="e => Model.Frequency = Enum.Parse<RecurrenceFrequency>(e.Value!.ToString()!)">
-            @foreach (var (value, label) in Units)
-            {
-                <option value="@value">@(Model.Interval == 1 ? label : label + "s")</option>
-            }
-        </select>
+        <div class="field__select">
+            <select class="field__control" aria-label="Repeat unit" value="@Model.Frequency"
+                    @onchange="e => Model.Frequency = Enum.Parse<RecurrenceFrequency>(e.Value!.ToString()!)">
+                @foreach (var (value, label) in Units)
+                {
+                    <option value="@value">@(Model.Interval == 1 ? label : label + "s")</option>
+                }
+            </select>
+            <Icon Name="chevron-down" Class="field__select-icon" />
+        </div>
     </div>
 
     <div class="field">

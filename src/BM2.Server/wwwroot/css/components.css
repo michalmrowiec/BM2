@@ -1026,21 +1026,53 @@ button.account-card {
 }
 
 /* Segmented control (radio group) */
+/* Options share one width, so the selected pill (::before) can slide between them. */
 .segmented {
-    display: inline-flex;
+    --n: 1;
+    --i: 0;
+    position: relative;
+    isolation: isolate;
+    display: inline-grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
     gap: var(--space-1);
     padding: var(--space-1);
     border-radius: var(--radius-pill);
     background: var(--wash);
 }
 
+.segmented::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: var(--space-1);
+    width: calc((100% - (var(--n) + 1) * var(--space-1)) / var(--n));
+    border-radius: var(--radius-pill);
+    background: var(--sheet-raised);
+    box-shadow: var(--shadow);
+    translate: calc(var(--i) * (100% + var(--space-1))) 0;
+    transition: translate 300ms var(--ease-out);
+}
+
+.segmented[data-index="-1"]::before { display: none; }
+.segmented[data-count="2"] { --n: 2; }
+.segmented[data-count="3"] { --n: 3; }
+.segmented[data-count="4"] { --n: 4; }
+.segmented[data-count="5"] { --n: 5; }
+.segmented[data-index="1"] { --i: 1; }
+.segmented[data-index="2"] { --i: 2; }
+.segmented[data-index="3"] { --i: 3; }
+.segmented[data-index="4"] { --i: 4; }
+
 .segmented--block {
-    display: flex;
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
     margin-bottom: var(--space-4);
 }
 
 .segmented--block .segmented__option {
-    flex: 1 1 0;
     min-width: 0;
     padding: 0 var(--space-2);
 }
@@ -1055,21 +1087,18 @@ button.account-card {
     font: inherit;
     font-weight: 500;
     cursor: pointer;
-    transition: background var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+    transition: color var(--dur) var(--ease);
 }
 
 .segmented__option:hover { color: var(--ink); }
 
 .segmented__option[aria-checked="true"] {
-    background: var(--sheet-raised);
     color: var(--ink);
     font-weight: 600;
-    box-shadow: var(--shadow);
 }
 
-/* Record and category types: the selected one takes its color (text on a tint, like tags) */
+/* Record and category types: the selected one's text takes its color */
 .segmented__option[aria-checked="true"]:is([data-value="Expense"], [data-value="Income"], [data-value="Refund"], [data-value="Transfer"]) {
-    background: color-mix(in srgb, var(--type-color) 16%, var(--sheet-raised));
     color: var(--type-color);
 }
 
@@ -1391,6 +1420,14 @@ button.account-card {
 .record-day__total {
     display: flex;
     gap: var(--space-3);
+}
+
+/* Today stands out, so planned rows above it don't hide where today starts. */
+.record-day__header--today { color: var(--ink); }
+
+.record-day__today {
+    margin-right: var(--space-1);
+    padding-inline: var(--space-2);
 }
 
 /* Round badge with a category emoji or initial (records, templates, categories) */

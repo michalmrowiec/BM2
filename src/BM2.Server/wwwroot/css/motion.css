@@ -278,3 +278,37 @@ html.theme-switching::view-transition-new(root) {
 @keyframes chip-pop {
     from { transform: scale(0.92); }
 }
+
+/* Repeat settings and the new tag editor fade in where they open; the New tag chip pops back after the editor. */
+.check + .repeat-fields,
+.new-tag {
+    animation: swap-in 280ms var(--ease-out) both;
+}
+
+/* Where height can animate to auto, Repeat unfolds and pushes the fields below down smoothly. */
+@supports (interpolate-size: allow-keywords) {
+    .check + .repeat-fields {
+        interpolate-size: allow-keywords;
+        animation: unfold 320ms var(--ease-out);
+    }
+}
+
+@keyframes unfold {
+    from {
+        overflow: clip;
+        height: 0;
+        padding-block: 0;
+        opacity: 0;
+    }
+
+    to { overflow: clip; }
+}
+
+.chip--back { animation: chip-back 300ms var(--ease-spring); }
+
+@keyframes chip-back {
+    from {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+}

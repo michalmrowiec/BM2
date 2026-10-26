@@ -10,9 +10,16 @@
 
 @foreach (var day in RecordGrouping.ByDay(Items, CurrencyOf))
 {
+    var isToday = day.Date == DateOnly.FromDateTime(DateTime.Now);
     <section class="record-day" @key="day.Date">
-        <h2 class="record-day__header">
-            <span>@day.Date.ToString("dddd, d MMMM", CultureInfo.CurrentCulture)</span>
+        <h2 class="record-day__header @(isToday ? "record-day__header--today" : null)">
+            <span>
+                @if (isToday)
+                {
+                    <text><span class="badge record-day__today">Today</span>@(" ")</text>
+                }
+                @day.Date.ToString("dddd, d MMMM", CultureInfo.CurrentCulture)
+            </span>
             <span class="record-day__total">
                 @foreach (var total in day.Totals)
                 {

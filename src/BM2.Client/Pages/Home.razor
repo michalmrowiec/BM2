@@ -37,7 +37,6 @@
         }
         else if (WalletState.Current is { } wallet)
         {
-            <p class="eyebrow">@DateTime.Now.ToString("dddd, d MMMM")</p>
             <h1 class="page-title">@wallet.Name</h1>
 
             var active = wallet.Accounts.Where(a => !a.IsArchived).ToList();

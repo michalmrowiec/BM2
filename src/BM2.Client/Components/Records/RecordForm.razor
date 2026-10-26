@@ -195,7 +195,7 @@
                 {
                     @if (_newTag is null)
                     {
-                        <button type="button" class="chip chip--sm chip--add" @onclick="OpenNewTag">
+                        <button type="button" class="chip chip--sm chip--add @(_tagEditorUsed ? "chip--back" : null)" @onclick="OpenNewTag">
                             <Icon Name="plus" /> New tag
                         </button>
                     }
@@ -314,6 +314,7 @@
     private bool _nameFocused;
     private string? _newTag;
     private string? _newTagColor;
+    private bool _tagEditorUsed; // the New tag chip animates back only after the editor was open
     private bool _creatingTag;
     private bool _focusNewTag;
     private ElementReference _newTagInput;
@@ -684,6 +685,7 @@
         _newTag = string.Empty;
         _newTagColor = null;
         _focusNewTag = true;
+        _tagEditorUsed = true;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

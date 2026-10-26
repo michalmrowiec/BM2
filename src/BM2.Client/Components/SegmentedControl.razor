@@ -1,6 +1,7 @@
 @typeparam TValue
 
-<div class="segmented @Class" role="radiogroup" aria-label="@Label">
+@* data-count / data-index place the sliding selection pill (CSS). *@
+<div class="segmented @Class" role="radiogroup" aria-label="@Label" data-count="@Options.Count" data-index="@SelectedIndex()">
     @for (var i = 0; i < Options.Count; i++)
     {
         var index = i;
@@ -43,6 +44,19 @@
             _focusIndex = null;
             await _buttons[index].FocusAsync();
         }
+    }
+
+    private int SelectedIndex()
+    {
+        for (var i = 0; i < Options.Count; i++)
+        {
+            if (EqualityComparer<TValue>.Default.Equals(Options[i].Value, Value))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     // Radio group keyboard pattern: arrows move the selection and the focus, wrapping around.
