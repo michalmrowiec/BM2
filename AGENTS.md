@@ -67,6 +67,14 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Cykliczne:** `RecurringRule` pamięta `NextIndex`/`NextDate`; `RecurringCatchUp` (wołany w `GetWallet`) dodaje
   wystąpienia do dzisiaj, przyszłych rekordów nie tworzymy. Idempotencja przez unikalny indeks
   (`RecurringRuleId`, `OccurrenceDate`) – konflikt oznacza „już zrobione”.
+- **Zwroty:** przychód z kategorią wydatku = zwrot tej kategorii (domena dopuszcza, wydatek z kategorią przychodu
+  nie). Statystyki, budżety, średnia w prognozie, podsumowanie listy i filtr `type` liczą go jako ujemny wydatek
+  (filtr `Expense` obejmuje zwroty, `Income` ich nie obejmuje); wydatek netto może wyjść ujemny. Saldo konta bez zmian.
+  UI: etykieta „Refund” na liście rekordów, kategorie wydatków w formularzu przychodu jako „… · refund”.
+- **Inwestycje:** `Account.Kind` (`Cash`/`Investment`). Konto inwestycyjne: `Balance` = wpłacone netto (z rekordów),
+  wartość = ostatnia `AccountValuation` (data, wartość; jedna na dzień, PUT nadpisuje), zysk = wartość − wpłacone.
+  Poza saldem Home i prognozą (Home pokazuje osobno „Investments” i „Net worth”). `stats/monthly` ma `Invested` =
+  transfery gotówka → inwestycje minus z powrotem. Wyceny: odczyt z dostępem do konta, zapis `CanWriteAccount`.
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne
   waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Home ładuje wszystko jednym `GET dashboard`.
