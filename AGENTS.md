@@ -158,8 +158,10 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   markup SVG, licencja w `BM2.Client/wwwroot/icons/LICENSE-lucide.txt`; nowe ikony dopisuj z tej samej wersji.
   Kwoty zawsze ze znakiem `+`/`−`.
 - Motyw jasny/ciemny/systemowy obsługuje `wwwroot/js/theme.js` (przycisk z atrybutem `data-theme-toggle`). Bez skryptów
-  inline (przyszły CSP). Tam też font kwot: token `--font-num` (domyślnie Fraunces), opcja w More „Plain font for
-  amounts” ustawia `data-amounts="plain"` (Inter); duże sumy (`.amount--large`) zostają we Fraunces.
+  inline (przyszły CSP). Tam też preferencje z More (`window.bm2Prefs`, `localStorage`, atrybuty na `<html>`): font kwot
+  (token `--font-num`, domyślnie Fraunces; `data-amounts="plain"` = Inter, duże sumy `.amount--large` zostają we
+  Fraunces) i kolor akcentu (`data-accent`: ochre/ink/green/plum, brak = terakota; wartości `--accent*` na końcu
+  `tokens.css`, z nich `--vivid`, `--link`, `--focus`).
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
 - Wszystkie teksty UI w zasobach (EN domyślnie, PL). Daty i kwoty formatowane wg kultury użytkownika.

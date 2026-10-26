@@ -1,4 +1,4 @@
-// Applies the saved theme and amount font before first paint and handles [data-theme-toggle] buttons (system → light → dark).
+// Applies the saved theme, amount font and accent before first paint and handles [data-theme-toggle] buttons (system → light → dark).
 (() => {
     const storageKey = "bm2-theme";
     const modes = ["system", "light", "dark"];
@@ -29,25 +29,27 @@
 
     apply(read());
 
-    // Amount font: the display serif by default, or the plain UI font (switched in More).
-    const amountsKey = "bm2-amounts";
-    const readAmounts = () => {
-        try { return localStorage.getItem(amountsKey); } catch { return null; }
+    // Preferences set in More, as data-* on <html>: amounts ("plain" = UI font) and accent (none = terracotta).
+    const prefs = ["amounts", "accent"];
+    const readPref = name => {
+        try { return localStorage.getItem(`bm2-${name}`); } catch { return null; }
     };
-    const applyAmounts = value => {
-        if (value === "plain") root.dataset.amounts = "plain";
-        else delete root.dataset.amounts;
+    const applyPref = (name, value) => {
+        if (value) root.dataset[name] = value;
+        else delete root.dataset[name];
     };
-    applyAmounts(readAmounts());
+    const applyPrefs = () => prefs.forEach(name => applyPref(name, readPref(name)));
+    applyPrefs();
 
-    window.bm2Amounts = {
-        isPlain: () => root.dataset.amounts === "plain",
-        setPlain: plain => {
+    window.bm2Prefs = {
+        get: name => (prefs.includes(name) ? root.dataset[name] ?? null : null),
+        set: (name, value) => {
+            if (!prefs.includes(name)) return;
             try {
-                if (plain) localStorage.setItem(amountsKey, "plain");
-                else localStorage.removeItem(amountsKey);
+                if (value) localStorage.setItem(`bm2-${name}`, value);
+                else localStorage.removeItem(`bm2-${name}`);
             } catch { /* storage unavailable: the choice lasts for this page only */ }
-            applyAmounts(plain ? "plain" : null);
+            applyPref(name, value);
         },
     };
 
@@ -79,7 +81,7 @@
     document.addEventListener("DOMContentLoaded", () => {
         window.Blazor?.addEventListener?.("enhancedload", () => {
             apply(read());
-            applyAmounts(readAmounts());
+            applyPrefs();
         });
     });
 })();

@@ -12,7 +12,8 @@ public static class StatsCharts
 {
     public const string NumberFont = "var(--font-num)";
     private const int MaxColored = 8;
-    private static readonly string[] Palette = ["vivid", "blue", "green", "amber", "violet", "teal", "pink", "orange", "red"];
+    // Amber sits away from the first slice, which takes the accent (ochre is one of them).
+    private static readonly string[] Palette = ["vivid", "blue", "green", "violet", "teal", "pink", "amber", "orange", "red"];
 
     /// <summary>Swatch key (class <c>stats-swatch--key</c>) of the n-th slice; the tail shares a muted color.</summary>
     public static string SwatchOf(int index) => index < MaxColored ? Palette[index % Palette.Length] : "muted";

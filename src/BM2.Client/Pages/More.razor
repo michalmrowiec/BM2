@@ -92,6 +92,13 @@
                 <span class="menu-list__trail">@(_plainAmounts ? "On" : "Off")</span>
             </button>
         </li>
+        <li>
+            <button type="button" aria-haspopup="dialog" @onclick="() => _accentOpen = true">
+                <span class="accent-swatch accent-swatch--@_accent" aria-hidden="true"></span>
+                <span>Accent color</span>
+                <span class="menu-list__trail">@AccentName(_accent)</span>
+            </button>
+        </li>
     }
     <li>
         <form action="Account/Logout" method="post">
@@ -105,14 +112,45 @@
     </li>
 </ul>
 
+<Sheet Open="_accentOpen" OpenChanged="v => _accentOpen = v" Title="Accent color">
+    <p class="muted">Colors the add button, links and highlights. Applies right away and is saved in this browser.</p>
+    <ul class="menu-list accent-picker">
+        @foreach (var (key, name) in Accents)
+        {
+            <li>
+                <button type="button" aria-pressed="@(_accent == key ? "true" : "false")" @onclick="() => SetAccentAsync(key)">
+                    <span class="accent-swatch accent-swatch--@key" aria-hidden="true"></span>
+                    <span>@name</span>
+                    @if (_accent == key)
+                    {
+                        <Icon Name="check" Class="menu-list__trail" />
+                    }
+                </button>
+            </li>
+        }
+    </ul>
+</Sheet>
+
 @code {
+    // Keys match data-accent in tokens.css; terracotta is the default (no attribute).
+    private const string DefaultAccent = "terracotta";
+
+    private static readonly IReadOnlyList<(string Key, string Name)> Accents =
+        [(DefaultAccent, "Terracotta"), ("ochre", "Ochre"), ("ink", "Ink blue"), ("green", "Bottle green"), ("plum", "Plum")];
+
     private bool _plainAmounts;
+    private string _accent = DefaultAccent;
+    private bool _accentOpen;
+
+    private static string AccentName(string key) => Accents.FirstOrDefault(a => a.Key == key).Name ?? "Terracotta";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            _plainAmounts = await JS.InvokeAsync<bool>("bm2Amounts.isPlain");
+            _plainAmounts = await JS.InvokeAsync<string?>("bm2Prefs.get", "amounts") == "plain";
+            var accent = await JS.InvokeAsync<string?>("bm2Prefs.get", "accent");
+            _accent = Accents.FirstOrDefault(a => a.Key == accent).Key ?? DefaultAccent;
             StateHasChanged();
         }
     }
@@ -120,6 +158,12 @@
     private async Task ToggleAmountsAsync()
     {
         _plainAmounts = !_plainAmounts;
-        await JS.InvokeVoidAsync("bm2Amounts.setPlain", _plainAmounts);
+        await JS.InvokeVoidAsync("bm2Prefs.set", "amounts", _plainAmounts ? "plain" : null);
+    }
+
+    private async Task SetAccentAsync(string key)
+    {
+        _accent = key;
+        await JS.InvokeVoidAsync("bm2Prefs.set", "accent", key == DefaultAccent ? null : key);
     }
 }

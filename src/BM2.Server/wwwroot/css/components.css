@@ -2225,6 +2225,22 @@ button.account-card {
 }
 
 .stats-swatch--vivid { background: var(--vivid); }
+
+/* Accent picker in More: each swatch shows its light and dark shade. */
+.accent-swatch {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+
+.accent-swatch--terracotta { background: linear-gradient(135deg, #d9481f 50%, #ff7a50 50%); }
+.accent-swatch--ochre { background: linear-gradient(135deg, #9c6210 50%, #f2b84b 50%); }
+.accent-swatch--ink { background: linear-gradient(135deg, #2c4a9e 50%, #8ea8ff 50%); }
+.accent-swatch--green { background: linear-gradient(135deg, #1f6b4f 50%, #6fcf9f 50%); }
+.accent-swatch--plum { background: linear-gradient(135deg, #8b2f5c 50%, #f08bb8 50%); }
+.accent-picker button[aria-pressed="true"] { font-weight: 600; }
 .stats-swatch--blue { background: var(--tag-blue); }
 .stats-swatch--green { background: var(--tag-green); }
 .stats-swatch--amber { background: var(--tag-amber); }
