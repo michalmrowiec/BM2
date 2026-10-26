@@ -45,7 +45,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   FluentAssertions (nowe wersje są komercyjne).
 - **Projekty** (`BM2.slnx`): `BM2.Domain` (czysty C#, z BM2 zna tylko Contracts), `BM2.Contracts` (DTO/requesty,
   bez referencji do BM2), `BM2.Server` (host: Minimal API, EF Core, Identity, strony konta SSR), `BM2.Client`
-  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`.
+  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`. Narzędzia jednorazowe w `tools/`
+  (`BM2.Import` – import z MoneyManager, referencja do `BM2.Server`, `AppDbContext` budowany przez DI jak w serwerze).
 - **Serwer:** foldery per funkcja `Features/<Obszar>/<Akcja>.cs` z `Map<Obszar>Endpoints(this RouteGroupBuilder)`;
   bez MediatR i repozytoriów (endpoint używa `AppDbContext`); `TypedResults`; błędy API jako ProblemDetails;
   bieżący użytkownik przez `ICurrentUser`; wszystko pod `/api` wymaga logowania (wyjątki jawnie `AllowAnonymous()`).

@@ -7,6 +7,14 @@
       "runtimeArgs": ["run", "--project", "src/BM2.Server", "--launch-profile", "https"],
       "port": 7237,
       "url": "https://localhost:7237"
+    },
+    {
+      "name": "bm2-import",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/BM2.Server", "--launch-profile", "https", "--",
+        "--ConnectionStrings:BM2=Server=localhost\\SQLEXPRESS;Database=BM2_Import;Integrated Security=true;TrustServerCertificate=true"],
+      "port": 7237,
+      "url": "https://localhost:7237"
     }
   ]
 }
