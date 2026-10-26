@@ -70,10 +70,12 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Zwroty:** przychód z kategorią wydatku = zwrot tej kategorii (domena dopuszcza, wydatek z kategorią przychodu
   nie). Statystyki, budżety, średnia w prognozie, podsumowanie listy i filtr `type` liczą go jako ujemny wydatek
   (filtr `Expense` obejmuje zwroty, `Income` ich nie obejmuje); wydatek netto może wyjść ujemny. Saldo konta bez zmian.
-  UI: etykieta „Refund” na liście rekordów, kategorie wydatków w formularzu przychodu jako „… · refund”.
+  UI: w formularzu osobny typ „Refund” (tylko po stronie klienta; kategorie wydatków, zapis jako Income), etykieta
+  „Refund” na liście rekordów; wykres kołowy kategorii pomija wartości ujemne (lista pokazuje prawdziwe).
 - **Inwestycje:** `Account.Kind` (`Cash`/`Investment`). Konto inwestycyjne: `Balance` = wpłacone netto (z rekordów),
   wartość = ostatnia `AccountValuation` (data, wartość; jedna na dzień, PUT nadpisuje), zysk = wartość − wpłacone.
-  Poza saldem Home i prognozą (Home pokazuje osobno „Investments” i „Net worth”). `stats/monthly` ma `Invested` =
+  Duża liczba na Home = cały portfel (gotówka + wartości inwestycji, rozbicie „Cash · Investments”); prognoza tylko
+  gotówka. `ValuationSheet` (Home i Accounts): szybka wycena na dziś, wykres wartość vs wpłacone (`PaidIn` w historii). `stats/monthly` ma `Invested` =
   transfery gotówka → inwestycje minus z powrotem. Wyceny: odczyt z dostępem do konta, zapis `CanWriteAccount`.
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne

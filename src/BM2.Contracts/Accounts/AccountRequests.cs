@@ -30,7 +30,8 @@ public sealed class UpdateAccountRequestValidator : AbstractValidator<UpdateAcco
     }
 }
 
-public sealed record AccountValuationItem(Guid Id, DateOnly ValuedOn, decimal Value);
+/// <summary>PaidIn: the account's net paid-in amount (balance from records) on that day.</summary>
+public sealed record AccountValuationItem(Guid Id, DateOnly ValuedOn, decimal Value, decimal PaidIn);
 
 /// <summary>Sets the account's value on a day; a second valuation on the same day replaces the first.</summary>
 public sealed record SaveValuationRequest(DateOnly ValuedOn, decimal Value);

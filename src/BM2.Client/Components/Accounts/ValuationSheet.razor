@@ -1,65 +1,84 @@
+@using BM2.Client.Components.Stats
 @using BM2.Contracts.Accounts
 @inject ApiClient Api
 @inject ToastService Toasts
 
-@* Value of an investment account: latest valuation against the net amount paid in, plus the valuation history. *@
+@* Investment account: value against the net amount paid in, a quick valuation for today and the history. *@
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Account?.Name ?? "Investment")">
     @if (Account is not null)
     {
         var value = Account.Valuation ?? Account.Balance;
-        <div class="month-stats month-stats--three">
-            <div class="stat">
-                <span class="stat__label">Value</span>
-                <Amount Value="value" Currency="@Account.Currency" Sign="AmountSign.None" />
-            </div>
-            <div class="stat">
-                <span class="stat__label">Paid in</span>
-                <Amount Value="Account.Balance" Currency="@Account.Currency" Sign="AmountSign.None" />
-            </div>
-            <div class="stat">
-                <span class="stat__label">Gain</span>
-                <Amount Value="Math.Abs(value - Account.Balance)" Currency="@Account.Currency"
-                        Sign="@(value < Account.Balance ? AmountSign.Minus : AmountSign.Plus)" />
-            </div>
+        var gain = value - Account.Balance;
+        <div class="valuation-summary">
+            <Amount Value="value" Currency="@Account.Currency" Large="true" Sign="AmountSign.None" />
+            <span class="muted">
+                @(Account.ValuedOn is { } on ? $"Valued on {on:d}" : "No valuation yet: shows what you paid in")
+            </span>
+            <dl class="valuation-summary__facts">
+                <div><dt>Paid in</dt><dd><Amount Value="Account.Balance" Currency="@Account.Currency" Sign="AmountSign.None" /></dd></div>
+                <div>
+                    <dt>Gain</dt>
+                    <dd><Amount Value="Math.Abs(gain)" Currency="@Account.Currency" Sign="@(gain < 0 ? AmountSign.Minus : AmountSign.Plus)" /></dd>
+                </div>
+            </dl>
         </div>
-        <p class="muted">
-            @(Account.ValuedOn is { } on ? $"Valued on {on:d}." : "No valuation yet, so the value is what you paid in.")
-            Paid in = transfers to this account minus transfers out of it.
-        </p>
 
         @if (Account.CanWrite)
         {
             <EditForm Model="_model" OnValidSubmit="SaveAsync" class="form-stack">
-                <DateField Label="Date" @bind-Value="_model.ValuedOn" />
-                <MoneyInput Label="Value" Currency="@Account.Currency" @bind-Value="_model.Value"
-                            Hint="What the account is worth on that day. A second valuation on the same day replaces the first." />
-                <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">Save valuation</button>
+                <MoneyInput Label="@(_otherDate ? "Value" : "Current value")" Currency="@Account.Currency" @bind-Value="_model.Value"
+                            SelectOnFocus="true"
+                            Hint="What the account is worth now. One valuation per day: saving again the same day replaces it." />
+                @if (_otherDate)
+                {
+                    <DateField Label="Valued on" @bind-Value="_model.ValuedOn" />
+                }
+                else
+                {
+                    <button type="button" class="btn btn-ghost btn-sm" @onclick="() => _otherDate = true">
+                        <Icon Name="calendar" /> Other date
+                    </button>
+                }
+                <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">Save value</button>
             </EditForm>
         }
 
+        @if (_items?.Count > 1)
+        {
+            <Chart Options="_chart" Label="Value and paid in over time. The history below gives the numbers." />
+        }
+
+        <a class="btn btn-ghost btn-block" href="@($"records?accountId={Account.Id}&all=true")">
+            <Icon Name="transfer" /> Transfers and records
+        </a>
+
         @if (_items?.Count > 0)
         {
-            <h3 class="section-title">History</h3>
-            <ul class="list">
-                @foreach (var item in _items)
-                {
-                    <li>
-                        <ListRow Title="@item.ValuedOn.ToString("d")">
-                            <Trailing>
-                                <Amount Value="item.Value" Currency="@Account.Currency" Sign="AmountSign.None" />
-                                @if (Account.CanWrite)
-                                {
-                                    <button type="button" class="icon-button" aria-label="@($"Delete valuation of {item.ValuedOn:d}")"
-                                            @onclick="() => DeleteAsync(item)">
-                                        <Icon Name="trash" />
-                                    </button>
-                                }
-                            </Trailing>
-                        </ListRow>
-                    </li>
-                }
-            </ul>
+            <details class="disclosure">
+                <summary class="section-title">History (@_items.Count)</summary>
+                <ul class="list">
+                    @foreach (var item in _items)
+                    {
+                        <li>
+                            <ListRow Title="@item.ValuedOn.ToString("d")" Subtitle="@($"Paid in {item.PaidIn:N2}")">
+                                <Trailing>
+                                    <Amount Value="item.Value" Currency="@Account.Currency" Sign="AmountSign.None" />
+                                    @if (Account.CanWrite)
+                                    {
+                                        <button type="button" class="icon-button" aria-label="@($"Delete valuation of {item.ValuedOn:d}")"
+                                                @onclick="() => DeleteAsync(item)">
+                                            <Icon Name="trash" />
+                                        </button>
+                                    }
+                                </Trailing>
+                            </ListRow>
+                        </li>
+                    }
+                </ul>
+            </details>
         }
+
+        <p class="muted">Paid in = transfers to this account minus transfers out of it. Gain = value − paid in.</p>
 
         @ChildContent
     }
@@ -68,7 +87,9 @@
 @code {
     private FormModel _model = new();
     private List<AccountValuationItem>? _items;
+    private object _chart = new();
     private Guid? _loadedFor;
+    private bool _otherDate;
     private bool _busy;
 
     [Parameter, EditorRequired] public Guid WalletId { get; set; }
@@ -91,6 +112,8 @@
         if (Open && Account is not null && _loadedFor != Account.Id)
         {
             _loadedFor = Account.Id;
+            _otherDate = false;
+            _items = null;
             _model = new FormModel { Value = Account.Valuation };
             await LoadAsync();
         }
@@ -100,7 +123,14 @@
         }
     }
 
-    private async Task LoadAsync() => _items = (await Api.GetAsync<List<AccountValuationItem>>(Url)).Value;
+    private async Task LoadAsync()
+    {
+        _items = (await Api.GetAsync<List<AccountValuationItem>>(Url)).Value;
+        if (_items?.Count > 1)
+        {
+            _chart = StatsCharts.Valuations(_items.AsEnumerable().Reverse().ToList());
+        }
+    }
 
     private async Task SaveAsync()
     {
@@ -115,11 +145,11 @@
         _busy = false;
         if (!result.Ok)
         {
-            Toasts.Show(result.Problem?.Detail ?? "Couldn't save the valuation.", ToastKind.Error);
+            Toasts.Show(result.Problem?.Detail ?? "Couldn't save the value.", ToastKind.Error);
             return;
         }
 
-        Toasts.Show("Valuation saved.", ToastKind.Success);
+        Toasts.Show("Value saved.", ToastKind.Success);
         await LoadAsync();
         await OnChanged.InvokeAsync();
     }

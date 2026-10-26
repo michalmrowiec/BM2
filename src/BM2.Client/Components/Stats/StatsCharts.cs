@@ -1,4 +1,5 @@
 using System.Globalization;
+using BM2.Contracts.Accounts;
 using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Contracts.Stats;
@@ -56,7 +57,8 @@ public static class StatsCharts
                     {
                         id = s.Id,
                         name = s.Name,
-                        value = s.Value,
+                        // A slice can't be negative (refunds above spending); the list still shows the real total.
+                        value = Math.Max(s.Value, 0),
                         itemStyle = new { color = $"var({TokenOf(SwatchOf(i))})" },
                     }).ToList(),
                 },
@@ -120,6 +122,53 @@ public static class StatsCharts
             series,
         };
     }
+
+    /// <summary>Investment value against the amount paid in, oldest first.</summary>
+    public static object Valuations(IReadOnlyList<AccountValuationItem> items) => new
+    {
+        grid = new { left = 4, right = 8, top = 36, bottom = 4, containLabel = true },
+        legend = new { top = 0, icon = "roundRect", textStyle = new { color = "var(--ink-muted)" } },
+        tooltip = new { trigger = "axis" },
+        xAxis = new
+        {
+            type = "category",
+            boundaryGap = false,
+            data = items.Select(v => v.ValuedOn.ToString("d MMM yy", CultureInfo.CurrentCulture)).ToList(),
+            axisTick = new { show = false },
+            axisLine = new { lineStyle = new { color = "var(--rule)" } },
+            axisLabel = new { color = "var(--ink-muted)" },
+        },
+        yAxis = new
+        {
+            type = "value",
+            scale = true,
+            splitLine = new { lineStyle = new { color = "var(--rule)" } },
+            axisLabel = new { color = "var(--ink-muted)", fontFamily = NumberFont },
+        },
+        series = new object[]
+        {
+            new
+            {
+                name = "Value",
+                type = "line",
+                data = items.Select(v => v.Value).ToList(),
+                symbol = "circle",
+                symbolSize = 6,
+                lineStyle = new { color = "var(--vivid)", width = 2 },
+                itemStyle = new { color = "var(--vivid)" },
+            },
+            new
+            {
+                name = "Paid in",
+                type = "line",
+                step = "end",
+                data = items.Select(v => v.PaidIn).ToList(),
+                symbol = "none",
+                lineStyle = new { color = "var(--ink-muted)", width = 2, type = "dashed" },
+                itemStyle = new { color = "var(--ink-muted)" },
+            },
+        },
+    };
 
     /// <summary>Forecast balance as a line, with a dashed zero line.</summary>
     public static object Forecast(IReadOnlyList<ForecastPoint> points) => new

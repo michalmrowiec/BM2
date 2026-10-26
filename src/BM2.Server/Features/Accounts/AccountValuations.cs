@@ -1,4 +1,5 @@
 using BM2.Contracts.Accounts;
+using BM2.Contracts.Records;
 using BM2.Domain.Accounts;
 using BM2.Domain.Common;
 using BM2.Server.Data;
@@ -28,11 +29,28 @@ internal static class AccountValuations
             return Error.NotFound().ToProblem();
         }
 
-        return TypedResults.Ok(await db.AccountValuations.AsNoTracking()
+        var valuations = await db.AccountValuations.AsNoTracking()
             .Where(v => v.AccountId == accountId)
             .OrderByDescending(v => v.ValuedOn)
-            .Select(v => new AccountValuationItem(v.Id, v.ValuedOn, v.Value))
-            .ToListAsync(ct));
+            .ToListAsync(ct);
+
+        // Paid in on each valuation day: opening balance plus completed and pending flows up to that day.
+        var opening = await db.Accounts.Where(a => a.Id == accountId).Select(a => a.OpeningBalance).SingleAsync(ct);
+        var flows = await db.Records.AsNoTracking()
+            .Where(r => r.Status != RecordStatus.Planned && (r.AccountId == accountId || r.TransferAccountId == accountId))
+            .GroupBy(r => r.OccurredOn)
+            .Select(g => new
+            {
+                Day = g.Key,
+                Net = g.Sum(r => r.AccountId == accountId
+                    ? (r.Type == RecordType.Income ? r.AccountAmount : -r.AccountAmount)
+                    : r.TransferAmount ?? 0),
+            })
+            .ToListAsync(ct);
+
+        return TypedResults.Ok(valuations
+            .Select(v => new AccountValuationItem(v.Id, v.ValuedOn, v.Value, opening + flows.Where(f => f.Day <= v.ValuedOn).Sum(f => f.Net)))
+            .ToList());
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> SaveAsync(

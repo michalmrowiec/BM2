@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using BM2.Contracts.Accounts
+@using BM2.Client.Components.Accounts
 @using BM2.Client.Components.Budgets
 @using BM2.Client.Components.Records
 @using BM2.Contracts.Budgets
@@ -45,11 +46,24 @@
             if (active.Count > 0)
             {
                 <section class="balance" aria-label="Total balance">
-                    @foreach (var total in accounts.GroupBy(a => a.Currency)
-                                  .Select(g => (Currency: g.Key, Sum: g.Sum(a => a.Balance), WithPlanned: g.Sum(a => a.WithPlanned))))
+                    @* Whole wallet: cash balances plus investment values; the forecast stays cash only. *@
+                    @foreach (var total in active.GroupBy(a => a.Currency).Select(g => (
+                                  Currency: g.Key,
+                                  Cash: g.Where(a => a.Kind == AccountKind.Cash).Sum(a => a.Balance),
+                                  Invested: g.Where(a => a.Kind == AccountKind.Investment).Sum(a => a.Valuation ?? a.Balance),
+                                  HasInvestments: g.Any(a => a.Kind == AccountKind.Investment),
+                                  Sum: g.Sum(a => a.Valuation ?? a.Balance),
+                                  WithPlanned: g.Sum(a => a.Kind == AccountKind.Cash ? a.WithPlanned : a.Valuation ?? a.Balance))))
                     {
                         <Amount Value="total.Sum" Currency="@total.Currency" Large="true"
                                 Sign="@(total.Sum < 0 ? AmountSign.Minus : AmountSign.None)" />
+                        @if (total.HasInvestments)
+                        {
+                            <span class="balance__planned">
+                                Cash <Amount Value="total.Cash" Currency="@total.Currency" Sign="@(total.Cash < 0 ? AmountSign.Minus : AmountSign.None)" />
+                                · Investments <Amount Value="total.Invested" Currency="@total.Currency" Sign="AmountSign.None" />
+                            </span>
+                        }
                         @if (total.WithPlanned != total.Sum)
                         {
                             <span class="balance__planned">
@@ -81,25 +95,19 @@
                         {
                             var value = account.Valuation ?? account.Balance;
                             <li>
-                                <a class="account-card" href="@($"accounts?account={account.Id}")">
+                                <button type="button" class="account-card" @onclick="() => _valuing = account.Id">
                                     <span class="account-card__name">@account.Name</span>
                                     <Amount Value="value" Currency="@account.Currency" Sign="AmountSign.None" />
                                     <span class="account-card__meta">
                                         Gain <Amount Value="Math.Abs(value - account.Balance)" Currency="@account.Currency"
                                                      Sign="@(value < account.Balance ? AmountSign.Minus : AmountSign.Plus)" />
                                     </span>
-                                </a>
+                                </button>
                             </li>
                         }
                     </ul>
-                    <p class="balance__planned">
-                        Net worth:
-                        @foreach (var total in active.GroupBy(a => a.Currency)
-                                      .Select(g => (Currency: g.Key, Sum: g.Sum(a => a.Valuation ?? a.Balance))))
-                        {
-                            <Amount Value="total.Sum" Currency="@total.Currency" Sign="@(total.Sum < 0 ? AmountSign.Minus : AmountSign.None)" />
-                        }
-                    </p>
+                    <ValuationSheet WalletId="wallet.Id" Account="@investments.FirstOrDefault(a => a.Id == _valuing)"
+                                    Open="_valuing is not null" OpenChanged="v => { if (!v) _valuing = null; }" OnChanged="WalletState.RefreshAsync" />
                 }
 
                 @if (_month?.Totals.Count > 0)
@@ -290,6 +298,8 @@
                Chosen="s => ConfirmManyAsync([_choiceFor!], s)" />
 
 @code {
+    private Guid? _valuing;
+
     private bool _confirmAll;
     private IReadOnlyList<RecordItem> _planned = [];
     private RecordItem? _choiceFor;

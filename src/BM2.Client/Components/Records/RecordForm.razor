@@ -12,7 +12,7 @@
 <EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync" class="record-form">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="_ => BuildRequest()" />
 
-    <SegmentedControl TValue="RecordType" Options="TypeOptions" Value="_model.Type" ValueChanged="OnTypeChanged" Label="Record type"
+    <SegmentedControl TValue="FormKind" Options="KindOptions" Value="Kind" ValueChanged="OnKindChanged" Label="Record type"
                       Class="segmented--block" />
 
     <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null || Template?.Amount > 0)"
@@ -86,6 +86,10 @@
         @* The most used categories as chips; the rest through All, with search. *@
         <div class="field record-form__categories">
             <span class="field__label" id="record-category-label">Category</span>
+            @if (RefundHint is { } refundHint)
+            {
+                <p class="field__hint record-form__refund"><Icon Name="in" /> @refundHint</p>
+            }
             <ChipGroup TValue="Guid" Options="ShownCategories" Selected="SelectedCategory" SelectedChanged="OnCategoryChanged"
                        Label="Category" Class="chip-group--categories" IconOf="id => FindCategory(id)?.Icon"
                        DescribedBy="@(ErrorFor(nameof(FormModel.CategoryId)) is null ? null : "record-category-error")">
@@ -96,8 +100,7 @@
                     </button>
                 }
             </ChipGroup>
-            <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint"
-                           Hint="@(IsRefund ? $"Refund: lowers {FindCategory(_model.CategoryId)?.Name} spending instead of counting as income." : null)" />
+            <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint" />
         </div>
 
         <Sheet Open="_pickCategory" OpenChanged="v => _pickCategory = v" Title="Category">
@@ -252,8 +255,35 @@
 
     private static readonly SaveRecordRequestValidator Validator = new();
 
-    private static readonly IReadOnlyList<(RecordType Value, string Label)> TypeOptions =
-        [(RecordType.Expense, "Expense"), (RecordType.Income, "Income"), (RecordType.Transfer, "Transfer")];
+    // Refund is saved as income in an expense category; it lowers that category's spending.
+    private enum FormKind { Expense, Income, Refund, Transfer }
+
+    private static readonly IReadOnlyList<(FormKind Value, string Label)> KindOptions =
+        [(FormKind.Expense, "Expense"), (FormKind.Income, "Income"), (FormKind.Refund, "Refund"), (FormKind.Transfer, "Transfer")];
+
+    private FormKind Kind => _model.Refund ? FormKind.Refund : _model.Type switch
+    {
+        RecordType.Income => FormKind.Income,
+        RecordType.Transfer => FormKind.Transfer,
+        _ => FormKind.Expense,
+    };
+
+    private void OnKindChanged(FormKind kind)
+    {
+        _model.Refund = kind == FormKind.Refund;
+        OnTypeChanged(kind switch
+        {
+            FormKind.Income or FormKind.Refund => RecordType.Income,
+            FormKind.Transfer => RecordType.Transfer,
+            _ => RecordType.Expense,
+        });
+    }
+
+    private string? RefundHint => !_model.Refund ? null
+        : FindCategory(_model.CategoryId) is { } category ? $"Money back: lowers {category.Name} spending, not counted as income."
+        : "Money back for an expense: lowers that category's spending, not counted as income.";
+
+    private bool IsRefundCategory(Guid? categoryId) => FindCategory(categoryId)?.Type == CategoryType.Expense;
 
     private static readonly IReadOnlyList<(RecordStatus Value, string Label)> StatusOptions =
         [
@@ -331,16 +361,13 @@
         .Select(a => ((Guid?)a.Id, a.Name))
         .ToList();
 
-    // Most used in the wallet first, then by name. Income may also take an expense category (a refund), listed after.
+    // Most used in the wallet first, then by name. Refunds take expense categories.
     private IReadOnlyList<(Guid Value, string Label)> CategoryOptions => Wallet.Categories
-        .Where(c => (c.Type == CategoryType.Expense || _model.Type == RecordType.Income)
+        .Where(c => c.Type == (_model.Type == RecordType.Income && !_model.Refund ? CategoryType.Income : CategoryType.Expense)
             && (!c.IsArchived || c.Id == Initial?.CategoryId))
-        .OrderBy(c => _model.Type == RecordType.Income && c.Type == CategoryType.Expense)
-        .ThenBy(c => Rank(Suggestions?.CategoryIds, c.Id)).ThenBy(c => c.Name)
-        .Select(c => (c.Id, _model.Type == RecordType.Income && c.Type == CategoryType.Expense ? $"{c.Name} · refund" : c.Name))
+        .OrderBy(c => Rank(Suggestions?.CategoryIds, c.Id)).ThenBy(c => c.Name)
+        .Select(c => (c.Id, c.Name))
         .ToList();
-
-    private bool IsRefund => _model.Type == RecordType.Income && FindCategory(_model.CategoryId)?.Type == CategoryType.Expense;
 
     private IReadOnlyList<TagItem> TagOptions => Wallet.Tags
         .Concat(_createdTags.Where(c => Wallet.Tags.All(t => t.Id != c.Id)))
@@ -382,6 +409,7 @@
             _model = new FormModel
             {
                 Type = record.Type,
+                Refund = record.Type == RecordType.Income && IsRefundCategory(record.CategoryId),
                 Status = IsCopy ? RecordStatus.Completed : record.Status,
                 OccurredOn = IsCopy ? today : record.OccurredOn,
                 AccountId = record.AccountId,
@@ -407,6 +435,7 @@
             _model = new FormModel
             {
                 Type = template?.Type ?? RecordType.Expense,
+                Refund = template?.Type == RecordType.Income && IsRefundCategory(template.CategoryId),
                 OccurredOn = today,
                 AccountId = accountId,
                 // A template amount of 0 means "type it each time": the field stays empty.
@@ -780,6 +809,8 @@
     private sealed class FormModel
     {
         public RecordType Type { get; set; } = RecordType.Expense;
+
+        public bool Refund { get; set; }
 
         public RecordStatus Status { get; set; } = RecordStatus.Completed;
 

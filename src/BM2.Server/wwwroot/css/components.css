@@ -985,6 +985,14 @@ button.list-row:hover { background: var(--wash); }
     transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
 
+button.account-card {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
 .account-card:hover { border-color: var(--ink-muted); }
 .account-card:active { transform: scale(0.98); }
 
@@ -1025,7 +1033,11 @@ button.list-row:hover { background: var(--wash); }
     margin-bottom: var(--space-4);
 }
 
-.segmented--block .segmented__option { flex: 1; }
+.segmented--block .segmented__option {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 var(--space-2);
+}
 
 .segmented__option {
     min-height: var(--tap);
@@ -1050,14 +1062,22 @@ button.list-row:hover { background: var(--wash); }
 }
 
 /* Record and category types: the selected one takes its color (text on a tint, like tags) */
-.segmented__option[aria-checked="true"]:is([data-value="Expense"], [data-value="Income"], [data-value="Transfer"]) {
+.segmented__option[aria-checked="true"]:is([data-value="Expense"], [data-value="Income"], [data-value="Refund"], [data-value="Transfer"]) {
     background: color-mix(in srgb, var(--type-color) 16%, var(--sheet-raised));
     color: var(--type-color);
 }
 
 .segmented__option[data-value="Expense"] { --type-color: var(--tag-red); }
 .segmented__option[data-value="Income"] { --type-color: var(--tag-green); }
+.segmented__option[data-value="Refund"] { --type-color: var(--tag-amber); }
 .segmented__option[data-value="Transfer"] { --type-color: var(--tag-blue); }
+
+.record-form__refund {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    margin: 0 0 var(--space-2);
+}
 
 /* Chips */
 .chip-group {
@@ -2251,3 +2271,23 @@ button.list-row:hover { background: var(--wash); }
     display: flex;
     gap: var(--space-2);
 }
+
+/* Investment account value (ValuationSheet) */
+.valuation-summary {
+    display: grid;
+    gap: var(--space-1);
+    margin-bottom: var(--space-4);
+}
+
+.valuation-summary__facts {
+    display: flex;
+    gap: var(--space-5);
+    margin: var(--space-2) 0 0;
+}
+
+.valuation-summary__facts dt {
+    font-size: var(--text-s);
+    color: var(--ink-muted);
+}
+
+.valuation-summary__facts dd { margin: 0; }
