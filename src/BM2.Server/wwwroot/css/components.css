@@ -979,6 +979,7 @@ button.list-row:hover { background: var(--wash); }
 }
 
 .account-card {
+    container-type: inline-size;
     display: grid;
     gap: var(--space-2);
     min-height: 5.5rem;
@@ -1012,6 +1013,7 @@ button.account-card {
 
 .account-card__meta {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-1);
     font-size: var(--text-s);
     color: var(--ink-muted);
@@ -1019,10 +1021,12 @@ button.account-card {
 
 .account-card__meta .amount { font: inherit; }
 
+/* Shrinks with the card on narrow phones; a very long amount wraps only before the currency (digit groups use nbsp). */
 .account-card > .amount {
     font-family: var(--font-display);
-    font-size: var(--text-l);
+    font-size: clamp(0.875rem, 11.5cqi, var(--text-l));
     font-weight: 600;
+    white-space: normal;
 }
 
 /* Segmented control (radio group) */
@@ -1700,10 +1704,14 @@ button.account-card {
     color: var(--ink-muted);
 }
 
+.stat { container-type: inline-size; }
+
+/* Same fit as the account cards. */
 .stat .amount {
     font-family: var(--font-display);
-    font-size: var(--text-l);
+    font-size: clamp(0.875rem, 11.5cqi, var(--text-l));
     font-weight: 600;
+    white-space: normal;
 }
 
 /* Members and invitations */
