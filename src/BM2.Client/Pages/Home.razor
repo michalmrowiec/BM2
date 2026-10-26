@@ -153,7 +153,15 @@
                 {
                     <div class="section-header">
                         <h2 class="section-title">Planned</h2>
-                        <a class="link" href="records?status=Planned&all=true">All</a>
+                        <span class="section-header__actions">
+                            @if (_planned.Count > 1)
+                            {
+                                <button type="button" class="btn btn-secondary btn-sm" disabled="@_busy" @onclick="() => _choiceAll = true">
+                                    <Icon Name="check" /> Confirm all
+                                </button>
+                            }
+                            <a class="link" href="records?status=Planned&all=true">All</a>
+                        </span>
                     </div>
                     @OpenRecords(_planned, wallet)
                 }
@@ -294,8 +302,12 @@
     <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
 </ConfirmDialog>
 
-<PlannedChoice Record="_choiceFor" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
+<PlannedChoice Open="_choiceFor is not null" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
                Chosen="s => ConfirmManyAsync([_choiceFor!], s)" />
+
+@* Confirm all for Planned: the records shown there, all to one status. *@
+<PlannedChoice Open="_choiceAll" Count="_planned.Count" Closed="() => _choiceAll = false"
+               Chosen="s => ConfirmManyAsync(_planned.ToList(), s)" />
 
 @code {
     private Guid? _valuing;
@@ -303,6 +315,7 @@
     private bool _confirmAll;
     private IReadOnlyList<RecordItem> _planned = [];
     private RecordItem? _choiceFor;
+    private bool _choiceAll;
 
     // Pending and planned records with a one-tap ✓; planned ones ask completed or pending.
     private RenderFragment OpenRecords(IReadOnlyList<RecordItem> records, WalletSnapshot wallet) =>
@@ -418,6 +431,7 @@
     private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
     {
         _choiceFor = null;
+        _choiceAll = false;
         _confirmOne = null;
         _busy = true;
         var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records, status);

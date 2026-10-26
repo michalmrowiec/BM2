@@ -24,13 +24,13 @@
             @foreach (var item in day.Items)
             {
                 var view = View(item);
-                @* Right click and Android long press open the same menu as the dots button. *@
+                @* Right click and Android long press open the same details as a tap. *@
                 var selected = _selected.Contains(item.Id);
                 var open = item.Status != RecordStatus.Completed;
                 <li @key="item.Id" class="record-row @(open ? $"record-row--{item.Status.ToString().ToLowerInvariant()}" : null) @(selected ? "is-selected" : null)" @oncontextmenu="() => OpenMenu(item)" @oncontextmenu:preventDefault="true">
                     @if (Selectable)
                     {
-                        @* Tapping the icon selects; the rest of the row opens the record. *@
+                        @* Tapping the icon selects; the rest of the row shows the record. *@
                         <button type="button" class="record-row__select" aria-pressed="@(selected ? "true" : "false")"
                                 aria-label="@($"Select {view.Title}")" @onclick="() => ToggleSelected(item.Id)">
                             @if (selected)
@@ -43,7 +43,9 @@
                             }
                         </button>
                     }
-                    <a class="record-row__main @(Selectable ? "record-row__main--after-select" : null)" href="@($"records/{item.Id}")">
+                    @* Tapping the row shows the whole record with its actions; Edit is one tap further. *@
+                    <button type="button" class="record-row__main @(Selectable ? "record-row__main--after-select" : null)" aria-haspopup="dialog"
+                            @onclick="() => OpenMenu(item)">
                         @if (!Selectable)
                         {
                             <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
@@ -85,7 +87,7 @@
                                 <span class="tag record-status"><Icon Name="@(item.Status == RecordStatus.Pending ? "clock" : "calendar")" />@item.Status</span>
                             }
                         </span>
-                    </a>
+                    </button>
                     @if (open && CanWrite(item))
                     {
                         <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {view.Title} as completed")"
@@ -93,10 +95,6 @@
                             <Icon Name="check" />
                         </button>
                     }
-                    <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {view.Title}")"
-                            @onclick="() => OpenMenu(item)">
-                        <Icon Name="dots" />
-                    </button>
                 </li>
             }
         </ul>
@@ -106,18 +104,76 @@
 <Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuShown is null ? "Record" : View(_menuShown).Title)">
     @if (_menuShown is { } record)
     {
-        <ul class="menu-list">
-            <li>
-                <a href="@($"records/{record.Id}")"><Icon Name="edit" /><span>@(CanWrite(record) ? "Edit" : "Open")</span></a>
-            </li>
-            @if (CanWrite(record))
-            {
+        var details = View(record);
+        <div class="record-details">
+            <div class="record-details__amount">
+                <Amount Value="details.Amount" Currency="@details.Currency" Sign="details.Sign" />
+                @if (record.Type != RecordType.Transfer && record.Currency != details.Currency)
+                {
+                    <span class="muted">paid <Amount Value="record.Amount" Currency="@record.Currency" /></span>
+                }
+            </div>
+            <dl class="record-details__list">
+                <div><dt>Date</dt><dd>@record.OccurredOn.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture)</dd></div>
                 @if (record.Status != RecordStatus.Completed)
                 {
-                    <li>
-                        <button type="button" @onclick="() => Check(record)"><Icon Name="check" /><span>@(record.Status == RecordStatus.Planned ? "Mark as done…" : "Mark as completed")</span></button>
-                    </li>
+                    <div>
+                        <dt>Status</dt>
+                        <dd>@record.Status <span class="muted">· @(record.Status == RecordStatus.Pending ? "counted, not checked yet" : "not counted yet")</span></dd>
+                    </div>
                 }
+                @if (record.Type == RecordType.Transfer)
+                {
+                    <div><dt>Transfer</dt><dd>@record.AccountName → @record.TransferAccountName</dd></div>
+                }
+                else
+                {
+                    <div>
+                        <dt>Category</dt>
+                        <dd>
+                            @(details.Category?.Name ?? "No category")
+                            @if (record.Type == RecordType.Income && details.Category?.Type == CategoryType.Expense)
+                            {
+                                <span class="muted"> · refund</span>
+                            }
+                        </dd>
+                    </div>
+                    <div><dt>Account</dt><dd>@record.AccountName</dd></div>
+                }
+                @if (details.Tags.Count > 0)
+                {
+                    <div>
+                        <dt>Tags</dt>
+                        <dd class="record-details__tags">
+                            @foreach (var tag in details.Tags)
+                            {
+                                <span class="record-row__tag @TagPalette.ClassFor(tag.Color)"><span class="tag-dot" aria-hidden="true"></span>@tag.Name</span>
+                            }
+                        </dd>
+                    </div>
+                }
+                @if (record.PairWalletId is { } pairWallet)
+                {
+                    <div><dt>Linked</dt><dd>@(record.PairPending ? $"Sent to {PairWalletName(pairWallet)} on confirm" : $"Record in {PairWalletName(pairWallet)}")</dd></div>
+                }
+                @if (record.RecurringRuleId is not null)
+                {
+                    <div><dt>Repeats</dt><dd>Added by a recurring rule</dd></div>
+                }
+            </dl>
+        </div>
+        @if (CanWrite(record))
+        {
+            <div class="record-details__actions">
+                <a class="btn btn-primary" href="@($"records/{record.Id}")"><Icon Name="edit" /> Edit</a>
+                @if (record.Status != RecordStatus.Completed)
+                {
+                    <button type="button" class="btn btn-secondary" disabled="@_busy" @onclick="() => Check(record)">
+                        <Icon Name="check" /> @(record.Status == RecordStatus.Planned ? "Confirm…" : "Confirm")
+                    </button>
+                }
+            </div>
+            <ul class="menu-list">
                 <li>
                     <a href="@($"records/new?copy={record.Id}")"><Icon Name="copy" /><span>Copy</span></a>
                 </li>
@@ -137,8 +193,8 @@
                 <li>
                     <button type="button" class="danger-text" @onclick="AskDelete"><Icon Name="trash" /><span>Delete</span></button>
                 </li>
-            }
-        </ul>
+            </ul>
+        }
     }
 </Sheet>
 
@@ -158,20 +214,24 @@
                 }
             </span>
         </div>
-        @if (SelectedItems.Count < Items.Count)
-        {
-            @* Selects the records loaded so far; scrolling loads more. *@
-            <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.UnionWith(Items.Select(i => i.Id))">Select all</button>
-        }
-        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.Clear()">Clear</button>
-        @if (SelectedOpen.Count > 0)
-        {
-            <button type="button" class="btn btn-primary btn-sm" disabled="@_busy" @onclick="() => _confirmBulkComplete = true">
-                <Icon Name="check" /> Complete
+        <div class="selection-bar__actions">
+            @if (SelectedItems.Count < Items.Count)
+            {
+                @* Selects the records loaded so far; scrolling loads more. *@
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.UnionWith(Items.Select(i => i.Id))">Select all</button>
+            }
+            @if (SelectedOpen.Count > 0)
+            {
+                <button type="button" class="btn btn-primary btn-sm" disabled="@_busy" @onclick="() => _confirmBulkComplete = true">
+                    <Icon Name="check" /> Complete
+                </button>
+            }
+            <button type="button" class="btn btn-danger btn-sm" @onclick="() => _confirmBulk = true">
+                <Icon Name="trash" /> Delete
             </button>
-        }
-        <button type="button" class="btn btn-danger btn-sm" @onclick="() => _confirmBulk = true">
-            <Icon Name="trash" /> Delete
+        </div>
+        <button type="button" class="icon-button selection-bar__clear" aria-label="Clear selection" @onclick="() => _selected.Clear()">
+            <Icon Name="close" />
         </button>
     </div>
 }
@@ -193,7 +253,7 @@
     <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
 </ConfirmDialog>
 
-<PlannedChoice Record="_choiceFor" Title="@(_choiceFor is null ? null : View(_choiceFor).Title)" Closed="() => _choiceFor = null"
+<PlannedChoice Open="_choiceFor is not null" Title="@(_choiceFor is null ? null : View(_choiceFor).Title)" Closed="() => _choiceFor = null"
                Chosen="s => ConfirmAsync([_choiceFor!], s)" />
 
 <ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="Delete record?" ConfirmLabel="Delete"

@@ -116,7 +116,7 @@
 
         <Sheet Open="_pickCategory" OpenChanged="v => _pickCategory = v" Title="Category">
             @* Enter picks the first match; data-enter-picks keeps it from saving the record. *@
-            <input type="search" class="field__control" form="record-category-search" data-enter-picks placeholder="Search categories"
+            <input type="search" class="field__control category-search" form="record-category-search" data-enter-picks placeholder="Search categories"
                    aria-label="Search categories" autocomplete="off" value="@_categoryTerm"
                    @oninput="e => _categoryTerm = e.Value?.ToString()" @onkeydown="OnCategorySearchKeyDown" />
             <ul class="menu-list category-picker">
@@ -170,7 +170,7 @@
     {
         <label class="check">
             <input type="checkbox" checked="@_repeatOn" @onchange="OnRepeatChanged" />
-            <span><Icon Name="repeat" /> Repeat – save this record now and add the next ones automatically</span>
+            <span><Icon Name="repeat" /> Repeat</span>
         </label>
         @if (_repeatOn)
         {
@@ -207,6 +207,7 @@
                                    aria-label="New tag name" maxlength="30" autocomplete="off" @ref="_newTagInput"
                                    @oninput="e => _newTag = e.Value?.ToString()" @onkeydown="OnNewTagKeyDown" />
                             <button type="button" class="btn btn-secondary btn-sm" disabled="@_creatingTag" @onclick="CreateTagAsync">Add</button>
+                            <button type="button" class="icon-button" aria-label="Cancel new tag" @onclick="() => _newTag = null"><Icon Name="close" /></button>
                             <TagColorPicker Small="true" Value="@_newTagColor" ValueChanged="c => _newTagColor = c" />
                         </span>
                     }

@@ -94,6 +94,11 @@
     --tag-blue: #1d5fbf;
     --tag-violet: #6d3fc0;
     --tag-pink: #b0306a;
+    --tag-lime: #4d7c0f;
+    --tag-cyan: #0e7490;
+    --tag-indigo: #4338ca;
+    --tag-brown: #8a5a3c;
+    --tag-slate: #475569;
 
     /* Calm accent for records waiting for a ✓; follows the theme through --tag-blue */
     --attention: var(--tag-blue);
@@ -124,6 +129,11 @@
         --tag-blue: #8ab4ff;
         --tag-violet: #c4a5ff;
         --tag-pink: #ff8ac0;
+        --tag-lime: #b5e06a;
+        --tag-cyan: #67d8f0;
+        --tag-indigo: #a5b4fc;
+        --tag-brown: #d6a77f;
+        --tag-slate: #b0bccb;
     }
 }
 
@@ -151,4 +161,9 @@
     --tag-blue: #8ab4ff;
     --tag-violet: #c4a5ff;
     --tag-pink: #ff8ac0;
+    --tag-lime: #b5e06a;
+    --tag-cyan: #67d8f0;
+    --tag-indigo: #a5b4fc;
+    --tag-brown: #d6a77f;
+    --tag-slate: #b0bccb;
 }

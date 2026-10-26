@@ -1,7 +1,7 @@
 @using BM2.Contracts.Records
 
-@* A planned record can become pending (it happened, check it later) or completed (checked). *@
-<Sheet Open="Record is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(Title ?? "Planned record")">
+@* Planned records can become pending (it happened, check it later) or completed (checked). *@
+<Sheet Open="Open" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(Title ?? (Count == 1 ? "Planned record" : $"{Count} planned records"))">
     <ul class="menu-list">
         <li>
             <button type="button" @onclick="() => Chosen.InvokeAsync(RecordStatus.Completed)">
@@ -18,7 +18,10 @@
 </Sheet>
 
 @code {
-    [Parameter] public RecordItem? Record { get; set; }
+    [Parameter] public bool Open { get; set; }
+
+    /// <summary>How many records the choice applies to.</summary>
+    [Parameter] public int Count { get; set; } = 1;
 
     [Parameter] public string? Title { get; set; }
 

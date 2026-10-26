@@ -729,11 +729,15 @@ button.list-row:hover { background: var(--wash); }
 
 .sheet__title { font-size: var(--text-l); }
 
+/* The body shrinks inside the panel (min-height: 0) and scrolls; rows keep their content height. */
 .sheet__body {
     display: grid;
+    grid-auto-rows: max-content;
     gap: var(--space-4);
+    min-height: 0;
     padding: var(--space-2) var(--space-5) var(--space-5);
     overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .sheet__footer {
@@ -1196,7 +1200,15 @@ button.account-card {
 .record-form__swap { margin-bottom: 2px; color: var(--ink-muted); }
 
 /* Category picker sheet: search on top, all categories below */
-.category-picker { margin-top: var(--space-3); }
+.category-picker { margin-top: calc(-1 * var(--space-1)); }
+
+/* The search stays on top while the list scrolls. */
+.category-search {
+    position: sticky;
+    top: calc(-1 * var(--space-2));
+    z-index: 1;
+    box-shadow: 0 calc(-1 * var(--space-2)) 0 var(--space-2) var(--sheet-raised);
+}
 .category-picker button[aria-pressed="true"] { font-weight: 600; }
 
 .record-form__fx {
@@ -1223,6 +1235,38 @@ button.account-card {
 }
 
 /* Records */
+.records-loading { animation: fade-in var(--dur) ease-out 120ms both; }
+
+.records-loading__day {
+    width: 9rem;
+    margin: var(--space-2) var(--space-1) var(--space-3);
+}
+
+.records-loading__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 3.75rem;
+    padding: var(--space-3) var(--space-4);
+}
+
+.records-loading__avatar {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-pill);
+}
+
+.records-loading__text {
+    display: grid;
+    flex: 1;
+    gap: var(--space-2);
+}
+
+.records-loading__text .skeleton:first-child { width: 60%; }
+.records-loading__text .skeleton:last-child { width: 40%; height: 0.75em; }
+.records-loading__amount { width: 5rem; }
+
 .records-toolbar {
     display: grid;
     gap: var(--space-3);
@@ -1237,10 +1281,26 @@ button.account-card {
 
 .month-switcher__label {
     flex: 1;
+    min-width: 0;
     font-family: var(--font-display);
     font-size: var(--text-l);
     font-weight: 600;
     text-align: center;
+    white-space: nowrap;
+}
+
+/* Phones: header buttons show only their icons (the label stays for screen readers), the month fits one line. */
+@media (max-width: 30rem) {
+    .month-switcher__label { font-size: var(--text-m); }
+
+    .page-header__actions .btn__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
 }
 
 .search-field {
@@ -1366,8 +1426,13 @@ button.account-card {
     min-width: 0;
     min-height: 3.75rem;
     padding: var(--space-3) var(--space-2) var(--space-3) var(--space-4);
+    border: 0;
+    background: none;
     color: inherit;
+    font: inherit;
+    text-align: left;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .record-row__text {
@@ -1376,11 +1441,15 @@ button.account-card {
     min-width: 0;
 }
 
+/* Up to two lines, so names stay readable on phones; the details sheet shows everything. */
 .record-row__title {
+    display: -webkit-box;
     overflow: hidden;
     font-weight: 500;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
 }
 
 /* Line 2 is one run of text, so a narrow row cuts the tags at the end, not the category and account. */
@@ -1415,6 +1484,11 @@ button.account-card {
 .tag-color--blue { --tag: var(--tag-blue); }
 .tag-color--violet { --tag: var(--tag-violet); }
 .tag-color--pink { --tag: var(--tag-pink); }
+.tag-color--lime { --tag: var(--tag-lime); }
+.tag-color--cyan { --tag: var(--tag-cyan); }
+.tag-color--indigo { --tag: var(--tag-indigo); }
+.tag-color--brown { --tag: var(--tag-brown); }
+.tag-color--slate { --tag: var(--tag-slate); }
 
 .chip[class*="tag-color--"] {
     border-color: color-mix(in srgb, var(--tag) 45%, var(--rule));
@@ -1482,7 +1556,6 @@ button.account-card {
     gap: var(--space-1);
 }
 
-.record-row__menu { flex: none; color: var(--ink-muted); }
 
 /* Pending and planned records: accent edge, status chip with icon, muted amount until completed */
 .record-row--pending { box-shadow: inset 3px 0 0 var(--attention); }
@@ -1495,7 +1568,47 @@ button.account-card {
 .record-status .icon { width: 0.9em; height: 0.9em; }
 .record-row--pending .record-status { color: var(--attention); }
 
-.record-row__confirm { flex: none; color: var(--attention); }
+.record-row__confirm { flex: none; margin-right: var(--space-1); color: var(--attention); }
+
+/* Record details sheet: amount, a label/value list, then the actions */
+.record-details {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.record-details__amount {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-size: var(--text-xl);
+}
+
+.record-details__amount .muted { font-size: var(--text-s); }
+
+.record-details__list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+}
+
+.record-details__list > div { display: contents; }
+.record-details__list dt { color: var(--ink-muted); font-size: var(--text-s); line-height: 1.5rem; }
+.record-details__list dd { margin: 0; overflow-wrap: anywhere; }
+
+.record-details__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+}
+
+.record-details__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.record-details__actions .btn { flex: 1; }
 
 .section-header__actions {
     display: flex;
@@ -1860,27 +1973,56 @@ button.account-card {
 
 .avatar--selected .icon { color: var(--paper); }
 
+/* Phones: count and sums with a clear button on top, the actions below; one row on wider screens. */
 .selection-bar {
     position: fixed;
     z-index: 20;
     left: 50%;
     bottom: calc(var(--nav-h) + var(--space-4) + env(safe-area-inset-bottom));
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
     gap: var(--space-2);
     width: min(calc(100% - 2 * var(--space-4)), 40rem);
-    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-2) var(--space-3) var(--space-3);
     border: 1px solid var(--rule);
     border-radius: var(--radius-l);
     background: var(--sheet);
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
-    transform: translateX(-50%);
+    /* translate, not transform: the entrance animation animates transform. */
+    translate: -50% 0;
 }
 
 .selection-bar__info {
     display: grid;
-    flex: 1;
     min-width: 0;
+}
+
+.selection-bar__clear { grid-row: 1; grid-column: 2; }
+
+.selection-bar__actions {
+    display: flex;
+    grid-column: 1 / -1;
+    gap: var(--space-2);
+}
+
+.selection-bar__actions .btn {
+    flex: 1 1 auto;
+    padding-inline: var(--space-2);
+    white-space: nowrap;
+}
+
+.app-main:has(.selection-bar) { padding-bottom: calc(var(--nav-h) + 10rem + env(safe-area-inset-bottom)); }
+
+@media (min-width: 48rem) {
+    .selection-bar {
+        grid-template-columns: 1fr auto auto;
+        padding-bottom: var(--space-2);
+    }
+
+    .selection-bar__actions { grid-row: 1; grid-column: 2; }
+    .selection-bar__clear { grid-column: 3; }
+    .selection-bar__actions .btn { flex: none; }
 }
 
 .selection-bar__sums {

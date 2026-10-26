@@ -12,7 +12,8 @@ public sealed record UpdateTagRequest(string Name, bool IsArchived, string? Colo
 /// <summary>Palette keys; the client maps each to a theme token (--tag-red etc.), so colors follow the theme.</summary>
 public static class TagColors
 {
-    public static readonly IReadOnlyList<string> All = ["red", "orange", "amber", "green", "teal", "blue", "violet", "pink"];
+    public static readonly IReadOnlyList<string> All =
+        ["red", "orange", "amber", "lime", "green", "teal", "cyan", "blue", "indigo", "violet", "pink", "brown", "slate"];
 
     /// <summary>No color is valid too.</summary>
     public static bool IsKnown(string? key) => key is null || All.Contains(key);
