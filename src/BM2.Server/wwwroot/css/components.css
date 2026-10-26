@@ -969,6 +969,21 @@ button.list-row:hover { background: var(--wash); }
     color: var(--ink-muted);
 }
 
+/* Label and amount stay together; on a narrow screen a whole pair moves to the next line. */
+.balance__split {
+    flex-wrap: wrap;
+    column-gap: var(--space-4);
+    row-gap: 0;
+}
+
+.balance__split > span { white-space: nowrap; }
+
+/* One line per currency on the Wallets list. */
+.wallet-totals {
+    display: grid;
+    justify-items: end;
+}
+
 .account-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));

@@ -73,7 +73,7 @@ else
     </ValuationSheet>
 
     <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@($"Delete {_editing?.Name}?")"
-                   ConfirmLabel="Delete account" Danger="true" OnConfirm="DeleteAsync">
+                   ConfirmLabel="Delete account" Danger="true" RequireText="@_editing?.Name" OnConfirm="DeleteAsync">
         <p>The account and all its records will be deleted, including transfers to other accounts. This can't be undone.</p>
         <p class="muted">To keep the history, archive the account instead.</p>
     </ConfirmDialog>

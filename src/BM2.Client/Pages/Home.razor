@@ -58,9 +58,9 @@
                                 Sign="@(total.Sum < 0 ? AmountSign.Minus : AmountSign.None)" />
                         @if (total.HasInvestments)
                         {
-                            <span class="balance__planned">
-                                Cash <Amount Value="total.Cash" Currency="@total.Currency" Sign="@(total.Cash < 0 ? AmountSign.Minus : AmountSign.None)" />
-                                · Investments <Amount Value="total.Invested" Currency="@total.Currency" Sign="AmountSign.None" />
+                            <span class="balance__planned balance__split">
+                                <span>Cash <Amount Value="total.Cash" Currency="@total.Currency" Sign="@(total.Cash < 0 ? AmountSign.Minus : AmountSign.None)" /></span>
+                                <span>Investments <Amount Value="total.Invested" Currency="@total.Currency" Sign="@(total.Invested < 0 ? AmountSign.Minus : AmountSign.None)" /></span>
                             </span>
                         }
                         @if (total.WithPlanned != total.Sum)

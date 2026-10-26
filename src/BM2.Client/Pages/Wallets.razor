@@ -23,14 +23,25 @@ else
         @foreach (var wallet in WalletState.Wallets)
         {
             <li>
-                <ListRow Title="@wallet.Name" Subtitle="@($"{Options.RoleLabel(wallet.Role)} · {wallet.BaseCurrency}")"
+                <ListRow Title="@wallet.Name"
+                         Subtitle="@($"{Options.RoleLabel(wallet.Role)} · {wallet.BaseCurrency}{(wallet.Id == WalletState.Current?.Id ? " · Current" : "")}")"
                          OnClick="() => OpenEdit(wallet)">
                     <Leading><Icon Name="wallet" /></Leading>
                     <Trailing>
-                        @if (wallet.Id == WalletState.Current?.Id)
-                        {
-                            <span class="tag">Current</span>
-                        }
+                        <span class="wallet-totals">
+                            @if (wallet.Totals is not { Count: > 0 } totals)
+                            {
+                                <span class="muted">No accounts</span>
+                            }
+                            else
+                            {
+                                @foreach (var total in totals)
+                                {
+                                    <Amount Value="total.Amount" Currency="@total.Currency"
+                                            Sign="@(total.Amount < 0 ? AmountSign.Minus : AmountSign.None)" />
+                                }
+                            }
+                        </span>
                         <Icon Name="chevron-right" />
                     </Trailing>
                 </ListRow>
