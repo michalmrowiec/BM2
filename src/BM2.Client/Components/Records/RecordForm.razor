@@ -96,7 +96,8 @@
                     </button>
                 }
             </ChipGroup>
-            <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint" />
+            <FieldMessages Error="@ErrorFor(nameof(FormModel.CategoryId))" ErrorId="record-category-error" HintId="record-category-hint"
+                           Hint="@(IsRefund ? $"Refund: lowers {FindCategory(_model.CategoryId)?.Name} spending instead of counting as income." : null)" />
         </div>
 
         <Sheet Open="_pickCategory" OpenChanged="v => _pickCategory = v" Title="Category">
@@ -330,13 +331,16 @@
         .Select(a => ((Guid?)a.Id, a.Name))
         .ToList();
 
-    // Most used in the wallet first, then by name.
+    // Most used in the wallet first, then by name. Income may also take an expense category (a refund), listed after.
     private IReadOnlyList<(Guid Value, string Label)> CategoryOptions => Wallet.Categories
-        .Where(c => c.Type == (_model.Type == RecordType.Income ? CategoryType.Income : CategoryType.Expense)
+        .Where(c => (c.Type == CategoryType.Expense || _model.Type == RecordType.Income)
             && (!c.IsArchived || c.Id == Initial?.CategoryId))
-        .OrderBy(c => Rank(Suggestions?.CategoryIds, c.Id)).ThenBy(c => c.Name)
-        .Select(c => (c.Id, c.Name))
+        .OrderBy(c => _model.Type == RecordType.Income && c.Type == CategoryType.Expense)
+        .ThenBy(c => Rank(Suggestions?.CategoryIds, c.Id)).ThenBy(c => c.Name)
+        .Select(c => (c.Id, _model.Type == RecordType.Income && c.Type == CategoryType.Expense ? $"{c.Name} · refund" : c.Name))
         .ToList();
+
+    private bool IsRefund => _model.Type == RecordType.Income && FindCategory(_model.CategoryId)?.Type == CategoryType.Expense;
 
     private IReadOnlyList<TagItem> TagOptions => Wallet.Tags
         .Concat(_createdTags.Where(c => Wallet.Tags.All(t => t.Id != c.Id)))

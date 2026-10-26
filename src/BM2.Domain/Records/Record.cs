@@ -178,10 +178,10 @@ public sealed class Record
             return Error.NotFound();
         }
 
-        var expected = draft.Type == RecordType.Income ? CategoryType.Income : CategoryType.Expense;
-        if (category.Type != expected)
+        // Income with an expense category is a refund of that category.
+        if (draft.Type == RecordType.Expense && category.Type != CategoryType.Expense)
         {
-            return Error.Validation(nameof(CategoryId), $"Choose an {expected.ToString().ToLowerInvariant()} category.");
+            return Error.Validation(nameof(CategoryId), "Choose an expense category.");
         }
 
         return category.IsArchived && (isNew || category.Id != CategoryId)

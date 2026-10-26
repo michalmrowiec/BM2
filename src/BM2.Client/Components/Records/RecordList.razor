@@ -69,6 +69,10 @@
                         </span>
                         <span class="record-row__end">
                             <Amount Value="view.Amount" Currency="@view.Currency" Sign="view.Sign" />
+                            @if (item.Type == RecordType.Income && view.Category?.Type == CategoryType.Expense)
+                            {
+                                <span class="tag record-status" title="Lowers @view.Category.Name spending"><Icon Name="in" />Refund</span>
+                            }
                             @if (open)
                             {
                                 <span class="tag record-status"><Icon Name="@(item.Status == RecordStatus.Pending ? "clock" : "calendar")" />@item.Status</span>

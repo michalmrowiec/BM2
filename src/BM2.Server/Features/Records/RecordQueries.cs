@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Domain.Records;
 using BM2.Server.Data;
@@ -67,9 +68,16 @@ internal static class RecordQueries
             query = query.Where(r => r.Tags.Any(t => t.TagId == tag));
         }
 
+        // Refunds (income in an expense category) match expenses, like in stats.
         if (filter.Type is { } type)
         {
-            query = query.Where(r => r.Type == type);
+            query = type switch
+            {
+                RecordType.Expense => query.Where(r => r.Type == RecordType.Expense
+                    || (r.Type == RecordType.Income && r.Category!.Type == CategoryType.Expense)),
+                RecordType.Income => query.Where(r => r.Type == RecordType.Income && r.Category!.Type != CategoryType.Expense),
+                _ => query.Where(r => r.Type == type),
+            };
         }
 
         if (filter.Status is { } status)

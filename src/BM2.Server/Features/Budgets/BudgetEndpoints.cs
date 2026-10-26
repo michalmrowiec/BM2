@@ -49,11 +49,11 @@ public static class BudgetEndpoints
         var spent = await db.Records
             .AsNoTracking()
             .Visible(current.Access.ReadableAccountIds)
-            .Where(r => r.Type == RecordType.Expense
+            .Where(r => r.Type != RecordType.Transfer
                 && r.OccurredOn >= start && r.OccurredOn < end
                 && r.CategoryId != null && categoryIds.Contains(r.CategoryId.Value))
             .GroupBy(r => new { CategoryId = r.CategoryId!.Value, r.Account.Currency, Planned = r.Status == RecordStatus.Planned })
-            .Select(g => new { g.Key.CategoryId, g.Key.Currency, g.Key.Planned, Amount = g.Sum(r => r.AccountAmount) })
+            .Select(g => new { g.Key.CategoryId, g.Key.Currency, g.Key.Planned, Amount = g.Sum(r => r.Type == RecordType.Income ? -r.AccountAmount : r.AccountAmount) })
             .ToListAsync(ct);
         var planned = spent.Where(s => s.Planned).ToList();
         spent = spent.Where(s => !s.Planned).ToList();
