@@ -5,28 +5,29 @@
 
 @* Investment account: value against the net amount paid in, a quick valuation for today and the history. *@
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Account?.Name ?? "Investment")">
-    @if (Account is not null)
+    @* A local copy: the form re-renders on its own after the parent clears Account on close. *@
+    @if (Account is { } account)
     {
-        var value = Account.Valuation ?? Account.Balance;
-        var gain = value - Account.Balance;
+        var value = account.Valuation ?? account.Balance;
+        var gain = value - account.Balance;
         <div class="valuation-summary">
-            <Amount Value="value" Currency="@Account.Currency" Large="true" Sign="AmountSign.None" />
+            <Amount Value="value" Currency="@account.Currency" Large="true" Sign="@(value < 0 ? AmountSign.Minus : AmountSign.None)" />
             <span class="muted">
-                @(Account.ValuedOn is { } on ? $"Valued on {on:d}" : "No valuation yet: shows what you paid in")
+                @(account.ValuedOn is { } on ? $"Valued on {on:d}" : "No valuation yet: shows what you paid in")
             </span>
             <dl class="valuation-summary__facts">
-                <div><dt>Paid in</dt><dd><Amount Value="Account.Balance" Currency="@Account.Currency" Sign="AmountSign.None" /></dd></div>
+                <div><dt>Paid in</dt><dd><Amount Value="account.Balance" Currency="@account.Currency" Sign="@(account.Balance < 0 ? AmountSign.Minus : AmountSign.None)" /></dd></div>
                 <div>
                     <dt>Gain</dt>
-                    <dd><Amount Value="Math.Abs(gain)" Currency="@Account.Currency" Sign="@(gain < 0 ? AmountSign.Minus : AmountSign.Plus)" /></dd>
+                    <dd><Amount Value="Math.Abs(gain)" Currency="@account.Currency" Sign="@(gain < 0 ? AmountSign.Minus : AmountSign.Plus)" /></dd>
                 </div>
             </dl>
         </div>
 
-        @if (Account.CanWrite)
+        @if (account.CanWrite)
         {
             <EditForm Model="_model" OnValidSubmit="SaveAsync" class="form-stack">
-                <MoneyInput Label="@(_otherDate ? "Value" : "Current value")" Currency="@Account.Currency" @bind-Value="_model.Value"
+                <MoneyInput Label="@(_otherDate ? "Value" : "Current value")" Currency="@account.Currency" @bind-Value="_model.Value"
                             SelectOnFocus="true"
                             Hint="What the account is worth now. One valuation per day: saving again the same day replaces it." />
                 @if (_otherDate)
@@ -48,7 +49,7 @@
             <Chart Options="_chart" Label="Value and paid in over time. The history below gives the numbers." />
         }
 
-        <a class="btn btn-ghost btn-block" href="@($"records?accountId={Account.Id}&all=true")">
+        <a class="btn btn-ghost btn-block" href="@($"records?accountId={account.Id}&all=true")">
             <Icon Name="transfer" /> Transfers and records
         </a>
 
@@ -62,8 +63,8 @@
                         <li>
                             <ListRow Title="@item.ValuedOn.ToString("d")" Subtitle="@($"Paid in {item.PaidIn:N2}")">
                                 <Trailing>
-                                    <Amount Value="item.Value" Currency="@Account.Currency" Sign="AmountSign.None" />
-                                    @if (Account.CanWrite)
+                                    <Amount Value="item.Value" Currency="@account.Currency" Sign="AmountSign.None" />
+                                    @if (account.CanWrite)
                                     {
                                         <button type="button" class="icon-button" aria-label="@($"Delete valuation of {item.ValuedOn:d}")"
                                                 @onclick="() => DeleteAsync(item)">

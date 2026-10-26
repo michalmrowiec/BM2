@@ -96,7 +96,7 @@
                             <li>
                                 <button type="button" class="account-card" @onclick="() => _valuing = account.Id">
                                     <span class="account-card__name">@account.Name</span>
-                                    <Amount Value="value" Currency="@account.Currency" Sign="AmountSign.None" />
+                                    <Amount Value="value" Currency="@account.Currency" Sign="@(value < 0 ? AmountSign.Minus : AmountSign.None)" />
                                     <span class="account-card__meta">
                                         Gain <Amount Value="Math.Abs(value - account.Balance)" Currency="@account.Currency"
                                                      Sign="@(value < account.Balance ? AmountSign.Minus : AmountSign.Plus)" />
