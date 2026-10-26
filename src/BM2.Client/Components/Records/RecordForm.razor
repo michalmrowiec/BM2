@@ -538,6 +538,7 @@
 
     private void OnNameBlur()
     {
+        _model.Name = _model.Name?.Trim();
         _nameFocused = false;
         _activeSuggestion = -1;
     }
