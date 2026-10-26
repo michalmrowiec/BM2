@@ -1,3 +1,4 @@
+using BM2.Contracts.Accounts;
 using BM2.Contracts.Wallets;
 using BM2.Domain.Common;
 
@@ -25,21 +26,26 @@ public sealed class Account
 
     public bool IsArchived { get; private set; }
 
+    public AccountKind Kind { get; private set; } = AccountKind.Cash;
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public IReadOnlyCollection<AccountMember> Members => _members;
 
-    public static Account Create(Guid walletId, string name, string currency, decimal openingBalance, DateTimeOffset now) =>
+    public static Account Create(
+        Guid walletId, string name, string currency, decimal openingBalance, DateTimeOffset now, AccountKind kind = AccountKind.Cash) =>
         new()
         {
             WalletId = walletId,
             Name = name.Trim(),
             Currency = currency,
             OpeningBalance = openingBalance,
+            Kind = kind,
             CreatedAt = now,
         };
 
-    public Result Update(string name, string currency, decimal openingBalance, bool isArchived, bool hasRecords)
+    public Result Update(
+        string name, string currency, decimal openingBalance, bool isArchived, bool hasRecords, AccountKind kind = AccountKind.Cash)
     {
         if (currency != Currency && hasRecords)
         {
@@ -50,6 +56,7 @@ public sealed class Account
         Currency = currency;
         OpeningBalance = openingBalance;
         IsArchived = isArchived;
+        Kind = kind;
         return Result.Success;
     }
 

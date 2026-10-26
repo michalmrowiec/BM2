@@ -1,4 +1,5 @@
 using BM2.Contracts.Records;
+using BM2.Domain.Accounts;
 using BM2.Server.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,5 +39,20 @@ internal static class AccountBalances
         }
 
         return balances;
+    }
+
+    /// <summary>Latest valuation of each given account that has one.</summary>
+    public static async Task<Dictionary<Guid, AccountValuation>> LatestValuationsAsync(
+        AppDbContext db, IReadOnlyCollection<Guid> accountIds, CancellationToken ct)
+    {
+        if (accountIds.Count == 0)
+        {
+            return [];
+        }
+
+        var all = await db.AccountValuations.AsNoTracking()
+            .Where(v => accountIds.Contains(v.AccountId) && !db.AccountValuations.Any(n => n.AccountId == v.AccountId && n.ValuedOn > v.ValuedOn))
+            .ToListAsync(ct);
+        return all.ToDictionary(v => v.AccountId);
     }
 }

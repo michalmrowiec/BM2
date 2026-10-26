@@ -28,6 +28,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<AccountMember> AccountMembers => Set<AccountMember>();
 
+    public DbSet<AccountValuation> AccountValuations => Set<AccountValuation>();
+
     public DbSet<Category> Categories => Set<Category>();
 
     public DbSet<Tag> Tags => Set<Tag>();

@@ -1,0 +1,146 @@
+@using BM2.Contracts.Accounts
+@inject ApiClient Api
+@inject ToastService Toasts
+
+@* Value of an investment account: latest valuation against the net amount paid in, plus the valuation history. *@
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Account?.Name ?? "Investment")">
+    @if (Account is not null)
+    {
+        var value = Account.Valuation ?? Account.Balance;
+        <div class="month-stats month-stats--three">
+            <div class="stat">
+                <span class="stat__label">Value</span>
+                <Amount Value="value" Currency="@Account.Currency" Sign="AmountSign.None" />
+            </div>
+            <div class="stat">
+                <span class="stat__label">Paid in</span>
+                <Amount Value="Account.Balance" Currency="@Account.Currency" Sign="AmountSign.None" />
+            </div>
+            <div class="stat">
+                <span class="stat__label">Gain</span>
+                <Amount Value="Math.Abs(value - Account.Balance)" Currency="@Account.Currency"
+                        Sign="@(value < Account.Balance ? AmountSign.Minus : AmountSign.Plus)" />
+            </div>
+        </div>
+        <p class="muted">
+            @(Account.ValuedOn is { } on ? $"Valued on {on:d}." : "No valuation yet, so the value is what you paid in.")
+            Paid in = transfers to this account minus transfers out of it.
+        </p>
+
+        @if (Account.CanWrite)
+        {
+            <EditForm Model="_model" OnValidSubmit="SaveAsync" class="form-stack">
+                <DateField Label="Date" @bind-Value="_model.ValuedOn" />
+                <MoneyInput Label="Value" Currency="@Account.Currency" @bind-Value="_model.Value"
+                            Hint="What the account is worth on that day. A second valuation on the same day replaces the first." />
+                <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">Save valuation</button>
+            </EditForm>
+        }
+
+        @if (_items?.Count > 0)
+        {
+            <h3 class="section-title">History</h3>
+            <ul class="list">
+                @foreach (var item in _items)
+                {
+                    <li>
+                        <ListRow Title="@item.ValuedOn.ToString("d")">
+                            <Trailing>
+                                <Amount Value="item.Value" Currency="@Account.Currency" Sign="AmountSign.None" />
+                                @if (Account.CanWrite)
+                                {
+                                    <button type="button" class="icon-button" aria-label="@($"Delete valuation of {item.ValuedOn:d}")"
+                                            @onclick="() => DeleteAsync(item)">
+                                        <Icon Name="trash" />
+                                    </button>
+                                }
+                            </Trailing>
+                        </ListRow>
+                    </li>
+                }
+            </ul>
+        }
+
+        @ChildContent
+    }
+</Sheet>
+
+@code {
+    private FormModel _model = new();
+    private List<AccountValuationItem>? _items;
+    private Guid? _loadedFor;
+    private bool _busy;
+
+    [Parameter, EditorRequired] public Guid WalletId { get; set; }
+
+    [Parameter] public AccountItem? Account { get; set; }
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    /// <summary>Raised after a valuation changes, so the wallet snapshot can refresh.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Url => $"api/wallets/{WalletId}/accounts/{Account!.Id}/valuations";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Open && Account is not null && _loadedFor != Account.Id)
+        {
+            _loadedFor = Account.Id;
+            _model = new FormModel { Value = Account.Valuation };
+            await LoadAsync();
+        }
+        else if (!Open)
+        {
+            _loadedFor = null;
+        }
+    }
+
+    private async Task LoadAsync() => _items = (await Api.GetAsync<List<AccountValuationItem>>(Url)).Value;
+
+    private async Task SaveAsync()
+    {
+        if (_model.Value is not { } value || value < 0)
+        {
+            Toasts.Show("Enter a value of 0 or more.", ToastKind.Error);
+            return;
+        }
+
+        _busy = true;
+        var result = await Api.PutAsync(Url, new SaveValuationRequest(_model.ValuedOn, value));
+        _busy = false;
+        if (!result.Ok)
+        {
+            Toasts.Show(result.Problem?.Detail ?? "Couldn't save the valuation.", ToastKind.Error);
+            return;
+        }
+
+        Toasts.Show("Valuation saved.", ToastKind.Success);
+        await LoadAsync();
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task DeleteAsync(AccountValuationItem item)
+    {
+        var result = await Api.DeleteAsync($"{Url}/{item.Id}");
+        if (!result.Ok)
+        {
+            Toasts.ShowError();
+            return;
+        }
+
+        await LoadAsync();
+        await OnChanged.InvokeAsync();
+    }
+
+    private sealed class FormModel
+    {
+        public DateOnly ValuedOn { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+
+        public decimal? Value { get; set; }
+    }
+}

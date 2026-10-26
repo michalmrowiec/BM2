@@ -1,3 +1,4 @@
+using BM2.Contracts.Accounts;
 using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Contracts.Stats;
@@ -32,7 +33,7 @@ internal static class GetForecast
             : query.Currency.Trim().ToUpperInvariant();
 
         var accounts = (await db.Accounts
-                .Where(a => a.WalletId == walletId && a.Currency == currency)
+                .Where(a => a.WalletId == walletId && a.Currency == currency && a.Kind == AccountKind.Cash)
                 .Select(a => new { a.Id, a.OpeningBalance })
                 .ToListAsync(ct))
             .Where(a => access.CanReadAccount(a.Id))

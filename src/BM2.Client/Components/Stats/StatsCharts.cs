@@ -78,6 +78,12 @@ public static class StatsCharts
             series.Add(Bars("Expenses", RecordType.Expense, items, m => m.Expense, only is null ? "var(--negative)" : "var(--vivid)"));
         }
 
+        // Invested (transfers to investment accounts, net) only next to both types, and only when there is any.
+        if (only is null && items.Any(m => m.Invested != 0))
+        {
+            series.Add(Bars("Invested", RecordType.Transfer, items, m => m.Invested, "var(--link)"));
+        }
+
         if (only is null)
         {
             series.Add(new

@@ -34,7 +34,7 @@ internal static class UpdateAccount
         }
 
         var hasRecords = await db.Records.AnyAsync(r => r.AccountId == account.Id || r.TransferAccountId == account.Id, ct);
-        var result = account.Update(request.Name, request.Currency, request.OpeningBalance, request.IsArchived, hasRecords);
+        var result = account.Update(request.Name, request.Currency, request.OpeningBalance, request.IsArchived, hasRecords, request.Kind);
         if (!result.IsSuccess)
         {
             return result.Error!.ToProblem();

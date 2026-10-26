@@ -7,6 +7,14 @@
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToUpdateRequest()" />
     <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
     <SelectField Label="Currency" @bind-Value="_model.Currency" Options="Options.Currencies" />
+    <div class="field">
+        <SegmentedControl TValue="AccountKind" Options="KindOptions" Value="_model.Kind" ValueChanged="k => _model.Kind = k" Label="Account type" />
+        <p class="field__hint">
+            @(_model.Kind == AccountKind.Investment
+                ? "Valued by the valuations you enter; kept out of the cash balance and forecast. Transfers to it show as invested."
+                : "Cash, a bank account or savings: its balance comes from records.")
+        </p>
+    </div>
     <MoneyInput Label="Opening balance" Currency="@_model.Currency" @bind-Value="_model.OpeningBalance" AllowNegative="true"
                 Hint="What the account held when you started tracking it." />
     @if (Account is not null)
@@ -21,6 +29,7 @@
 
 @code {
     private static readonly UpdateAccountRequestValidator Validator = new();
+    private static readonly IReadOnlyList<(AccountKind, string)> KindOptions = [(AccountKind.Cash, "Cash"), (AccountKind.Investment, "Investment")];
     private FormModel _model = new();
     private FluentValidator? _validator;
     private bool _busy;
@@ -41,6 +50,7 @@
             Currency = Account.Currency,
             OpeningBalance = Account.OpeningBalance,
             IsArchived = Account.IsArchived,
+            Kind = Account.Kind,
         };
 
     private async Task SubmitAsync()
@@ -49,7 +59,7 @@
         var request = _model.ToUpdateRequest();
         var result = Account is null
             ? await Api.PostAsync<AccountItem>(
-                $"api/wallets/{WalletId}/accounts", new CreateAccountRequest(request.Name, request.Currency, request.OpeningBalance))
+                $"api/wallets/{WalletId}/accounts", new CreateAccountRequest(request.Name, request.Currency, request.OpeningBalance, request.Kind))
             : await Api.PutAsync($"api/wallets/{WalletId}/accounts/{Account.Id}", request);
         _busy = false;
 
@@ -77,6 +87,8 @@
 
         public bool IsArchived { get; set; }
 
-        public UpdateAccountRequest ToUpdateRequest() => new(Name ?? "", Currency, OpeningBalance ?? 0, IsArchived);
+        public AccountKind Kind { get; set; } = AccountKind.Cash;
+
+        public UpdateAccountRequest ToUpdateRequest() => new(Name ?? "", Currency, OpeningBalance ?? 0, IsArchived, Kind);
     }
 }

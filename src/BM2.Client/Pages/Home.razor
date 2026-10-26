@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using BM2.Contracts.Accounts
 @using BM2.Client.Components.Budgets
 @using BM2.Client.Components.Records
 @using BM2.Contracts.Budgets
@@ -38,8 +39,10 @@
             <p class="eyebrow">@DateTime.Now.ToString("dddd, d MMMM")</p>
             <h1 class="page-title">@wallet.Name</h1>
 
-            var accounts = wallet.Accounts.Where(a => !a.IsArchived).ToList();
-            if (accounts.Count > 0)
+            var active = wallet.Accounts.Where(a => !a.IsArchived).ToList();
+            var accounts = active.Where(a => a.Kind == AccountKind.Cash).ToList();
+            var investments = active.Where(a => a.Kind == AccountKind.Investment).ToList();
+            if (active.Count > 0)
             {
                 <section class="balance" aria-label="Total balance">
                     @foreach (var total in accounts.GroupBy(a => a.Currency)
@@ -69,6 +72,35 @@
                         </li>
                     }
                 </ul>
+
+                @if (investments.Count > 0)
+                {
+                    <h2 class="section-title">Investments</h2>
+                    <ul class="account-cards">
+                        @foreach (var account in investments)
+                        {
+                            var value = account.Valuation ?? account.Balance;
+                            <li>
+                                <a class="account-card" href="@($"accounts?account={account.Id}")">
+                                    <span class="account-card__name">@account.Name</span>
+                                    <Amount Value="value" Currency="@account.Currency" Sign="AmountSign.None" />
+                                    <span class="account-card__meta">
+                                        Gain <Amount Value="Math.Abs(value - account.Balance)" Currency="@account.Currency"
+                                                     Sign="@(value < account.Balance ? AmountSign.Minus : AmountSign.Plus)" />
+                                    </span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                    <p class="balance__planned">
+                        Net worth:
+                        @foreach (var total in active.GroupBy(a => a.Currency)
+                                      .Select(g => (Currency: g.Key, Sum: g.Sum(a => a.Valuation ?? a.Balance))))
+                        {
+                            <Amount Value="total.Sum" Currency="@total.Currency" Sign="@(total.Sum < 0 ? AmountSign.Minus : AmountSign.None)" />
+                        }
+                    </p>
+                }
 
                 @if (_month?.Totals.Count > 0)
                 {

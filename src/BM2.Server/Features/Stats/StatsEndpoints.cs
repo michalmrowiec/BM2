@@ -1,3 +1,4 @@
+using BM2.Contracts.Accounts;
 using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Contracts.Stats;
@@ -60,6 +61,20 @@ public static class StatsEndpoints
             .Select(g => new { g.Key.OccurredOn, g.Key.Type, Total = g.Sum(r => r.Amount) })
             .ToListAsync(ct);
 
+        // Transfers between cash and investment accounts, on the side in the stats currency.
+        var invested = await Base(db, current, filter, from, to)!
+            .Where(r => r.Type == RecordType.Transfer && r.Account.Kind != r.TransferAccount!.Kind)
+            .Select(r => new
+            {
+                r.OccurredOn,
+                Amount = r.TransferAccount!.Kind == AccountKind.Investment
+                    ? (r.Account.Currency == currency ? r.AccountAmount : 0)
+                    : (r.TransferAccount.Currency == currency ? -(r.TransferAmount ?? r.AccountAmount) : 0),
+            })
+            .GroupBy(r => r.OccurredOn)
+            .Select(g => new { OccurredOn = g.Key, Total = g.Sum(r => r.Amount) })
+            .ToListAsync(ct);
+
         var items = new List<MonthTotal>();
         for (var month = from; month < to; month = month.AddMonths(1))
         {
@@ -68,7 +83,8 @@ public static class StatsEndpoints
             items.Add(new MonthTotal(
                 month,
                 inMonth.Where(d => d.Type == RecordType.Income).Sum(d => d.Total),
-                inMonth.Where(d => d.Type == RecordType.Expense).Sum(d => d.Total)));
+                inMonth.Where(d => d.Type == RecordType.Expense).Sum(d => d.Total),
+                invested.Where(d => d.OccurredOn >= month && d.OccurredOn < end).Sum(d => d.Total)));
         }
 
         return TypedResults.Ok(new MonthlyTotals(currency, items));
@@ -124,7 +140,20 @@ public static class StatsEndpoints
     // Completed and pending income and expenses on visible accounts in one currency; null when the account is not readable.
     // Refunds (income in an expense category) count as negative expenses.
     private static IQueryable<StatRow>? Query(
-        AppDbContext db, CurrentWallet current, StatsFilter filter, string currency, DateOnly? from = null, DateOnly? to = null)
+        AppDbContext db, CurrentWallet current, StatsFilter filter, string currency, DateOnly? from = null, DateOnly? to = null) =>
+        Base(db, current, filter, from, to)?
+            .Where(r => r.Type != RecordType.Transfer && r.Account.Currency == currency)
+            .Select(r => new StatRow
+            {
+                CategoryId = r.CategoryId,
+                OccurredOn = r.OccurredOn,
+                Type = r.Type == RecordType.Income && r.Category!.Type == CategoryType.Expense ? RecordType.Expense : r.Type,
+                Amount = r.Type == RecordType.Income && r.Category!.Type == CategoryType.Expense ? -r.AccountAmount : r.AccountAmount,
+            });
+
+    // Completed and pending records matching the filter; null when the account is not readable.
+    private static IQueryable<Record>? Base(
+        AppDbContext db, CurrentWallet current, StatsFilter filter, DateOnly? from = null, DateOnly? to = null)
     {
         var query = RecordQueries.Filtered(db, current, new RecordFilter
         {
@@ -132,20 +161,14 @@ public static class StatsEndpoints
             To = to ?? filter.To,
             AccountId = filter.AccountId,
             CategoryId = filter.CategoryId,
-        })?.Where(r => r.Status != RecordStatus.Planned && r.Type != RecordType.Transfer && r.Account.Currency == currency);
+        })?.Where(r => r.Status != RecordStatus.Planned);
 
         if (query is not null && filter.TagIds is { Length: > 0 } tagIds)
         {
             query = query.Where(r => r.Tags.Any(t => tagIds.Contains(t.TagId)));
         }
 
-        return query?.Select(r => new StatRow
-        {
-            CategoryId = r.CategoryId,
-            OccurredOn = r.OccurredOn,
-            Type = r.Type == RecordType.Income && r.Category!.Type == CategoryType.Expense ? RecordType.Expense : r.Type,
-            Amount = r.Type == RecordType.Income && r.Category!.Type == CategoryType.Expense ? -r.AccountAmount : r.AccountAmount,
-        });
+        return query;
     }
 
     private sealed class StatRow
