@@ -10,7 +10,7 @@ namespace BM2.Client.Components.Stats;
 /// <summary>ECharts options and formatting shared by the stats screens.</summary>
 public static class StatsCharts
 {
-    public const string NumberFont = "Fraunces, ui-serif, Georgia, serif";
+    public const string NumberFont = "var(--font-num)";
     private const int MaxColored = 8;
     private static readonly string[] Palette = ["vivid", "blue", "green", "amber", "violet", "teal", "pink", "orange", "red"];
 

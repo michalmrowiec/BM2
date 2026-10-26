@@ -41,6 +41,8 @@
 
     --font-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-display: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+    /* Amounts (.num, charts); More can switch them to the UI font, see theme.js. */
+    --font-num: var(--font-display);
 
     --text-xs: 0.75rem;
     --text-s: 0.875rem;
@@ -167,3 +169,5 @@
     --tag-brown: #d6a77f;
     --tag-slate: #b0bccb;
 }
+
+:root[data-amounts="plain"] { --font-num: var(--font-ui); }

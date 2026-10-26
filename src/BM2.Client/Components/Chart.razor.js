@@ -52,7 +52,7 @@ function redrawAll() {
     charts.forEach(render);
 }
 
-new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-amounts"] });
 systemDark.addEventListener("change", redrawAll);
 reducedMotion.addEventListener("change", redrawAll);
 

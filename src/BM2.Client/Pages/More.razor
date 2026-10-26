@@ -1,5 +1,6 @@
 @page "/more"
 @attribute [Authorize]
+@inject IJSRuntime JS
 
 <PageTitle>More · BM2</PageTitle>
 
@@ -81,6 +82,17 @@
             <span class="menu-list__trail">System · Light · Dark</span>
         </button>
     </li>
+    @if (RendererInfo.IsInteractive)
+    {
+        @* Saved in this browser, like the theme; big totals stay in the display font. *@
+        <li>
+            <button type="button" aria-pressed="@(_plainAmounts ? "true" : "false")" @onclick="ToggleAmountsAsync">
+                <Icon Name="type" />
+                <span>Plain font for amounts</span>
+                <span class="menu-list__trail">@(_plainAmounts ? "On" : "Off")</span>
+            </button>
+        </li>
+    }
     <li>
         <form action="Account/Logout" method="post">
             <AntiforgeryToken />
@@ -92,3 +104,22 @@
         </form>
     </li>
 </ul>
+
+@code {
+    private bool _plainAmounts;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _plainAmounts = await JS.InvokeAsync<bool>("bm2Amounts.isPlain");
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleAmountsAsync()
+    {
+        _plainAmounts = !_plainAmounts;
+        await JS.InvokeVoidAsync("bm2Amounts.setPlain", _plainAmounts);
+    }
+}

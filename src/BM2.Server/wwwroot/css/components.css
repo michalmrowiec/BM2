@@ -895,7 +895,9 @@ button.list-row:hover { background: var(--wash); }
 .amount--positive { color: var(--positive); }
 .amount--negative { color: var(--negative); }
 
+/* Big totals keep the display font even with plain amounts. */
 .amount--large {
+    font-family: var(--font-display);
     font-size: var(--text-2xl);
     font-weight: 700;
     line-height: 1.1;

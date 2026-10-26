@@ -57,7 +57,7 @@ h1:focus { outline: none; }
 ::selection { background: color-mix(in srgb, var(--vivid) 25%, transparent); }
 
 .num {
-    font-family: var(--font-display);
+    font-family: var(--font-num);
     font-variant-numeric: lining-nums tabular-nums;
 }
 
