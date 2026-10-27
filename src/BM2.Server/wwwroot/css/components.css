@@ -2690,3 +2690,9 @@ button.account-card {
     color: var(--ink);
     letter-spacing: 0.06em;
 }
+
+/* The day total stays muted when hidden, as it is when shown. */
+:root[data-balances="hidden"] .record-day__total .amount,
+:root[data-balances="hidden"] .record-day__total .amount::before {
+    color: var(--ink-muted);
+}
