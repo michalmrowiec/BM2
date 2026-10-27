@@ -1,6 +1,13 @@
 // Blazor JS initializer. Registers the service worker (fast start, see wwwroot/service-worker.js) on every page.
 export function afterWebStarted() {
-    navigator.serviceWorker?.register("/service-worker.js", { scope: "/" })
+    if (!navigator.serviceWorker) return;
+    // Locally every rebuild changes the fingerprints and the dev certificate can block worker fetches, which
+    // leaves the app half-loaded; keep the worker for deployed hosts only and remove a stale local one.
+    if (["localhost", "127.0.0.1"].includes(location.hostname)) {
+        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+        return;
+    }
+    navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
         .catch(error => console.warn("Service worker registration failed", error));
 }
 
@@ -64,7 +71,9 @@ function slideBetweenTabs(event) {
         setTimeout(done, 300);
         window.Blazor.navigateTo(link.href);
     }));
-    transition.finished.finally(() => delete root.dataset.slide);
+    // An aborted transition (e.g. a second tap) rejects these promises; the navigation itself still happens.
+    transition.ready.catch(() => {});
+    transition.finished.catch(() => {}).finally(() => delete root.dataset.slide);
 }
 
 // Enter on a highlighted combobox suggestion, or in a field marked data-enter-picks, picks (in Blazor) instead of

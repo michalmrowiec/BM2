@@ -88,8 +88,9 @@
         root.style.setProperty("--reveal-x", `${box.left + box.width / 2}px`);
         root.style.setProperty("--reveal-y", `${box.top + box.height / 2}px`);
         root.classList.add("theme-switching");
-        document.startViewTransition(() => apply(next)).finished
-            .finally(() => root.classList.remove("theme-switching"));
+        const transition = document.startViewTransition(() => apply(next));
+        transition.ready.catch(() => {});
+        transition.finished.catch(() => {}).finally(() => root.classList.remove("theme-switching"));
     });
 
     // Enhanced navigation can patch <html> attributes; restore the theme afterwards.
