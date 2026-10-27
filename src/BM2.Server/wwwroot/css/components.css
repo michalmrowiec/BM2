@@ -2676,6 +2676,11 @@ button.account-card {
     display: none;
 }
 
+/* A hidden amount has no sign to show, so it drops the red/green and its currency takes the text colour. */
+:root[data-balances="hidden"] :is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount {
+    color: var(--ink);
+}
+
 /* An asterisk sits high on the line; nudge it down to the middle of the digits. */
 :root[data-balances="hidden"] :is(:is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount, .secret)::before {
     content: "***";
