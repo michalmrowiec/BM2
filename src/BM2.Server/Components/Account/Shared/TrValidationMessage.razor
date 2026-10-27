@@ -1,0 +1,50 @@
+@* ValidationMessage with translated messages (DataAnnotations attributes can't call Tr). *@
+@typeparam TValue
+@implements IDisposable
+
+@foreach (var message in _messages)
+{
+    <div class="validation-message" @attributes="AdditionalAttributes">@TrMessage(message)</div>
+}
+
+@code {
+    private EditContext? _context;
+    private FieldIdentifier _field;
+    private List<string> _messages = [];
+
+    [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
+
+    [Parameter, EditorRequired] public System.Linq.Expressions.Expression<Func<TValue>> For { get; set; } = null!;
+
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _field = FieldIdentifier.Create(For);
+        if (!ReferenceEquals(CurrentEditContext, _context))
+        {
+            Dispose();
+            _context = CurrentEditContext;
+            if (_context is not null)
+            {
+                _context.OnValidationStateChanged += OnChanged;
+            }
+        }
+
+        _messages = _context?.GetValidationMessages(_field).ToList() ?? [];
+    }
+
+    private void OnChanged(object? sender, ValidationStateChangedEventArgs e)
+    {
+        _messages = _context?.GetValidationMessages(_field).ToList() ?? [];
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        if (_context is not null)
+        {
+            _context.OnValidationStateChanged -= OnChanged;
+        }
+    }
+}

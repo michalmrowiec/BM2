@@ -1,0 +1,17 @@
+@using System.Globalization
+
+@inject NavigationManager NavigationManager
+
+<p class="language-switch">
+    <a href="@Link("en")" hreflang="en" lang="en" aria-current="@Current("en")">English</a>
+    <span aria-hidden="true">·</span>
+    <a href="@Link("pl")" hreflang="pl" lang="pl" aria-current="@Current("pl")">Polski</a>
+</p>
+
+@code {
+    private string Link(string language) =>
+        $"culture/{language}?returnUrl={Uri.EscapeDataString("/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri))}";
+
+    private string? Current(string language) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == language ? "true" : null;
+}
