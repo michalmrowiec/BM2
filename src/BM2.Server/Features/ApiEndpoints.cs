@@ -36,6 +36,7 @@ public static class ApiEndpoints
         wallet.MapMemberEndpoints();
         wallet.MapInvitationManagementEndpoints();
         api.MapInvitationEndpoints();
+        api.MapAppInvitationEndpoints();
 
         // Unknown API routes must not fall through to the Blazor not-found page.
         app.MapFallback($"{ApiPaths.Prefix}/{{**path}}", () => TypedResults.NotFound());

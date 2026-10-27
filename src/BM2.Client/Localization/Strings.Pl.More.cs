@@ -103,5 +103,17 @@ public static partial class Strings
         ["You lose access to this wallet until someone invites you again."] = "Stracisz dostęp do tego portfela, dopóki ktoś nie zaprosi Cię ponownie.",
         ["You lose access to this account until someone invites you again."] = "Stracisz dostęp do tego konta, dopóki ktoś nie zaprosi Cię ponownie.",
         ["Make someone else an owner first."] = "Najpierw ustaw kogoś innego jako właściciela.",
+        ["Invite to BM2"] = "Zaproś do BM2",
+        ["A link lets one person create their own BM2 account. It does not share your wallets or accounts."] = "Link pozwala jednej osobie założyć własne konto w BM2. Nie udostępnia Twoich portfeli ani kont.",
+        ["You haven't invited anyone yet."] = "Nikogo jeszcze nie zaproszono.",
+        ["Anyone with the link"] = "Każdy z linkiem",
+        ["Email (optional)"] = "E-mail (opcjonalnie)",
+        ["When set, only this address can register with the link."] = "Jeśli podasz, tylko ten adres może się zarejestrować przez link.",
+        ["Copy the link now: it is shown only once. It works once and expires in 7 days."] = "Skopiuj link teraz: jest pokazywany tylko raz. Działa jednorazowo i wygasa po 7 dniach.",
+        ["Active · expires {0}"] = "Aktywne · wygasa {0}",
+        ["Used"] = "Wykorzystane",
+        ["Used by {0}"] = "Wykorzystane przez {0}",
+        ["Expired {0}"] = "Wygasło {0}",
+        ["Revoked"] = "Cofnięte",
     };
 }

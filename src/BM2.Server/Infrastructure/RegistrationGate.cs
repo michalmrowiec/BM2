@@ -3,7 +3,7 @@ using BM2.Server.Features.Invitations;
 
 namespace BM2.Server.Infrastructure;
 
-/// <summary>Outside Development, registration needs a valid invitation link; the confirmation page stays closed.</summary>
+/// <summary>Outside Development, registration needs a valid wallet or app invitation link; the confirmation page stays closed.</summary>
 public static class RegistrationGate
 {
     public static WebApplication UseRegistrationOnlyInDevelopment(this WebApplication app)
@@ -41,7 +41,11 @@ public static class RegistrationGate
         var db = context.RequestServices.GetRequiredService<AppDbContext>();
         var time = context.RequestServices.GetRequiredService<TimeProvider>();
         var invitation = await InvitationLookup.FindAsync(db, token, context.RequestAborted);
-        return invitation is not null
-            && (await InvitationAcceptance.CheckAsync(db, invitation, time.GetUtcNow(), context.RequestAborted)).IsSuccess;
+        if (invitation is not null)
+        {
+            return (await InvitationAcceptance.CheckAsync(db, invitation, time.GetUtcNow(), context.RequestAborted)).IsSuccess;
+        }
+
+        return await AppInvitationLookup.FindUsableAsync(db, token, time.GetUtcNow(), context.RequestAborted) is not null;
     }
 }

@@ -69,5 +69,9 @@ public static partial class Strings
         ["Schedule End"] = "Zakończenie",
         ["Tag Ids"] = "Tagi",
         ["Query"] = "Zapytanie",
+        ["Enter a valid email address."] = "Wpisz poprawny adres e-mail.",
+        ["Email is too long."] = "Adres e-mail jest za długi.",
+        ["You can have at most 10 active invitations. Revoke one first."] = "Możesz mieć najwyżej 10 aktywnych zaproszeń. Najpierw cofnij jedno z nich.",
+        ["This invitation is for a different email address."] = "To zaproszenie jest dla innego adresu e-mail.",
     };
 }

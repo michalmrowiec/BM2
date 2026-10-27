@@ -133,5 +133,6 @@ public static partial class Strings
         ["Passwords must use at least {0} different characters."] = "Hasło musi zawierać co najmniej {0} różnych znaków.",
         ["Recovery code redemption failed."] = "Nie udało się użyć kodu odzyskiwania.",
         ["Passkey could not be found."] = "Nie znaleziono klucza dostępu.",
+        ["You were invited to BM2. Create your account to start."] = "Zaproszono Cię do BM2. Załóż konto, aby zacząć.",
     };
 }
