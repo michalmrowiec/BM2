@@ -39,8 +39,13 @@
         </ul>
         @if (_more)
         {
-            <p class="muted">Showing the latest @_items.Count. Use Records with filters to see all.</p>
+            <p class="muted">Showing the latest @_items.Count. Use Show in Records to see all.</p>
         }
+    }
+    @if (_loaded?.TagIds is not { Count: > 1 })
+    {
+        @* Records filters by one tag, so the link is offered for zero or one. *@
+        <a class="btn btn-secondary btn-block records-preview__open" href="@RecordsHref(_loaded)"><Icon Name="list" /> Show in Records</a>
     }
 </Sheet>
 
@@ -100,6 +105,44 @@
                 .OrderByDescending(i => i.OccurredOn)
                 .ToList();
         }
+    }
+
+    /// <summary>The Records page with the same period and filters (a whole month opens in month mode).</summary>
+    private static string RecordsHref(RecordsPreviewQuery? query)
+    {
+        if (query is null)
+        {
+            return "records";
+        }
+
+        var parts = new List<string>();
+        if (query.From.Day == 1 && query.To == query.From.AddMonths(1))
+        {
+            parts.Add("month=" + query.From.ToString("yyyy-MM", CultureInfo.InvariantCulture));
+        }
+        else
+        {
+            parts.Add("from=" + query.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            parts.Add("to=" + query.To.AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        }
+
+        parts.Add("type=" + query.Type);
+        if (query.AccountId is { } account)
+        {
+            parts.Add("accountId=" + account);
+        }
+
+        if (query.CategoryId is { } category)
+        {
+            parts.Add("categoryId=" + category);
+        }
+
+        if (query.TagIds?.FirstOrDefault() is { } tag && tag != Guid.Empty)
+        {
+            parts.Add("tagId=" + tag);
+        }
+
+        return "records?" + string.Join("&", parts);
     }
 
     private string? CurrencyOf(Guid accountId) => Wallet.Accounts.FirstOrDefault(a => a.Id == accountId)?.Currency;

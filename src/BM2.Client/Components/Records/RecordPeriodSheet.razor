@@ -1,0 +1,157 @@
+@using System.Globalization
+@inject ApiClient Api
+@inject NavigationManager Navigation
+
+@* Picks the Records period: presets, a month that has records, or a custom range. Navigates itself. *@
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Period">
+    <ChildContent>
+        <section class="period-section" aria-label="Quick periods">
+            <div class="chip-group">
+                <a class="chip chip--sm" href="@MonthHref(ThisMonth)" @onclick="CloseAsync">This month</a>
+                <a class="chip chip--sm" href="@MonthHref(ThisMonth.AddMonths(-1))" @onclick="CloseAsync">Last month</a>
+                <a class="chip chip--sm" href="@RangeHref(new DateOnly(Today.Year, 1, 1), new DateOnly(Today.Year, 12, 31))" @onclick="CloseAsync">This year</a>
+                <a class="chip chip--sm" href="@RangeHref(ThisMonth.AddMonths(-11), ThisMonth.AddMonths(1).AddDays(-1))" @onclick="CloseAsync">Last 12 months</a>
+                <a class="chip chip--sm" href="@AllTimeHref" @onclick="CloseAsync">All time</a>
+            </div>
+        </section>
+
+        <section class="period-section">
+            <h3 class="period-section__title">Month</h3>
+            @if (_months is null)
+            {
+                <p class="muted" aria-busy="true">Loading…</p>
+            }
+            else if (_months.Count == 0)
+            {
+                <p class="muted">No records yet.</p>
+            }
+            else
+            {
+                <div class="chip-group" role="group" aria-label="Year">
+                    @foreach (var year in Years)
+                    {
+                        <button type="button" class="chip chip--sm" aria-pressed="@(year == _year ? "true" : "false")" @onclick="() => _year = year">@year</button>
+                    }
+                </div>
+                <div class="period-months" role="group" aria-label="@($"Months of {_year}")">
+                    @foreach (var month in _months.Where(m => m.Year == _year).OrderBy(m => m.Month))
+                    {
+                        <a class="chip chip--sm" aria-current="@(month == Month ? "true" : null)" href="@MonthHref(month)" @onclick="CloseAsync">
+                            @month.ToString("MMM", CultureInfo.CurrentCulture)
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="period-section">
+            <h3 class="period-section__title">Custom range</h3>
+            <EditForm Model="_range" OnSubmit="ApplyRange" class="form-stack" id="record-period-range">
+                <DateField id="period-from" Label="From" Shortcuts="false" @bind-Value="_range.From" />
+                <DateField id="period-to" Label="To (inclusive)" Shortcuts="false" @bind-Value="_range.To" />
+                @if (_rangeError is not null)
+                {
+                    <p class="field__error" role="alert">@_rangeError</p>
+                }
+            </EditForm>
+        </section>
+    </ChildContent>
+    <Footer>
+        <button type="submit" form="record-period-range" class="btn btn-primary">Show range</button>
+    </Footer>
+</Sheet>
+
+@code {
+    private List<DateOnly>? _months;
+    private Guid? _monthsWallet;
+    private int _year;
+    private RangeModel _range = new();
+    private string? _rangeError;
+    private bool _wasOpen;
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    [Parameter, EditorRequired] public Guid WalletId { get; set; }
+
+    /// <summary>The month shown in month mode; also the starting year of the picker.</summary>
+    [Parameter] public DateOnly Month { get; set; }
+
+    /// <summary>Current range (To inclusive), prefilled in the custom range.</summary>
+    [Parameter] public DateOnly? From { get; set; }
+
+    [Parameter] public DateOnly? To { get; set; }
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
+
+    private static DateOnly ThisMonth => new(Today.Year, Today.Month, 1);
+
+    private IEnumerable<int> Years => _months!.Select(m => m.Year).Distinct();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var opening = Open && !_wasOpen;
+        _wasOpen = Open;
+        if (!opening)
+        {
+            return;
+        }
+
+        _rangeError = null;
+        _range = new RangeModel { From = From ?? Month, To = To ?? Month.AddMonths(1).AddDays(-1) };
+        _year = Month.Year;
+        if (_monthsWallet != WalletId)
+        {
+            _months = null;
+            var result = await Api.GetAsync<List<string>>($"api/wallets/{WalletId}/records/months");
+            _months = (result.Value ?? [])
+                .Select(m => DateOnly.ParseExact(m + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture))
+                .ToList();
+            _monthsWallet = result.Ok ? WalletId : null;
+        }
+
+        if (_months is { Count: > 0 } && _months.All(m => m.Year != _year))
+        {
+            _year = _months[0].Year;
+        }
+    }
+
+    private string MonthHref(DateOnly month) => Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+    {
+        ["month"] = month.ToString("yyyy-MM", CultureInfo.InvariantCulture), ["all"] = null, ["from"] = null, ["to"] = null,
+    });
+
+    private string RangeHref(DateOnly from, DateOnly to) => Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+    {
+        ["from"] = from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        ["to"] = to.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        ["month"] = null, ["all"] = null,
+    });
+
+    private string AllTimeHref => Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+    {
+        ["all"] = true, ["month"] = null, ["from"] = null, ["to"] = null,
+    });
+
+    private Task CloseAsync() => OpenChanged.InvokeAsync(false);
+
+    private async Task ApplyRange()
+    {
+        if (_range.To < _range.From)
+        {
+            _rangeError = "The end date is before the start date.";
+            return;
+        }
+
+        Navigation.NavigateTo(RangeHref(_range.From, _range.To));
+        await CloseAsync();
+    }
+
+    private sealed class RangeModel
+    {
+        public DateOnly From { get; set; }
+
+        public DateOnly To { get; set; }
+    }
+}

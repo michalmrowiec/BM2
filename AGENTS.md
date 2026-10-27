@@ -65,6 +65,11 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   lub usunięte `ListTemplates` zwraca jako puste; etykieta = nazwa albo kategoria). Ikona kategorii to klucz z
   `CategoryIcons` (SVG w `Icon`), kolor tagu to klucz z `TagColors` (tokeny `--tag-*`, klasa `tag-color--*`); ikonę
   kategorii pokazuje `RecordAvatar`. Podpowiedzi formularza z `GET records/suggestions`, cache w `WalletState`.
+- **Lista rekordów (`/records`):** okres i filtry są w query stringu (`month=yyyy-MM` domyślnie bieżący, `all=true`,
+  `from`/`to` jako `yyyy-MM-dd` – w URL `to` włącznie, do API wysyłane +1 dzień; `accountId`, `categoryId`, `tagId`,
+  `type`, `status`, `q`, `ruleId`, `recurring`), więc inne ekrany linkują wprost (np. „Show in Records” w
+  `RecordsPreview`). Wybór okresu: `RecordPeriodSheet` (presety, miesiące z rekordami z `GET records/months` –
+  lista `yyyy-MM` od najnowszych, zakres od–do). Eksport bierze zawsze dokładnie bieżący widok.
 - **Cykliczne:** `RecurringRule` pamięta `NextIndex`/`NextDate`; `RecurringCatchUp` (wołany w `GetWallet`) dodaje
   wystąpienia do dzisiaj, przyszłych rekordów nie tworzymy. Idempotencja przez unikalny indeks
   (`RecurringRuleId`, `OccurrenceDate`) – konflikt oznacza „już zrobione”.
