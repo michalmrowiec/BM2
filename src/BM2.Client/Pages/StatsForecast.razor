@@ -9,7 +9,7 @@
 @inject ApiClient Api
 @inject StatsState State
 
-<StatsHeader Title="Forecast">Where the balance is heading, from what is already scheduled.</StatsHeader>
+<StatsHeader Title="@Tr("Forecast")">@Tr("Where the balance is heading, from what is already scheduled.")</StatsHeader>
 
 @if (Wallet is null)
 {
@@ -18,33 +18,33 @@
 else
 {
     <EditForm Model="State" class="stats-filters card">
-        <SegmentedControl Label="Forecast length" Options="MonthOptions" Value="State.ForecastMonths" ValueChanged="(int m) => SetAsync(() => State.ForecastMonths = m)" />
-        <SegmentedControl Label="Points" Options="StepOptions" Value="State.ForecastStep" ValueChanged="(ForecastStep s) => SetAsync(() => State.ForecastStep = s)" />
+        <SegmentedControl Label="@Tr("Forecast length")" Options="MonthOptions" Value="State.ForecastMonths" ValueChanged="(int m) => SetAsync(() => State.ForecastMonths = m)" />
+        <SegmentedControl Label="@Tr("Points")" Options="StepOptions" Value="State.ForecastStep" ValueChanged="(ForecastStep s) => SetAsync(() => State.ForecastStep = s)" />
         @if (Currencies.Count > 1)
         {
-            <SelectField Label="Currency" Options="Currencies" @bind-Value="State.Currency" @bind-Value:after="ReloadAsync"
-                         Hint="Only accounts in this currency are counted." />
+            <SelectField Label="@Tr("Currency")" Options="Currencies" @bind-Value="State.Currency" @bind-Value:after="ReloadAsync"
+                         Hint="@Tr("Only accounts in this currency are counted.")" />
         }
         <label class="check">
             <input type="checkbox" checked="@State.ForecastAverages" @onchange="e => SetAsync(() => State.ForecastAverages = e.Value is true)" />
-            <span>Include everyday spending – the average of the last 3 months from categories without recurring expenses, spread evenly</span>
+            <span>@Tr("Include everyday spending – the average of the last 3 months from categories without recurring expenses, spread evenly")</span>
         </label>
     </EditForm>
 
     @if (_data is null)
     {
-        <p class="muted">Loading…</p>
+        <p class="muted">@Tr("Loading…")</p>
     }
     else
     {
         var change = _data.End - _data.Start;
         <dl class="stats-figures">
-            <div><dt>Today</dt><dd><Amount Value="_data.Start" Currency="@_data.Currency" /></dd></div>
-            <div><dt>On @Day(_data.Points[^1].Date)</dt><dd><Amount Value="_data.End" Currency="@_data.Currency" /></dd></div>
-            <div><dt>Lowest, @Day(_data.Lowest.Date)</dt><dd><Amount Value="_data.Lowest.Balance" Currency="@_data.Currency" /></dd></div>
-            <div><dt>Change</dt><dd><Amount Value="change" Currency="@_data.Currency" /></dd></div>
+            <div><dt>@Tr("Today")</dt><dd><Amount Value="_data.Start" Currency="@_data.Currency" /></dd></div>
+            <div><dt>@Tr("On {0}", Day(_data.Points[^1].Date))</dt><dd><Amount Value="_data.End" Currency="@_data.Currency" /></dd></div>
+            <div><dt>@Tr("Lowest, {0}", Day(_data.Lowest.Date))</dt><dd><Amount Value="_data.Lowest.Balance" Currency="@_data.Currency" /></dd></div>
+            <div><dt>@Tr("Change")</dt><dd><Amount Value="change" Currency="@_data.Currency" /></dd></div>
         </dl>
-        <Chart Options="_chart" Label="@($"Forecast balance until {Day(_data.Points[^1].Date)}. The figures above and the list below give the numbers.")" />
+        <Chart Options="_chart" Label="@Tr("Forecast balance until {0}. The figures above and the list below give the numbers.", Day(_data.Points[^1].Date))" />
         <p class="muted">@Explanation</p>
 
         <div class="stats-actions">
@@ -53,7 +53,7 @@ else
 
         @if (_data.Items.Count > 0)
         {
-            <h2 class="section-title">Biggest items</h2>
+            <h2 class="section-title">@Tr("Biggest items")</h2>
             <ul class="stats-list">
                 @foreach (var item in _data.Items)
                 {
@@ -69,8 +69,9 @@ else
 }
 
 @code {
-    private static readonly IReadOnlyList<(int, string)> MonthOptions = [(3, "3 months"), (6, "6 months"), (12, "12 months")];
-    private static readonly IReadOnlyList<(ForecastStep, string)> StepOptions = [(ForecastStep.Day, "Daily"), (ForecastStep.Week, "Weekly")];
+    private IReadOnlyList<(int, string)> MonthOptions =>
+        [(3, Tr("{0} months", 3)), (6, Tr("{0} months", 6)), (12, Tr("{0} months", 12))];
+    private IReadOnlyList<(ForecastStep, string)> StepOptions => [(ForecastStep.Day, Tr("Daily")), (ForecastStep.Week, Tr("Weekly"))];
 
     private WalletSnapshot? _loadedFor;
     private ForecastData? _data;
@@ -86,18 +87,18 @@ else
     private static string Money(decimal value, string currency) => $"{value.ToString("N2", CultureInfo.CurrentCulture)} {currency}";
 
     private (string, string) PinView() =>
-        ($"Forecast · {State.ForecastMonths} months · {State.Currency}", PinnedChartQueries.Forecast(State));
+        (Tr("Forecast · {0} months · {1}", State.ForecastMonths, State.Currency), PinnedChartQueries.Forecast(State));
 
     private static string Describe(ForecastItem item)
     {
         var source = item.Source switch
         {
-            ForecastSource.Recurring => item.Count == 1 ? "Recurring, once" : $"Recurring, {item.Count} times",
-            ForecastSource.Planned => "Planned",
-            ForecastSource.Pending => "To confirm",
-            _ => "Dated ahead",
+            ForecastSource.Recurring => Plural(item.Count, "Recurring, {0} time", "Recurring, {0} times"),
+            ForecastSource.Planned => Tr("Planned"),
+            ForecastSource.Pending => Tr("To confirm"),
+            _ => Tr("Dated ahead"),
         };
-        return $"{source} · from {item.FirstDate.ToString("d MMM", CultureInfo.CurrentCulture)}";
+        return Tr("{0} · from {1}", source, item.FirstDate.ToString("d MMM", CultureInfo.CurrentCulture));
     }
 
     private string Explanation
@@ -105,16 +106,19 @@ else
         get
         {
             var d = _data!;
-            var accounts = d.AccountCount == 1 ? "1 account" : $"{d.AccountCount} accounts";
-            var text = $"Starts from today's balance of {Money(d.Start, d.Currency)} on {accounts} in {d.Currency}. "
-                + $"It adds the coming occurrences of {d.RecurringCount} recurring {(d.RecurringCount == 1 ? "rule" : "rules")} "
-                + $"and {d.RecordCount} planned, pending or future-dated {(d.RecordCount == 1 ? "record" : "records")}. ";
+            var text = Tr("Starts from today's balance of {0} on {1} in {2}. ", Money(d.Start, d.Currency),
+                    Plural(d.AccountCount, "{0} account", "{0} accounts"), d.Currency)
+                + Tr("It adds the coming occurrences of {0} and {1}. ",
+                    Plural(d.RecurringCount, "{0} recurring rule", "{0} recurring rules"),
+                    Plural(d.RecordCount, "{0} planned, pending or future-dated record", "{0} planned, pending or future-dated records"));
             text += State.ForecastAverages && d.DailyAverage > 0
-                ? $"Everyday spending is estimated at {Money(d.DailyAverage, d.Currency)} a day – the average from "
-                    + $"{d.AverageFrom.ToString("MMMM", CultureInfo.CurrentCulture)} to {d.AverageFrom.AddMonths(2).ToString("MMMM", CultureInfo.CurrentCulture)} "
-                    + $"in {d.AveragedCategoryCount} {(d.AveragedCategoryCount == 1 ? "category" : "categories")} that have no recurring expense. "
-                : "Everyday spending is not included, so only known items move the line. ";
-            return text + "It is an estimate: anything not recorded or scheduled is not in it.";
+                ? Tr("Everyday spending is estimated at {0} a day – the average from {1} to {2} in {3} that have no recurring expense. ",
+                    Money(d.DailyAverage, d.Currency),
+                    d.AverageFrom.ToString("MMMM", CultureInfo.CurrentCulture),
+                    d.AverageFrom.AddMonths(2).ToString("MMMM", CultureInfo.CurrentCulture),
+                    Plural(d.AveragedCategoryCount, "{0} category", "{0} categories"))
+                : Tr("Everyday spending is not included, so only known items move the line. ");
+            return text + Tr("It is an estimate: anything not recorded or scheduled is not in it.");
         }
     }
 

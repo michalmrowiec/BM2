@@ -16,14 +16,14 @@
         <li @key="(item.CategoryId, item.Type)" class="@(toggles ? hidden ? "stats-list__item is-hidden" : "stats-list__item" : null)">
             @if (toggles)
             {
-                <label class="stats-toggle" title="@(hidden ? "Include in chart and total" : "Leave out of chart and total")">
+                <label class="stats-toggle" title="@(hidden ? Tr("Include in chart and total") : Tr("Leave out of chart and total"))">
                     <input type="checkbox" checked="@(!hidden)" @onchange="() => OnToggle.InvokeAsync(item.CategoryId)"
-                           aria-label="@($"Include {name}")" />
+                           aria-label="@Tr("Include {0}", name)" />
                     <span class="stats-swatch stats-swatch--@swatch" aria-hidden="true"></span>
                 </label>
             }
             <ListRow Title="@name"
-                     Subtitle="@(hidden ? $"Left out · {StatsCharts.Records(item.Count)}" : $"{StatsCharts.Share(item.Total, Total)} · {StatsCharts.Records(item.Count)}")"
+                     Subtitle="@(hidden ? Tr("Left out · {0}", StatsCharts.Records(item.Count)) : $"{StatsCharts.Share(item.Total, Total)} · {StatsCharts.Records(item.Count)}")"
                      Class="@(selectable && item.CategoryId == SelectedId ? "stats-list__row is-selected" : "stats-list__row")"
                      OnClick="@(selectable ? EventCallback.Factory.Create(this, () => OnSelect.InvokeAsync(item.CategoryId!.Value)) : default)">
                 <Leading>

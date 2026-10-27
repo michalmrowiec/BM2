@@ -1,20 +1,20 @@
 @page "/stats"
 @attribute [Authorize]
 
-<PageTitle>Stats · BM2</PageTitle>
+<PageTitle>@Tr("Stats") · BM2</PageTitle>
 
 <header class="page-header">
-    <h1 class="page-title">Stats</h1>
+    <h1 class="page-title">@Tr("Stats")</h1>
 </header>
-<p class="muted">Completed income and expenses only; transfers between accounts are left out. Currencies are never mixed.</p>
+<p class="muted">@Tr("Completed income and expenses only; transfers between accounts are left out. Currencies are never mixed.")</p>
 
-<nav class="stats-hub" aria-label="Stats">
+<nav class="stats-hub" aria-label="@Tr("Stats")">
     @foreach (var (href, icon, title, text) in Screens)
     {
         <a class="stats-hub__tile" href="@href">
             <span class="stats-hub__icon" aria-hidden="true"><Icon Name="@icon" /></span>
-            <span class="stats-hub__title">@title</span>
-            <span class="stats-hub__text">@text</span>
+            <span class="stats-hub__title">@Tr(title)</span>
+            <span class="stats-hub__text">@Tr(text)</span>
         </a>
     }
 </nav>

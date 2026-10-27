@@ -4,7 +4,7 @@
 
 @* Saves the current stats view with its filters as a small chart on Home. *@
 <button type="button" class="btn btn-secondary btn-sm" disabled="@_busy" @onclick="PinAsync">
-    <Icon Name="pin" /> Pin to Home
+    <Icon Name="pin" /> @Tr("Pin to Home")
 </button>
 
 @code {
@@ -25,11 +25,11 @@
         _busy = false;
         if (result.Value is not null)
         {
-            Toasts.Show($"Pinned to Home: {title}");
+            Toasts.Show(Tr("Pinned to Home: {0}", title));
         }
         else
         {
-            Toasts.Show(result.Problem?.Detail ?? "Could not pin the chart.", ToastKind.Error);
+            Toasts.Show(result.Problem?.Detail ?? Tr("Could not pin the chart."), ToastKind.Error);
         }
     }
 }

@@ -8,17 +8,17 @@
 <article class="card pinned-chart">
     <header class="pinned-chart__header">
         <a class="pinned-chart__title" href="@Href">@Pin.Title</a>
-        <button type="button" class="icon-button" aria-label="@($"Unpin {Pin.Title}")" title="Unpin" @onclick="() => OnUnpin.InvokeAsync(Pin)">
+        <button type="button" class="icon-button" aria-label="@Tr("Unpin {0}", Pin.Title)" title="@Tr("Unpin")" @onclick="() => OnUnpin.InvokeAsync(Pin)">
             <Icon Name="close" />
         </button>
     </header>
     @if (_failed)
     {
-        <p class="muted">Could not load this chart.</p>
+        <p class="muted">@Tr("Could not load this chart.")</p>
     }
     else if (_options is null)
     {
-        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
     }
     else
     {
@@ -65,21 +65,21 @@
                 var slices = totals.Items.Where(i => i.Type == type).ToList();
                 var total = slices.Sum(s => s.Total);
                 _options = StatsCharts.Donut(slices.Select(s => (s.CategoryId?.ToString() ?? "none", StatsCharts.NameOf(Wallet, s.CategoryId), s.Total)).ToList(), totals.Currency);
-                SetFigure(type == RecordType.Income ? "Income" : "Expenses", StatsCharts.Signed(total, type), totals.Currency,
-                    slices.Count > 0 ? $"top: {StatsCharts.NameOf(Wallet, slices[0].CategoryId)}" : "no records");
+                SetFigure(type == RecordType.Income ? Tr("Income") : Tr("Expenses"), StatsCharts.Signed(total, type), totals.Currency,
+                    slices.Count > 0 ? Tr("top: {0}", StatsCharts.NameOf(Wallet, slices[0].CategoryId)) : Tr("no records"));
                 break;
             case PinnedChartKind.Forecast:
                 var forecast = (await Api.GetAsync<ForecastData>(url)).Value;
                 if (forecast is null) { _failed = true; return; }
                 _options = StatsCharts.Forecast(forecast.Points);
-                SetFigure($"On {forecast.Points[^1].Date.ToString("d MMM", CultureInfo.CurrentCulture)}", forecast.End, forecast.Currency,
-                    $"lowest {forecast.Lowest.Balance.ToString("N0", CultureInfo.CurrentCulture)} on {forecast.Lowest.Date.ToString("d MMM", CultureInfo.CurrentCulture)}");
+                SetFigure(Tr("On {0}", forecast.Points[^1].Date.ToString("d MMM", CultureInfo.CurrentCulture)), forecast.End, forecast.Currency,
+                    Tr("lowest {0} on {1}", forecast.Lowest.Balance.ToString("N0", CultureInfo.CurrentCulture), forecast.Lowest.Date.ToString("d MMM", CultureInfo.CurrentCulture)));
                 break;
             default:
                 var monthly = (await Api.GetAsync<MonthlyTotals>(url)).Value;
                 if (monthly is null) { _failed = true; return; }
                 _options = StatsCharts.Months(monthly.Items);
-                SetFigure("Net, 12 months", monthly.Items.Sum(m => m.Income - m.Expense), monthly.Currency, null);
+                SetFigure(Tr("Net, 12 months"), monthly.Items.Sum(m => m.Income - m.Expense), monthly.Currency, null);
                 break;
         }
     }

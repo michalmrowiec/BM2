@@ -4,6 +4,7 @@ using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Contracts.Stats;
 using BM2.Contracts.Wallets;
+using static BM2.Client.Localization.Strings;
 
 namespace BM2.Client.Components.Stats;
 
@@ -22,14 +23,14 @@ public static class StatsCharts
         id is null ? null : wallet.Categories.FirstOrDefault(c => c.Id == id);
 
     public static string NameOf(WalletSnapshot wallet, Guid? id) =>
-        id is null ? "No category" : CategoryOf(wallet, id)?.Name ?? "Deleted category";
+        id is null ? Tr("No category") : CategoryOf(wallet, id)?.Name ?? Tr("Deleted category");
 
     public static decimal Signed(decimal total, RecordType type) => type == RecordType.Expense ? -total : total;
 
     public static string Share(decimal part, decimal total) =>
         total == 0 ? "0%" : (part / total).ToString("P1", CultureInfo.CurrentCulture);
 
-    public static string Records(int count) => count == 1 ? "1 record" : $"{count} records";
+    public static string Records(int count) => Plural(count, "{0} record", "{0} records");
 
     /// <param name="hidden">Ids of slices to leave out; the others keep their colors.</param>
     public static object Donut(
@@ -76,25 +77,25 @@ public static class StatsCharts
         var series = new List<object>();
         if (only != RecordType.Expense)
         {
-            series.Add(Bars("Income", RecordType.Income, items, m => m.Income, only is null ? "var(--positive)" : "var(--vivid)"));
+            series.Add(Bars(Tr("Income"), RecordType.Income, items, m => m.Income, only is null ? "var(--positive)" : "var(--vivid)"));
         }
 
         if (only != RecordType.Income)
         {
-            series.Add(Bars("Expenses", RecordType.Expense, items, m => m.Expense, only is null ? "var(--negative)" : "var(--vivid)"));
+            series.Add(Bars(Tr("Expenses"), RecordType.Expense, items, m => m.Expense, only is null ? "var(--negative)" : "var(--vivid)"));
         }
 
         // Invested (transfers to investment accounts, net) only next to both types, and only when there is any.
         if (only is null && items.Any(m => m.Invested != 0))
         {
-            series.Add(Bars("Invested", RecordType.Transfer, items, m => m.Invested, "var(--link)"));
+            series.Add(Bars(Tr("Invested"), RecordType.Transfer, items, m => m.Invested, "var(--link)"));
         }
 
         if (only is null)
         {
             series.Add(new
             {
-                name = "Net",
+                name = Tr("Net"),
                 type = "line",
                 data = items.Select(m => m.Income - m.Expense).ToList(),
                 symbol = "circle",
@@ -153,7 +154,7 @@ public static class StatsCharts
         {
             new
             {
-                name = "Value",
+                name = Tr("Value"),
                 type = "line",
                 data = items.Select(v => v.Value).ToList(),
                 symbol = "circle",
@@ -163,7 +164,7 @@ public static class StatsCharts
             },
             new
             {
-                name = "Paid in",
+                name = Tr("Paid in"),
                 type = "line",
                 step = "end",
                 data = items.Select(v => v.PaidIn).ToList(),
@@ -199,7 +200,7 @@ public static class StatsCharts
         {
             new
             {
-                name = "Balance",
+                name = Tr("Balance"),
                 type = "line",
                 data = points.Select(p => p.Balance).ToList(),
                 symbol = "none",
