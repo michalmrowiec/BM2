@@ -17,7 +17,7 @@ export function afterWebAssemblyStarted() {
     document.addEventListener("beforeinput", blockInvalidMoney);
     document.addEventListener("input", cleanMoney);
     document.addEventListener("keydown", keepComboboxEnter);
-    document.addEventListener("click", slideBetweenTabs, true);
+    document.addEventListener("click", slideOnClick, true);
     watchMarquees();
 
     setTimeout(() => {
@@ -39,30 +39,45 @@ export function afterWebAssemblyStarted() {
     }, 400);
 }
 
-// Switching main tabs slides the page toward the tapped tab (View Transitions; see css/motion.css).
+// In-app navigation slides the page content (View Transitions; see css/motion.css): between main tabs toward the
+// tapped tab, from a subpage to a tab back, any other app link forward, and BackButton (window.bm2Back) back.
 const tabs = ["", "records", "stats", "more"];
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const tabIndex = href => tabs.indexOf(new URL(href, document.baseURI).pathname.replace(/^\/|\/$/g, ""));
+const canSlide = () => !!document.startViewTransition && !!window.Blazor?.navigateTo && !reducedMotion.matches;
 
-function slideBetweenTabs(event) {
-    const link = event.target instanceof Element ? event.target.closest("a.bottom-nav__item") : null;
-    if (!link || !document.startViewTransition || !window.Blazor?.navigateTo || reducedMotion.matches
-        || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+window.bm2Back = () => canSlide() ? slide("back", () => history.back()) : history.back();
+
+function slideOnClick(event) {
+    const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+    // Links in sheets, downloads and BackButton (data-back) keep their own handling.
+    if (!link || !canSlide() || link.target || link.hasAttribute("download") || link.hasAttribute("data-back")
+        || link.closest("dialog") || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
     }
 
+    const url = new URL(link.href, document.baseURI);
+    // Same page with other filters, and the server-rendered account pages, don't slide.
+    if (url.origin !== location.origin || url.pathname === location.pathname || /^\/account\//i.test(url.pathname)) return;
+
     const from = tabIndex(location.href);
     const to = tabIndex(link.href);
-    if (from < 0 || to < 0 || from === to) return;
+    const direction = to < 0 ? "forward" : from < 0 || to < from ? "back" : "forward";
 
     // Navigate ourselves (before Blazor sees the click) so the old page is captured first.
     event.preventDefault();
     event.stopPropagation();
+    slide(direction, () => window.Blazor.navigateTo(link.href));
+}
+
+function slide(direction, navigate) {
     const root = document.documentElement;
-    root.dataset.slide = to > from ? "forward" : "back";
+    root.dataset.slide = direction;
 
     const main = document.getElementById("main");
+    let stalled;
     const transition = document.startViewTransition(() => new Promise(resolve => {
+        clearTimeout(stalled);
         const done = () => {
             observer.disconnect();
             resolve();
@@ -70,8 +85,10 @@ function slideBetweenTabs(event) {
         const observer = new MutationObserver(done);
         observer.observe(main, { childList: true });
         setTimeout(done, 300);
-        window.Blazor.navigateTo(link.href);
+        navigate();
     }));
+    // Without rendered frames (busy or hidden page) the old page is never captured; skipping runs the navigation now.
+    stalled = setTimeout(() => transition.skipTransition(), 600);
     // An aborted transition (e.g. a second tap) rejects these promises; the navigation itself still happens.
     transition.ready.catch(() => {});
     transition.finished.catch(() => {}).finally(() => delete root.dataset.slide);

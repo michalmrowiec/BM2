@@ -3,7 +3,7 @@
 @inject IJSRuntime JS
 
 @* Goes back to the previous app page; without one (opened directly) goes to Fallback. *@
-<a class="icon-button @Class" href="@Fallback" aria-label="@(Label ?? Tr("Back"))" title="@(Label ?? Tr("Back"))"
+<a class="icon-button @Class" href="@Fallback" data-back aria-label="@(Label ?? Tr("Back"))" title="@(Label ?? Tr("Back"))"
    @onclick="GoBackAsync" @onclick:preventDefault="true">
     <Icon Name="@Icon" />
 </a>
@@ -21,7 +21,7 @@
     {
         if (AppNavigation.CanGoBack)
         {
-            await JS.InvokeVoidAsync("history.back");
+            await JS.InvokeVoidAsync("bm2Back");
         }
         else
         {

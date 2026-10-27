@@ -200,9 +200,11 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Dotyk i kolory:** bez `-webkit-tap-highlight-color`, focus tylko `:focus-visible` (`--focus`), wciśnięcie = tło
   `--wash`. Przyciski i ikony akcji neutralne (`--ink-muted` → `--ink`) albo w akcencie (`--vivid`/`--link`) – bez
   stałego niebieskiego; `--tag-blue` tylko jako kolor tagu wybrany przez użytkownika. `--attention` (Pending) = amber.
-- **Przejścia stron:** tapnięcie zakładki dolnego menu (Home/Records/Stats/More) przesuwa treść `main` w stronę
-  zakładki przez View Transitions (`BM2.Client.lib.module.js` → `data-slide`, CSS w `motion.css`); bez wsparcia lub
-  przy `prefers-reduced-motion` zwykła nawigacja z wejściem `.page-enter`.
+- **Przejścia stron:** każda nawigacja w aplikacji przesuwa treść `main` przez View Transitions
+  (`BM2.Client.lib.module.js` → `data-slide`, CSS w `motion.css`): między zakładkami dolnego menu w stronę zakładki,
+  z podstrony do zakładki wstecz, inny link w głąb, `BackButton` i powrót po zapisie przez `window.bm2Back` wstecz.
+  Bez przesuwania: linki w `<dialog>`, `download`, `target`, zmiana samego query, strony `/Account/`. Gdy przejście
+  nie ruszy w 600 ms, jest pomijane. Bez wsparcia lub przy `prefers-reduced-motion` zwykła nawigacja z `.page-enter`.
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
 - WCAG: tekst ≥ 4,5:1 na `--paper`/`--sheet`/`--wash` w obu motywach i każdym akcencie (nowy akcent → sprawdź),
