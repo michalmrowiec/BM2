@@ -17,6 +17,10 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Decyzje:** proste decyzje i wątpliwości rozstrzygaj sam, wybierając najbardziej optymalny darmowy wariant
   (i krótko je odnotuj). Dopytuj tylko przy istotnych decyzjach produktowych/architektonicznych.
 - Gdy powstaje działające demo – uruchom je lokalnie i podaj link do przetestowania.
+- **Produkcja działa (od 2026-10-27):** BM2 na `<host-produkcji>` jest używany na co dzień, z danymi zaimportowanymi
+  z MM. Każda zmiana musi zachować istniejące dane: migracje EF tylko addytywne i zgodne wstecz (nowe kolumny
+  `NOT NULL` z wartością domyślną, bez usuwania i zmiany nazw bez kroku przenoszącego dane), przed wdrożeniem backup
+  bazy, nigdy ręcznych zmian w bazie produkcyjnej.
 - **Tryb obecny (od 2026-10-24): najpierw funkcje, najniższym kosztem.** Funkcje robimy tak, jak opisuje je
   użytkownik: krótkie potwierdzenie w czacie zamiast speca i planu, bez nowych testów i bez pełnego audytu WCAG.
   Zostaje to, co nic nie kosztuje: autoryzacja przez `WalletAccessFilter`, zgodność z MSSQL 2012, istniejące
