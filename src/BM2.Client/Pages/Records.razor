@@ -42,7 +42,9 @@
             <a class="icon-button" href="@MonthUrl(-1)" aria-label="@Tr("Previous month")"><Icon Name="arrow-left" /></a>
             <button type="button" class="btn btn-ghost month-switcher__label" aria-live="polite" aria-haspopup="dialog"
                     aria-label="@Tr("{0}, choose period", PeriodLabel)" @onclick="() => _periodOpen = true">
-                @PeriodLabel <Icon Name="chevron-down" />
+                <span class="month-switcher__full">@PeriodLabel</span>
+                <span class="month-switcher__short">@MonthStart.ToString("MMM yyyy", CultureInfo.CurrentCulture)</span>
+                <Icon Name="chevron-down" />
             </button>
             <a class="icon-button" href="@MonthUrl(1)" aria-label="@Tr("Next month")"><Icon Name="arrow-right" /></a>
         }
