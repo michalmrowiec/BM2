@@ -123,6 +123,12 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   na wywołanie). Rate limiting w `Infrastructure/RateLimiting` (na minutę: POST-y `/Account` 20 na IP, zapisy `/api`
   120 na użytkownika, eksport 5 – polityka `RateLimiting.ExportPolicy`); 429 jako ProblemDetails, `ApiClient` pokazuje
   toast. W testach integracyjnych wyłączone (`RateLimiting:Enabled=false`). CSV eksportu jest strumieniowany.
+- **Konto demo:** `Demo:Enabled` (domyślnie false). `POST /Account/Demo` (antiforgery, limit `/Account`) loguje jako
+  `DemoAccount.Email` – użytkownik bez hasła z claimem roli `Demo.Role` (`BM2.Contracts.Common.Demo`), tworzony
+  razem z danymi `DemoData` przy pierwszym wejściu. O demo decyduje tylko claim roli, nie e-mail.
+  `UseDemoReadOnly` odrzuca każde żądanie modyfikujące demo (403, w `/api` ProblemDetails z `Demo.ReadOnlyMessage` →
+  toast w `ApiClient`) poza logowaniem/wylogowaniem/rejestracją. Nowy POST, który demo musi móc wysłać → dopisz go do
+  `AllowedPosts`. Znacznik „Demo” w nagłówku przez `AuthorizeView Roles`.
 - **PWA:** `wwwroot/manifest.webmanifest`, ikony w `wwwroot/icons` (PNG generowane z marki), `wwwroot/service-worker.js`
   rejestrowany w `BM2.Client.lib.module.js` (`afterWebStarted`). SW: nawigacje i `/api` zawsze z sieci, pliki
   z fingerprintem cache-first, pozostałe statyczne network-first z fallbackiem; zmiana strategii = podbij `version`.

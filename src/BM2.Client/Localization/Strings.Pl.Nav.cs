@@ -5,6 +5,8 @@ public static partial class Strings
     private static readonly Dictionary<string, string> PlNav = new()
     {
         ["Skip to content"] = "Przejdź do treści",
+        ["Demo"] = "Demo",
+        ["Read-only demo. Log in or create your own account."] = "Demo tylko do odczytu. Zaloguj się lub załóż własne konto.",
         ["An unhandled error has occurred."] = "Wystąpił nieoczekiwany błąd.",
         ["Main"] = "Główna",
         ["Home"] = "Start",

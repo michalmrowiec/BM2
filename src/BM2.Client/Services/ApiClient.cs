@@ -1,7 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BM2.Client.Localization;
+using BM2.Contracts.Common;
 using Microsoft.AspNetCore.Components;
 
 namespace BM2.Client.Services;
@@ -72,6 +73,10 @@ public sealed class ApiClient(HttpClient http, NavigationManager navigation, Toa
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
                 toasts.Show(problem.Detail ?? Strings.Tr("Too many requests. Wait a minute and try again."), ToastKind.Error);
+            }
+            else if (response.StatusCode == HttpStatusCode.Forbidden && problem.Detail == Strings.TrMessage(Demo.ReadOnlyMessage))
+            {
+                toasts.Show(problem.Detail, ToastKind.Error);
             }
 
             return (null, problem);

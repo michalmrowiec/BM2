@@ -16,6 +16,9 @@
             </AuthorizeView>
         }
         <a class="app-brand" href="">BM<span class="app-brand__dot" aria-hidden="true"></span></a>
+        <AuthorizeView Roles="@BM2.Contracts.Common.Demo.Role">
+            <a class="demo-badge" href="Account/Login" title="@Tr("Read-only demo. Log in or create your own account.")">@Tr("Demo")</a>
+        </AuthorizeView>
     </div>
     <div class="app-header__actions">
         <AuthorizeView>

@@ -5,6 +5,7 @@ public static partial class Strings
     private static readonly Dictionary<string, string> PlMessages = new()
     {
         ["Something went wrong. Try again."] = "Coś poszło nie tak. Spróbuj ponownie.",
+        ["The demo is read-only. Create an account to keep your own records."] = "Demo jest tylko do odczytu. Załóż konto, aby zapisywać własne rekordy.",
         ["Choose a date."] = "Wybierz datę.",
         ["Enter a value of 0 or more."] = "Wpisz wartość 0 lub większą.",
         ["Choose a category."] = "Wybierz kategorię.",

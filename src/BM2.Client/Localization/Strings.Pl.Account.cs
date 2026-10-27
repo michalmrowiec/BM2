@@ -5,6 +5,8 @@ public static partial class Strings
     private static readonly Dictionary<string, string> PlAccount = new()
     {
         ["Reset your password"] = "Zresetuj hasło",
+        ["Try the demo"] = "Wypróbuj demo",
+        ["Browse sample data without an account. The demo is read-only."] = "Przeglądaj przykładowe dane bez zakładania konta. Demo jest tylko do odczytu.",
         ["Confirm new password"] = "Powtórz nowe hasło",
         ["Current password"] = "Stare hasło",
         ["Recovery Code"] = "Kod odzyskiwania",
