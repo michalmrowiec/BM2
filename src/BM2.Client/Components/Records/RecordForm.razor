@@ -13,40 +13,40 @@
 <EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync" class="record-form">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="_ => BuildRequest()" />
 
-    <SegmentedControl TValue="FormKind" Options="KindOptions" Value="Kind" ValueChanged="OnKindChanged" Label="Record type"
+    <SegmentedControl TValue="FormKind" Options="KindOptions" Value="Kind" ValueChanged="OnKindChanged" Label="@Tr("Record type")"
                       Class="segmented--block" />
 
-    <MoneyInput id="record-amount" Label="Amount" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null || Template?.Amount > 0)"
+    <MoneyInput id="record-amount" Label="@Tr("Amount")" Large="true" Autofocus="true" SelectOnFocus="@(Initial is not null || Template?.Amount > 0)"
                 Currency="@AccountCurrency" @bind-Value="_model.Amount" @bind-Value:after="Recalculate" />
 
     @if (_model.Type == RecordType.Transfer)
     {
         <div class="record-form__route">
-            <SelectField id="record-account" Label="From account" Options="AccountOptions" @bind-Value="_model.AccountId"
+            <SelectField id="record-account" Label="@Tr("From account")" Options="AccountOptions" @bind-Value="_model.AccountId"
                          @bind-Value:after="OnAccountChanged" />
-            <button type="button" class="icon-button record-form__swap" aria-label="Swap from and to accounts"
+            <button type="button" class="icon-button record-form__swap" aria-label="@Tr("Swap from and to accounts")"
                     disabled="@(_model.TransferAccountId is null)" @onclick="SwapAccounts">
                 <Icon Name="transfer" />
             </button>
-            <SelectField id="record-target" Label="To account" Options="TargetOptions" @bind-Value="_model.TransferAccountId" />
+            <SelectField id="record-target" Label="@Tr("To account")" Options="TargetOptions" @bind-Value="_model.TransferAccountId" />
         </div>
         @if (NeedsTransferAmount)
         {
-            <MoneyInput id="record-transfer-amount" Label="@($"Amount received in {TargetCurrency}")" Currency="@TargetCurrency"
+            <MoneyInput id="record-transfer-amount" Label="@Tr("Amount received in {0}", TargetCurrency)" Currency="@TargetCurrency"
                         @bind-Value="_model.TransferAmount" />
         }
     }
     else
     {
-        <SelectField id="record-account" Label="@(_model.Type == RecordType.Income ? "To account" : "From account")"
+        <SelectField id="record-account" Label="@(_model.Type == RecordType.Income ? Tr("To account") : Tr("From account"))"
                      Options="AccountOptions" @bind-Value="_model.AccountId" @bind-Value:after="OnAccountChanged" />
     }
 
     <div class="field name-field">
-        <label class="field__label" for="record-name">Name</label>
+        <label class="field__label" for="record-name">@Tr("Name")</label>
         @* Combobox: arrows move through the suggestions, Enter picks, Escape closes. *@
         @{ var listOpen = _nameFocused && !_suggestionsClosed && NameMatches.Count > 0; }
-        <input id="record-name" class="field__control" value="@_model.Name" placeholder="Where or what, e.g. Lidl" autocomplete="off"
+        <input id="record-name" class="field__control" value="@_model.Name" placeholder="@Tr("Where or what, e.g. Lidl")" autocomplete="off"
                maxlength="100" aria-invalid="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "true")"
                aria-describedby="@(ErrorFor(nameof(FormModel.Name)) is null ? null : "record-name-error")"
                role="combobox" aria-autocomplete="list" aria-controls="record-name-list" aria-expanded="@(listOpen ? "true" : "false")"
@@ -55,7 +55,7 @@
                @onkeydown="OnNameKeyDown" />
         @if (listOpen)
         {
-            <ul class="suggestions" id="record-name-list" role="listbox" aria-label="Suggestions">
+            <ul class="suggestions" id="record-name-list" role="listbox" aria-label="@Tr("Suggestions")">
                 @for (var i = 0; i < NameMatches.Count; i++)
                 {
                     var suggestion = NameMatches[i];
@@ -86,18 +86,18 @@
     {
         @* The most used categories as chips; the rest through All, with search. *@
         <div class="field record-form__categories">
-            <span class="field__label" id="record-category-label">Category</span>
+            <span class="field__label" id="record-category-label">@Tr("Category")</span>
             @if (RefundHint is { } refundHint)
             {
                 <p class="field__hint record-form__refund"><Icon Name="in" /> @refundHint</p>
             }
             <ChipGroup TValue="Guid" Options="ShownCategories" Selected="SelectedCategory" SelectedChanged="OnCategoryChanged"
-                       Label="Category" Class="chip-group--categories" IconOf="id => FindCategory(id)?.Icon"
+                       Label="@Tr("Category")" Class="chip-group--categories" IconOf="id => FindCategory(id)?.Icon"
                        DescribedBy="@(ErrorFor(nameof(FormModel.CategoryId)) is null ? null : "record-category-error")">
                 @if (CategoryOptions.Count > ShownCategories.Count)
                 {
                     <button type="button" class="chip chip--add" @onclick="OpenCategoryPicker">
-                        <Icon Name="search" /> All @CategoryOptions.Count
+                        <Icon Name="search" /> @Tr("All {0}", CategoryOptions.Count)
                     </button>
                 }
             </ChipGroup>
@@ -108,16 +108,16 @@
             <label class="check">
                 <InputCheckbox @bind-Value="_updatePair" />
                 <span>
-                    Also change the linked record in @(WalletState.Wallets.FirstOrDefault(w => w.Id == pairWallet)?.Name ?? "the other wallet")
-                    <span class="muted">· date, name, and the amount when both use one currency</span>
+                    @Tr("Also change the linked record in {0}", WalletState.Wallets.FirstOrDefault(w => w.Id == pairWallet)?.Name ?? Tr("the other wallet"))
+                    <span class="muted">· @Tr("date, name, and the amount when both use one currency")</span>
                 </span>
             </label>
         }
 
-        <Sheet Open="_pickCategory" OpenChanged="v => _pickCategory = v" Title="Category">
+        <Sheet Open="_pickCategory" OpenChanged="v => _pickCategory = v" Title="@Tr("Category")">
             @* Enter picks the first match; data-enter-picks keeps it from saving the record. *@
-            <input type="search" class="field__control category-search" form="record-category-search" data-enter-picks placeholder="Search categories"
-                   aria-label="Search categories" autocomplete="off" value="@_categoryTerm"
+            <input type="search" class="field__control category-search" form="record-category-search" data-enter-picks placeholder="@Tr("Search categories")"
+                   aria-label="@Tr("Search categories")" autocomplete="off" value="@_categoryTerm"
                    @oninput="e => _categoryTerm = e.Value?.ToString()" @onkeydown="OnCategorySearchKeyDown" />
             <ul class="menu-list category-picker">
                 @foreach (var (id, name) in CategoryMatches)
@@ -135,7 +135,7 @@
             </ul>
             @if (CategoryMatches.Count == 0)
             {
-                <p class="muted">No category matches “@_categoryTerm”.</p>
+                <p class="muted">@Tr("No category matches “{0}”.", _categoryTerm)</p>
             }
         </Sheet>
     }
@@ -148,14 +148,14 @@
     {
         @* Moving the start would renumber and shift dates of records already added, so it is fixed. *@
         <div class="field">
-            <span class="field__label">Starts</span>
+            <span class="field__label">@Tr("Starts")</span>
             <p class="field__static">@_model.OccurredOn.ToString("d MMM yyyy")</p>
-            <p class="field__hint">Fixed once records were added. To start on another day, create a new rule.</p>
+            <p class="field__hint">@Tr("Fixed once records were added. To start on another day, create a new rule.")</p>
         </div>
     }
     else
     {
-        <DateField id="record-date" Label="@(RuleMode ? "Starts" : "Date")" @bind-Value="_model.OccurredOn" />
+        <DateField id="record-date" Label="@(RuleMode ? Tr("Starts") : Tr("Date"))" @bind-Value="_model.OccurredOn" />
     }
 
     @if (TemplateMode)
@@ -170,7 +170,7 @@
     {
         <label class="check">
             <input type="checkbox" checked="@_repeatOn" @onchange="OnRepeatChanged" />
-            <span><Icon Name="repeat" /> Repeat</span>
+            <span><Icon Name="repeat" /> @Tr("Repeat")</span>
         </label>
         @if (_repeatOn)
         {
@@ -181,7 +181,7 @@
     @if (TagOptions.Count > 0 || CanCreateTags)
     {
         <div class="field">
-            <span class="field__label" id="record-tags-label">Tags</span>
+            <span class="field__label" id="record-tags-label">@Tr("Tags")</span>
             <div class="chip-group" role="group" aria-labelledby="record-tags-label">
                 @foreach (var tag in TagOptions)
                 {
@@ -196,18 +196,18 @@
                     @if (_newTag is null)
                     {
                         <button type="button" class="chip chip--sm chip--add @(_tagEditorUsed ? "chip--back" : null)" @onclick="OpenNewTag">
-                            <Icon Name="plus" /> New tag
+                            <Icon Name="plus" /> @Tr("New tag")
                         </button>
                     }
                     else
                     {
                         @* form="" detaches the input from the record form, so Enter adds the tag instead of saving. *@
                         <span class="new-tag">
-                            <input class="field__control new-tag__input" form="record-new-tag" value="@_newTag" placeholder="Tag name"
-                                   aria-label="New tag name" maxlength="30" autocomplete="off" @ref="_newTagInput"
+                            <input class="field__control new-tag__input" form="record-new-tag" value="@_newTag" placeholder="@Tr("Tag name")"
+                                   aria-label="@Tr("New tag name")" maxlength="30" autocomplete="off" @ref="_newTagInput"
                                    @oninput="e => _newTag = e.Value?.ToString()" @onkeydown="OnNewTagKeyDown" />
-                            <button type="button" class="btn btn-secondary btn-sm" disabled="@_creatingTag" @onclick="CreateTagAsync">Add</button>
-                            <button type="button" class="icon-button" aria-label="Cancel new tag" @onclick="() => _newTag = null"><Icon Name="close" /></button>
+                            <button type="button" class="btn btn-secondary btn-sm" disabled="@_creatingTag" @onclick="CreateTagAsync">@Tr("Add")</button>
+                            <button type="button" class="icon-button" aria-label="@Tr("Cancel new tag")" @onclick="() => _newTag = null"><Icon Name="close" /></button>
                             <TagColorPicker Small="true" Value="@_newTagColor" ValueChanged="c => _newTagColor = c" />
                         </span>
                     }
@@ -217,16 +217,16 @@
     }
 
     <details class="record-form__more" open="@_moreOpen">
-        <summary>More</summary>
+        <summary>@Tr("More")</summary>
         <div class="form-stack">
             @if (!RuleMode && !TemplateMode)
             {
-                <SelectField id="record-status" Label="@(_repeatOn ? "Status of this record" : "Status")" Options="StatusOptions"
+                <SelectField id="record-status" Label="@(_repeatOn ? Tr("Status of this record") : Tr("Status"))" Options="StatusOptions"
                              @bind-Value="_model.Status" @bind-Value:after="SyncRepeatMode" />
             }
             @if (_model.Type != RecordType.Transfer)
             {
-                <SelectField id="record-currency" Label="Currency" Options="Options.Currencies" @bind-Value="_model.Currency"
+                <SelectField id="record-currency" Label="@Tr("Currency")" Options="Options.Currencies" @bind-Value="_model.Currency"
                              @bind-Value:after="Recalculate" />
             }
         </div>
@@ -235,9 +235,9 @@
     @if (IsForeign && !TemplateMode)
     {
         <div class="record-form__fx">
-            <MoneyInput id="record-rate" Label="@($"Rate {_model.Currency} → {AccountCurrency}")" Decimals="6"
+            <MoneyInput id="record-rate" Label="@Tr("Rate {0} → {1}", _model.Currency, AccountCurrency)" Decimals="6"
                         @bind-Value="_model.Rate" @bind-Value:after="Recalculate" />
-            <MoneyInput id="record-account-amount" Label="@($"Amount in {AccountCurrency}")" Currency="@AccountCurrency"
+            <MoneyInput id="record-account-amount" Label="@Tr("Amount in {0}", AccountCurrency)" Currency="@AccountCurrency"
                         @bind-Value="_model.AccountAmount" @bind-Value:after="OnAccountAmountChanged" />
         </div>
     }
@@ -246,7 +246,7 @@
     {
         @* Template fields are optional, so the record rules (e.g. a required category) don't apply here. *@
         <button type="button" class="btn btn-primary btn-block record-form__submit" disabled="@Busy" @onclick="SaveTemplateAsync">
-            Save template
+            @Tr("Save template")
         </button>
     }
     else
@@ -254,11 +254,11 @@
         @if (OnSaveTemplate.HasDelegate && !_repeatOn)
         {
             <button type="button" class="btn btn-ghost btn-block" disabled="@Busy" @onclick="SaveTemplateAsync">
-                <Icon Name="bolt" /> Save as template
+                <Icon Name="bolt" /> @Tr("Save as template")
             </button>
         }
 
-        <button type="submit" class="btn btn-primary btn-block record-form__submit" disabled="@Busy">Save</button>
+        <button type="submit" class="btn btn-primary btn-block record-form__submit" disabled="@Busy">@Tr("Save")</button>
     }
 </EditForm>
 
@@ -270,8 +270,8 @@
     // Refund is saved as income in an expense category; it lowers that category's spending.
     private enum FormKind { Expense, Income, Refund, Transfer }
 
-    private static readonly IReadOnlyList<(FormKind Value, string Label)> KindOptions =
-        [(FormKind.Expense, "Expense"), (FormKind.Income, "Income"), (FormKind.Refund, "Refund"), (FormKind.Transfer, "Transfer")];
+    private static IReadOnlyList<(FormKind Value, string Label)> KindOptions =>
+        [(FormKind.Expense, Tr("Expense")), (FormKind.Income, Tr("Income")), (FormKind.Refund, Tr("Refund")), (FormKind.Transfer, Tr("Transfer"))];
 
     private FormKind Kind => _model.Refund ? FormKind.Refund : _model.Type switch
     {
@@ -292,16 +292,16 @@
     }
 
     private string? RefundHint => !_model.Refund ? null
-        : FindCategory(_model.CategoryId) is { } category ? $"Money back: lowers {category.Name} spending, not counted as income."
-        : "Money back for an expense: lowers that category's spending, not counted as income.";
+        : FindCategory(_model.CategoryId) is { } category ? Tr("Money back: lowers {0} spending, not counted as income.", category.Name)
+        : Tr("Money back for an expense: lowers that category's spending, not counted as income.");
 
     private bool IsRefundCategory(Guid? categoryId) => FindCategory(categoryId)?.Type == CategoryType.Expense;
 
-    private static readonly IReadOnlyList<(RecordStatus Value, string Label)> StatusOptions =
+    private static IReadOnlyList<(RecordStatus Value, string Label)> StatusOptions =>
         [
-            (RecordStatus.Completed, "Completed – done and checked"),
-            (RecordStatus.Pending, "Pending – happened, waiting for your ✓ (counts in balances)"),
-            (RecordStatus.Planned, "Planned – not counted yet, shown as a forecast"),
+            (RecordStatus.Completed, Tr("Completed – done and checked")),
+            (RecordStatus.Pending, Tr("Pending – happened, waiting for your ✓ (counts in balances)")),
+            (RecordStatus.Planned, Tr("Planned – not counted yet, shown as a forecast")),
         ];
 
     private readonly List<TagItem> _createdTags = [];
@@ -736,7 +736,7 @@
         }
         else
         {
-            Toasts.Show(result.Problem!.Detail ?? "Couldn't add the tag.", ToastKind.Error);
+            Toasts.Show(result.Problem!.Detail ?? Tr("Couldn't add the tag."), ToastKind.Error);
         }
     }
 

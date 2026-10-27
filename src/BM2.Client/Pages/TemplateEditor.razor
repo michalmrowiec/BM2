@@ -10,17 +10,17 @@
 @inject ToastService Toasts
 @inject NavigationManager Navigation
 
-<PageTitle>Edit template · BM2</PageTitle>
+<PageTitle>@Tr("Edit template") · BM2</PageTitle>
 
 <section class="editor-sheet" aria-labelledby="editor-title">
     <header class="editor-sheet__header">
-        <BackButton Fallback="templates" Icon="close" Label="Close" />
-        <h1 id="editor-title" class="editor-sheet__title" tabindex="-1">Edit template</h1>
+        <BackButton Fallback="templates" Icon="close" Label="@Tr("Close")" />
+        <h1 id="editor-title" class="editor-sheet__title" tabindex="-1">@Tr("Edit template")</h1>
         <div class="editor-sheet__actions">
             @if (_template is not null && CanWrite)
             {
-                <a class="icon-button" href="@($"records/new?template={Id}")" aria-label="Use template"><Icon Name="plus" /></a>
-                <button type="button" class="icon-button" aria-label="Delete template" @onclick="() => _confirmDelete = true">
+                <a class="icon-button" href="@($"records/new?template={Id}")" aria-label="@Tr("Use template")"><Icon Name="plus" /></a>
+                <button type="button" class="icon-button" aria-label="@Tr("Delete template")" @onclick="() => _confirmDelete = true">
                     <Icon Name="trash" />
                 </button>
             }
@@ -33,27 +33,27 @@
     }
     else if (_loading)
     {
-        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
     }
     else if (_template is null)
     {
-        <EmptyState IconName="list" Title="This template doesn't exist">It may have been deleted.</EmptyState>
+        <EmptyState IconName="list" Title="@Tr("This template doesn't exist")">@Tr("It may have been deleted.")</EmptyState>
     }
     else if (!CanWrite)
     {
-        <EmptyState IconName="list" Title="View only">You can see this template but not change it.</EmptyState>
+        <EmptyState IconName="list" Title="@Tr("View only")">@Tr("You can see this template but not change it.")</EmptyState>
     }
     else
     {
-        <p class="muted">Fields left empty are filled in when you use the template. Amount empty or 0 means "type it each time".</p>
+        <p class="muted">@Tr("Fields left empty are filled in when you use the template. Amount empty or 0 means \"type it each time\".")</p>
         <RecordForm @key="_template.Id" Wallet="Wallet" Template="_template" TemplateMode="true" Suggestions="_suggestions"
                     Busy="_busy" OnSaveTemplate="SaveAsync" />
     }
 </section>
 
-<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete template?" ConfirmLabel="Delete"
+<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@Tr("Delete template?")" ConfirmLabel="@Tr("Delete")"
                Danger="true" OnConfirm="DeleteAsync">
-    <p>Records added from it stay as they are.</p>
+    <p>@Tr("Records added from it stay as they are.")</p>
 </ConfirmDialog>
 
 @code {
@@ -101,12 +101,12 @@
         _busy = false;
         if (result.Ok)
         {
-            Toasts.Show("Template saved.", ToastKind.Success);
+            Toasts.Show(Tr("Template saved."), ToastKind.Success);
             Navigation.NavigateTo("templates");
         }
         else
         {
-            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+            Toasts.Show(result.Problem!.Detail ?? Tr("Couldn't save the template."), ToastKind.Error);
         }
     }
 
@@ -116,7 +116,7 @@
         _confirmDelete = false;
         if (result.Ok)
         {
-            Toasts.Show("Template deleted.");
+            Toasts.Show(Tr("Template deleted."));
             Navigation.NavigateTo("templates");
         }
         else

@@ -18,13 +18,13 @@
 
 <section class="editor-sheet" aria-labelledby="editor-title">
     <header class="editor-sheet__header">
-        <BackButton Fallback="records" Icon="close" Label="Close" />
+        <BackButton Fallback="records" Icon="close" Label="@Tr("Close")" />
         <h1 id="editor-title" class="editor-sheet__title" tabindex="-1">@Title</h1>
         <div class="editor-sheet__actions">
             @if (Id is not null && _record is not null && CanWriteRecord)
             {
-                <a class="icon-button" href="@($"records/new?copy={Id}")" aria-label="Copy record"><Icon Name="copy" /></a>
-                <button type="button" class="icon-button" aria-label="Delete record" @onclick="() => _confirmDelete = true">
+                <a class="icon-button" href="@($"records/new?copy={Id}")" aria-label="@Tr("Copy record")"><Icon Name="copy" /></a>
+                <button type="button" class="icon-button" aria-label="@Tr("Delete record")" @onclick="() => _confirmDelete = true">
                     <Icon Name="trash" />
                 </button>
             }
@@ -37,27 +37,27 @@
     }
     else if (_loading)
     {
-        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
     }
     else if (_missing)
     {
-        <EmptyState IconName="list" Title="This record doesn't exist">It may have been deleted.</EmptyState>
+        <EmptyState IconName="list" Title="@Tr("This record doesn't exist")">@Tr("It may have been deleted.")</EmptyState>
     }
     else if ((_record is null || CopyId is not null) && !Wallet.Accounts.Any(a => a.CanWrite && !a.IsArchived))
     {
-        <EmptyState IconName="bank" Title="You can't add records here">
-            <ChildContent>Add an account first, or ask the wallet owner for edit access.</ChildContent>
+        <EmptyState IconName="bank" Title="@Tr("You can't add records here")">
+            <ChildContent>@Tr("Add an account first, or ask the wallet owner for edit access.")</ChildContent>
             <Actions>
                 @if (Wallet.Permissions.ManageAccounts)
                 {
-                    <a class="btn btn-primary" href="accounts">Add account</a>
+                    <a class="btn btn-primary" href="accounts">@Tr("Add account")</a>
                 }
             </Actions>
         </EmptyState>
     }
     else if (Id is not null && !CanWriteRecord)
     {
-        <EmptyState IconName="list" Title="View only">You can see this record but not change it.</EmptyState>
+        <EmptyState IconName="list" Title="@Tr("View only")">@Tr("You can see this record but not change it.")</EmptyState>
     }
     else
     {
@@ -65,8 +65,8 @@
         {
             <div class="notice">
                 <Icon Name="repeat" />
-                <p>Added by a recurring rule. Changes here apply only to this record.</p>
-                <a class="btn btn-secondary btn-sm" href="@($"recurring/{ruleId}")">Edit the rule</a>
+                <p>@Tr("Added by a recurring rule. Changes here apply only to this record.")</p>
+                <a class="btn btn-secondary btn-sm" href="@($"recurring/{ruleId}")">@Tr("Edit the rule")</a>
             </div>
         }
         <RecordForm @ref="_form" @key="_formKey" Wallet="Wallet" Initial="_record" IsCopy="@(CopyId is not null && Id is null)"
@@ -75,14 +75,14 @@
     }
 </section>
 
-<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete record?" ConfirmLabel="Delete"
+<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@Tr("Delete record?")" ConfirmLabel="@Tr("Delete")"
                Danger="true" OnConfirm="DeleteAsync">
-    <p>This can't be undone.</p>
+    <p>@Tr("This can't be undone.")</p>
     @if (_record is { PairWalletId: { } pairWallet, PairPending: false })
     {
         <label class="check">
             <input type="checkbox" checked="@_deletePair" @onchange="e => _deletePair = e.Value is true" />
-            <span>Also delete the linked record in @(WalletState.Wallets.FirstOrDefault(w => w.Id == pairWallet)?.Name ?? "the other wallet")</span>
+            <span>@Tr("Also delete the linked record in {0}", WalletState.Wallets.FirstOrDefault(w => w.Id == pairWallet)?.Name ?? Tr("the other wallet"))</span>
         </label>
     }
 </ConfirmDialog>
@@ -111,7 +111,7 @@
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
-    private string Title => Id is not null ? "Edit record" : CopyId is not null ? "Copy record" : "New record";
+    private string Title => Id is not null ? Tr("Edit record") : CopyId is not null ? Tr("Copy record") : Tr("New record");
 
     private bool CanWriteRecord => _record is not null && Wallet is not null
         && CanWrite(_record.AccountId) && (_record.TransferAccountId is not { } target || CanWrite(target));
@@ -171,7 +171,7 @@
             var saved = await Api.PostAsync<RecurringRuleItem>($"api/wallets/{Wallet.Id}/recurring", rule);
             if (!saved.Ok)
             {
-                Toasts.Show(saved.Problem!.Detail ?? "The record is saved, but the repeat couldn't be.", ToastKind.Error);
+                Toasts.Show(saved.Problem!.Detail ?? Tr("The record is saved, but the repeat couldn't be."), ToastKind.Error);
             }
         }
 
@@ -181,7 +181,7 @@
         {
             await WalletState.SetLastAccountAsync(request.AccountId);
             WalletState.ForgetSuggestions();
-            Toasts.Show("Saved.", ToastKind.Success);
+            Toasts.Show(Tr("Saved."), ToastKind.Success);
             await WalletState.RefreshAsync();
             await GoBackAsync();
         }
@@ -191,7 +191,7 @@
         }
         else if (result.Problem.IsNotFoundOrForbidden)
         {
-            Toasts.Show("You can't save this record here.", ToastKind.Error);
+            Toasts.Show(Tr("You can't save this record here."), ToastKind.Error);
         }
         else
         {
@@ -204,11 +204,11 @@
         var result = await Api.PostAsync<TemplateItem>($"api/wallets/{Wallet!.Id}/templates", request);
         if (result.Ok)
         {
-            Toasts.Show("Saved as template. It's pinned on Home.", ToastKind.Success);
+            Toasts.Show(Tr("Saved as template. It's pinned on Home."), ToastKind.Success);
         }
         else
         {
-            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+            Toasts.Show(result.Problem!.Detail ?? Tr("Couldn't save the template."), ToastKind.Error);
         }
     }
 
@@ -232,7 +232,7 @@
         if (result.Ok)
         {
             WalletState.ForgetSuggestions();
-            Toasts.Show("Record deleted.");
+            Toasts.Show(Tr("Record deleted."));
             await WalletState.RefreshAsync();
             await GoBackAsync();
         }

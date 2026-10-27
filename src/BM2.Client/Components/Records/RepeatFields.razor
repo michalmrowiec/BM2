@@ -5,15 +5,15 @@
 @* Schedule part of the record form: every N days/weeks/months/years, an optional end and the confirm mode. *@
 <div class="repeat-fields">
     <div class="repeat-fields__every">
-        <label class="field__label" for="repeat-interval">Every</label>
+        <label class="field__label" for="repeat-interval">@Tr("Every")</label>
         <input id="repeat-interval" class="field__control repeat-fields__interval" type="number" inputmode="numeric" min="1" max="366"
                value="@Model.Interval" @onchange="e => Model.Interval = ParseInt(e.Value, 1)" />
         <div class="field__select">
-            <select class="field__control" aria-label="Repeat unit" value="@Model.Frequency"
+            <select class="field__control" aria-label="@Tr("Repeat unit")" value="@Model.Frequency"
                     @onchange="e => Model.Frequency = Enum.Parse<RecurrenceFrequency>(e.Value!.ToString()!)">
-                @foreach (var (value, label) in Units)
+                @foreach (var value in Units)
                 {
-                    <option value="@value">@(Model.Interval == 1 ? label : label + "s")</option>
+                    <option value="@value">@UnitLabel(value)</option>
                 }
             </select>
             <Icon Name="chevron-down" Class="field__select-icon" />
@@ -21,30 +21,30 @@
     </div>
 
     <div class="field">
-        <span class="field__label" aria-hidden="true">Ends</span>
-        <SegmentedControl TValue="RecurrenceEnd" Options="EndOptions" Value="Model.End" ValueChanged="SetEnd" Label="Ends" />
+        <span class="field__label" aria-hidden="true">@Tr("Ends")</span>
+        <SegmentedControl TValue="RecurrenceEnd" Options="EndOptions" Value="Model.End" ValueChanged="SetEnd" Label="@Tr("Ends")" />
     </div>
 
     @if (Model.End == RecurrenceEnd.OnDate)
     {
-        <DateField id="repeat-until" Label="Last date" Shortcuts="false" @bind-Value="Model.LastDate" />
+        <DateField id="repeat-until" Label="@Tr("Last date")" Shortcuts="false" @bind-Value="Model.LastDate" />
     }
     else if (Model.End == RecurrenceEnd.AfterCount)
     {
         <div class="field">
-            <label class="field__label" for="repeat-count">Times (installments get "k/N" in the name)</label>
+            <label class="field__label" for="repeat-count">@Tr("Times (installments get \"k/N\" in the name)")</label>
             <input id="repeat-count" class="field__control" type="number" inputmode="numeric" min="1" max="1000" value="@Model.Count"
                    @onchange="e => Model.Count = ParseInt(e.Value, 12)" />
         </div>
     }
 
     <div class="field">
-        <label class="field__label" for="repeat-mode">Next records are added as</label>
+        <label class="field__label" for="repeat-mode">@Tr("Next records are added as")</label>
         <div class="field__select">
             <select id="repeat-mode" class="field__control" value="@(Model.Confirm ? "pending" : "completed")"
                     @onchange="SetMode">
-                <option value="completed">Completed (counted right away)</option>
-                <option value="pending">Pending (wait for my ✓ on Home)</option>
+                <option value="completed">@Tr("Completed (counted right away)")</option>
+                <option value="pending">@Tr("Pending (wait for my ✓ on Home)")</option>
             </select>
             <Icon Name="chevron-down" Class="field__select-icon" />
         </div>
@@ -60,11 +60,20 @@
 </div>
 
 @code {
-    private static readonly IReadOnlyList<(RecurrenceFrequency Value, string Label)> Units =
-        [(RecurrenceFrequency.Daily, "day"), (RecurrenceFrequency.Weekly, "week"), (RecurrenceFrequency.Monthly, "month"), (RecurrenceFrequency.Yearly, "year")];
+    private static readonly RecurrenceFrequency[] Units =
+        [RecurrenceFrequency.Daily, RecurrenceFrequency.Weekly, RecurrenceFrequency.Monthly, RecurrenceFrequency.Yearly];
 
-    private static readonly IReadOnlyList<(RecurrenceEnd Value, string Label)> EndOptions =
-        [(RecurrenceEnd.Never, "Never"), (RecurrenceEnd.OnDate, "On date"), (RecurrenceEnd.AfterCount, "N times")];
+    private static IReadOnlyList<(RecurrenceEnd Value, string Label)> EndOptions =>
+        [(RecurrenceEnd.Never, Tr("Never")), (RecurrenceEnd.OnDate, Tr("On date")), (RecurrenceEnd.AfterCount, Tr("N times"))];
+
+    // Unit name agreeing with the interval number ("1 week", "3 weeks", "5 weeks").
+    private string UnitLabel(RecurrenceFrequency f) => f switch
+    {
+        RecurrenceFrequency.Daily => Plural(Model.Interval, "day", "days"),
+        RecurrenceFrequency.Weekly => Plural(Model.Interval, "week", "weeks"),
+        RecurrenceFrequency.Monthly => Plural(Model.Interval, "month", "months"),
+        _ => Plural(Model.Interval, "year", "years"),
+    };
 
     [Parameter, EditorRequired] public RepeatModel Model { get; set; } = null!;
 
