@@ -1,5 +1,6 @@
 @page "/recurring"
 @attribute [Authorize]
+@using System.Globalization
 @using BM2.Client.Components.Records
 @using BM2.Client.Components.Wallets
 @using BM2.Contracts.Recurring
@@ -8,13 +9,13 @@
 @inject ApiClient Api
 @inject ToastService Toasts
 
-<PageTitle>Recurring · BM2</PageTitle>
+<PageTitle>@Tr("Recurring") · BM2</PageTitle>
 
 <header class="page-header">
-    <h1 class="page-title">Recurring</h1>
+    <h1 class="page-title">@Tr("Recurring")</h1>
     @if (CanWrite)
     {
-        <a class="btn btn-primary btn-sm" href="recurring/new"><Icon Name="plus" /> New</a>
+        <a class="btn btn-primary btn-sm" href="recurring/new"><Icon Name="plus" /> @Tr("New")</a>
     }
 </header>
 
@@ -24,12 +25,12 @@
 }
 else if (_rules is null)
 {
-    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
 }
 else if (_rules.Count == 0)
 {
-    <EmptyState IconName="repeat" Title="Nothing recurring yet">
-        Turn on Repeat when adding a record, or choose Make recurring in a record's menu (⋯).
+    <EmptyState IconName="repeat" Title="@Tr("Nothing recurring yet")">
+        @Tr("Turn on Repeat when adding a record, or choose Make recurring in a record's menu (⋯).")
     </EmptyState>
 }
 else
@@ -38,24 +39,24 @@ else
     if (sends.Count > 0)
     {
         @* "Send money" rules: each occurrence waits to be confirmed, then adds the income in the other wallet. *@
-        <h2 class="section-title">Sent to other wallets</h2>
+        <h2 class="section-title">@Tr("Sent to other wallets")</h2>
         <ul class="list stagger send-rules">
             @foreach (var rule in sends)
             {
                 var pair = rule.Record.Pair!;
                 var label = Label(rule);
                 <li class="template-row" @key="rule.Id">
-                    <ListRow Title="@($"To {WalletName(pair.WalletId)}{(rule.Record.Name is { } name ? $" · {name}" : null)}")"
+                    <ListRow Title="@($"{Tr("To {0}", WalletName(pair.WalletId))}{(rule.Record.Name is { } name ? $" · {name}" : null)}")"
                              Subtitle="@($"{Wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name} · {Subtitle(rule)}")" OnClick="() => _menuFor = rule">
                         <Leading><span class="avatar avatar--send" aria-hidden="true"><Icon Name="transfer" /></span></Leading>
                         <Trailing>
                             <span class="send-rules__amount">
                                 <Amount Value="rule.Record.Amount" Currency="@rule.Record.Currency" Sign="AmountSign.Minus" />
-                                <span class="tag record-status"><Icon Name="clock" />Confirm each</span>
+                                <span class="tag record-status"><Icon Name="clock" />@Tr("Confirm each")</span>
                             </span>
                         </Trailing>
                     </ListRow>
-                    <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {label}")"
+                    <button type="button" class="icon-button record-row__menu" aria-label="@Tr("Actions for {0}", label)"
                             @onclick="() => _menuFor = rule">
                         <Icon Name="dots" />
                     </button>
@@ -64,7 +65,7 @@ else
         </ul>
         if (sends.Count < _rules.Count)
         {
-            <h2 class="section-title">In this wallet</h2>
+            <h2 class="section-title">@Tr("In this wallet")</h2>
         }
     }
 
@@ -82,7 +83,7 @@ else
                         <Amount Value="rule.Record.Amount" Currency="@rule.Record.Currency" Sign="TemplateText.Sign(rule.Record.Type)" />
                     </Trailing>
                 </ListRow>
-                <button type="button" class="icon-button record-row__menu" aria-label="@($"Actions for {label}")"
+                <button type="button" class="icon-button record-row__menu" aria-label="@Tr("Actions for {0}", label)"
                         @onclick="() => _menuFor = rule">
                     <Icon Name="dots" />
                 </button>
@@ -90,19 +91,19 @@ else
         }
     </ul>
 
-    <Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuFor is null ? "Recurring" : Label(_menuFor))">
+    <Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuFor is null ? Tr("Recurring") : Label(_menuFor))">
         @if (_menuFor is { } rule)
         {
             <ul class="menu-list">
                 @if (CanWrite)
                 {
                     <li>
-                        <a href="@($"recurring/{rule.Id}")"><Icon Name="edit" /><span>Edit rule</span></a>
+                        <a href="@($"recurring/{rule.Id}")"><Icon Name="edit" /><span>@Tr("Edit rule")</span></a>
                     </li>
                 }
                 <li>
                     <a href="@($"records?ruleId={rule.Id}&all=true")">
-                        <Icon Name="list" /><span>Show records it added</span><span class="menu-list__trail">@rule.RecordCount</span>
+                        <Icon Name="list" /><span>@Tr("Show records it added")</span><span class="menu-list__trail">@rule.RecordCount</span>
                     </a>
                 </li>
                 @if (CanWrite)
@@ -112,7 +113,7 @@ else
                         <li>
                             <button type="button" disabled="@_busy" @onclick="() => TogglePauseAsync(rule)">
                                 <Icon Name="@(rule.IsPaused ? "play" : "pause")" />
-                                <span>@(rule.IsPaused ? "Resume (continues from today)" : "Pause (adds nothing until resumed)")</span>
+                                <span>@(rule.IsPaused ? Tr("Resume (continues from today)") : Tr("Pause (adds nothing until resumed)"))</span>
                             </button>
                         </li>
                     }
@@ -120,13 +121,13 @@ else
                     {
                         <li>
                             <button type="button" class="danger-text" @onclick="() => Ask(rule, DeleteKind.Records)">
-                                <Icon Name="trash" /><span>Delete the records it added (keep the rule)</span>
+                                <Icon Name="trash" /><span>@Tr("Delete the records it added (keep the rule)")</span>
                             </button>
                         </li>
                     }
                     <li>
                         <button type="button" class="danger-text" @onclick="() => Ask(rule, DeleteKind.Rule)">
-                            <Icon Name="trash" /><span>Delete rule</span>
+                            <Icon Name="trash" /><span>@Tr("Delete rule")</span>
                         </button>
                     </li>
                 }
@@ -135,22 +136,22 @@ else
     </Sheet>
 
     <ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Danger="true"
-                   Title="@(_deleteKind == DeleteKind.Records ? "Delete the records it added?" : "Delete recurring rule?")"
-                   ConfirmLabel="Delete" OnConfirm="DeleteAsync">
+                   Title="@(_deleteKind == DeleteKind.Records ? Tr("Delete the records it added?") : Tr("Delete recurring rule?"))"
+                   ConfirmLabel="@Tr("Delete")" OnConfirm="DeleteAsync">
         @if (_deleting is { } rule)
         {
             @if (_deleteKind == DeleteKind.Records)
             {
-                <p>Deletes all @rule.RecordCount records this rule added. The rule stays and adds only future ones. This can't be undone.</p>
+                <p>@Plural(rule.RecordCount, "Deletes the {0} record this rule added. The rule stays and adds only future ones. This can't be undone.", "Deletes all {0} records this rule added. The rule stays and adds only future ones. This can't be undone.")</p>
             }
             else
             {
-                <p>No more records will be added.</p>
+                <p>@Tr("No more records will be added.")</p>
                 @if (rule.RecordCount > 0)
                 {
                     <label class="check">
                         <input type="checkbox" checked="@_withRecords" @onchange="e => _withRecords = e.Value is true" />
-                        <span>Also delete the @rule.RecordCount records it added (otherwise they stay as normal records)</span>
+                        <span>@Plural(rule.RecordCount, "Also delete the {0} record it added (otherwise it stays as a normal record)", "Also delete the {0} records it added (otherwise they stay as normal records)")</span>
                     </label>
                 }
             }
@@ -201,19 +202,19 @@ else
     }
 
     private string Label(RecurringRuleItem rule) =>
-        rule.Record.Name ?? Wallet!.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? rule.Record.Type.ToString();
+        rule.Record.Name ?? Wallet!.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? TemplateText.TypeLabel(rule.Record.Type);
 
-    private string WalletName(Guid walletId) => WalletState.Wallets.FirstOrDefault(w => w.Id == walletId)?.Name ?? "another wallet";
+    private string WalletName(Guid walletId) => WalletState.Wallets.FirstOrDefault(w => w.Id == walletId)?.Name ?? Tr("another wallet");
 
     private static string Subtitle(RecurringRuleItem rule)
     {
         var next = rule switch
         {
-            { NextDate: null } => "Ended",
-            { IsPaused: true } => "Paused",
-            _ => $"Next {rule.NextDate:d MMM yyyy}",
+            { NextDate: null } => Tr("Ended"),
+            { IsPaused: true } => Tr("Paused"),
+            _ => Tr("Next {0}", rule.NextDate.GetValueOrDefault().ToString("d MMM yyyy", CultureInfo.CurrentCulture)),
         };
-        var added = rule.RecordCount == 1 ? "1 record added" : $"{rule.RecordCount} records added";
+        var added = Plural(rule.RecordCount, "{0} record added", "{0} records added");
         return $"{next} · {RecurringText.Describe(rule.Schedule)} · {added}";
     }
 
@@ -230,7 +231,7 @@ else
         }
         else
         {
-            Toasts.Show(result.Problem!.Detail ?? "Couldn't change the rule.", ToastKind.Error);
+            Toasts.Show(result.Problem!.Detail ?? Tr("Couldn't change the rule."), ToastKind.Error);
         }
     }
 
@@ -250,7 +251,7 @@ else
         _deleting = null;
         if (result.Ok)
         {
-            Toasts.Show(_deleteKind == DeleteKind.Records ? "Records deleted." : _withRecords ? "Rule and its records deleted." : "Rule deleted.");
+            Toasts.Show(_deleteKind == DeleteKind.Records ? Tr("Records deleted.") : _withRecords ? Tr("Rule and its records deleted.") : Tr("Rule deleted."));
             await WalletState.RefreshAsync();
             await LoadAsync(force: true);
         }

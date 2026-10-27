@@ -1,35 +1,35 @@
 @using BM2.Contracts.Records
 @using BM2.Contracts.Wallets
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="Filters">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@Tr("Filters")">
     <ChildContent>
         <EditForm Model="_model" OnSubmit="ApplyAsync" class="form-stack" id="record-filters">
-            <SelectField TValue="Guid?" id="filter-account" Label="Account" Options="AccountOptions" @bind-Value="_model.AccountId" />
-            <SelectField TValue="Guid?" id="filter-category" Label="Category" Options="CategoryOptions" @bind-Value="_model.CategoryId" />
+            <SelectField TValue="Guid?" id="filter-account" Label="@Tr("Account")" Options="AccountOptions" @bind-Value="_model.AccountId" />
+            <SelectField TValue="Guid?" id="filter-category" Label="@Tr("Category")" Options="CategoryOptions" @bind-Value="_model.CategoryId" />
             @if (Wallet.Tags.Count > 0)
             {
-                <SelectField TValue="Guid?" id="filter-tag" Label="Tag" Options="TagOptions" @bind-Value="_model.TagId" />
+                <SelectField TValue="Guid?" id="filter-tag" Label="@Tr("Tag")" Options="TagOptions" @bind-Value="_model.TagId" />
             }
-            <SelectField TValue="RecordType?" id="filter-type" Label="Type" Options="TypeOptions" @bind-Value="_model.Type" />
-            <SelectField TValue="RecordStatus?" id="filter-status" Label="Status" Options="StatusOptions" @bind-Value="_model.Status" />
-            <SelectField TValue="bool?" id="filter-source" Label="Added by" Options="SourceOptions" @bind-Value="_model.Recurring" />
+            <SelectField TValue="RecordType?" id="filter-type" Label="@Tr("Type")" Options="TypeOptions" @bind-Value="_model.Type" />
+            <SelectField TValue="RecordStatus?" id="filter-status" Label="@Tr("Status")" Options="StatusOptions" @bind-Value="_model.Status" />
+            <SelectField TValue="bool?" id="filter-source" Label="@Tr("Added by")" Options="SourceOptions" @bind-Value="_model.Recurring" />
         </EditForm>
     </ChildContent>
     <Footer>
-        <button type="button" class="btn btn-secondary" @onclick="ClearAsync">Clear</button>
-        <button type="submit" form="record-filters" class="btn btn-primary">Show records</button>
+        <button type="button" class="btn btn-secondary" @onclick="ClearAsync">@Tr("Clear")</button>
+        <button type="submit" form="record-filters" class="btn btn-primary">@Tr("Show records")</button>
     </Footer>
 </Sheet>
 
 @code {
-    private static readonly IReadOnlyList<(RecordType? Value, string Label)> TypeOptions =
-        [(null, "All types"), (RecordType.Expense, "Expenses"), (RecordType.Income, "Income"), (RecordType.Transfer, "Transfers")];
+    private static IReadOnlyList<(RecordType? Value, string Label)> TypeOptions =>
+        [(null, Tr("All types")), (RecordType.Expense, Tr("Expenses")), (RecordType.Income, Tr("Income")), (RecordType.Transfer, Tr("Transfers"))];
 
-    private static readonly IReadOnlyList<(RecordStatus? Value, string Label)> StatusOptions =
-        [(null, "Any status"), (RecordStatus.Completed, "Completed"), (RecordStatus.Pending, "Pending"), (RecordStatus.Planned, "Planned")];
+    private static IReadOnlyList<(RecordStatus? Value, string Label)> StatusOptions =>
+        [(null, Tr("Any status")), (RecordStatus.Completed, Tr("Completed")), (RecordStatus.Pending, Tr("Pending")), (RecordStatus.Planned, Tr("Planned"))];
 
-    private static readonly IReadOnlyList<(bool? Value, string Label)> SourceOptions =
-        [(null, "Anyone"), (true, "Recurring rules only")];
+    private static IReadOnlyList<(bool? Value, string Label)> SourceOptions =>
+        [(null, Tr("Anyone")), (true, Tr("Recurring rules only"))];
 
     private FilterModel _model = new();
     private bool _wasOpen;
@@ -45,13 +45,13 @@
     [Parameter] public EventCallback<RecordFilter> ValueChanged { get; set; }
 
     private IReadOnlyList<(Guid? Value, string Label)> AccountOptions =>
-        [(null, "All accounts"), .. Wallet.Accounts.Select(a => ((Guid?)a.Id, a.Name))];
+        [(null, Tr("All accounts")), .. Wallet.Accounts.Select(a => ((Guid?)a.Id, a.Name))];
 
     private IReadOnlyList<(Guid? Value, string Label)> CategoryOptions =>
-        [(null, "All categories"), .. Wallet.Categories.OrderBy(c => c.Type).ThenBy(c => c.Name).Select(c => ((Guid?)c.Id, c.Name))];
+        [(null, Tr("All categories")), .. Wallet.Categories.OrderBy(c => c.Type).ThenBy(c => c.Name).Select(c => ((Guid?)c.Id, c.Name))];
 
     private IReadOnlyList<(Guid? Value, string Label)> TagOptions =>
-        [(null, "All tags"), .. Wallet.Tags.Select(t => ((Guid?)t.Id, t.Name))];
+        [(null, Tr("All tags")), .. Wallet.Tags.Select(t => ((Guid?)t.Id, t.Name))];
 
     protected override void OnParametersSet()
     {

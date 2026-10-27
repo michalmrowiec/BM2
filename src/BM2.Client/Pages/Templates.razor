@@ -8,10 +8,10 @@
 @inject ApiClient Api
 @inject ToastService Toasts
 
-<PageTitle>Templates · BM2</PageTitle>
+<PageTitle>@Tr("Templates") · BM2</PageTitle>
 
 <header class="page-header">
-    <h1 class="page-title">Templates</h1>
+    <h1 class="page-title">@Tr("Templates")</h1>
 </header>
 
 @if (Wallet is null)
@@ -20,12 +20,12 @@
 }
 else if (_templates is null)
 {
-    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
 }
 else if (_templates.Count == 0)
 {
-    <EmptyState IconName="list" Title="No templates yet">
-        Open a record's menu (⋯) or the record form and choose Save as template. Pinned templates show on Home.
+    <EmptyState IconName="list" Title="@Tr("No templates yet")">
+        @Tr("Open a record's menu (⋯) or the record form and choose Save as template. Pinned templates show on Home.")
     </EmptyState>
 }
 else
@@ -49,7 +49,7 @@ else
                 @if (CanWrite)
                 {
                     <button type="button" class="icon-button pin-toggle" aria-pressed="@(template.IsPinned ? "true" : "false")"
-                            aria-label="@($"Pin {label} on Home")" @onclick="() => TogglePinAsync(template)">
+                            aria-label="@Tr("Pin {0} on Home", label)" @onclick="() => TogglePinAsync(template)">
                         <Icon Name="pin" />
                     </button>
                 }
@@ -92,7 +92,7 @@ else
     private string Subtitle(TemplateItem template)
     {
         var account = Wallet!.Accounts.FirstOrDefault(a => a.Id == template.AccountId)?.Name;
-        var parts = new[] { template.Type.ToString(), account, template.IsPinned ? "Pinned" : null };
+        var parts = new[] { TemplateText.TypeLabel(template.Type), account, template.IsPinned ? Tr("Pinned") : null };
         return string.Join(" · ", parts.OfType<string>());
     }
 
@@ -107,7 +107,7 @@ else
         }
         else
         {
-            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+            Toasts.Show(result.Problem!.Detail ?? Tr("Couldn't save the template."), ToastKind.Error);
         }
     }
 }

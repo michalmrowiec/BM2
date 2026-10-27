@@ -3,37 +3,37 @@
 @inject NavigationManager Navigation
 
 @* Picks the Records period: presets, a month that has records, or a custom range. Navigates itself. *@
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="Period">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@Tr("Period")">
     <ChildContent>
-        <section class="period-section" aria-label="Quick periods">
+        <section class="period-section" aria-label="@Tr("Quick periods")">
             <div class="chip-group">
-                <a class="chip chip--sm" href="@MonthHref(ThisMonth)" @onclick="CloseAsync">This month</a>
-                <a class="chip chip--sm" href="@MonthHref(ThisMonth.AddMonths(-1))" @onclick="CloseAsync">Last month</a>
-                <a class="chip chip--sm" href="@RangeHref(new DateOnly(Today.Year, 1, 1), new DateOnly(Today.Year, 12, 31))" @onclick="CloseAsync">This year</a>
-                <a class="chip chip--sm" href="@RangeHref(ThisMonth.AddMonths(-11), ThisMonth.AddMonths(1).AddDays(-1))" @onclick="CloseAsync">Last 12 months</a>
-                <a class="chip chip--sm" href="@AllTimeHref" @onclick="CloseAsync">All time</a>
+                <a class="chip chip--sm" href="@MonthHref(ThisMonth)" @onclick="CloseAsync">@Tr("This month")</a>
+                <a class="chip chip--sm" href="@MonthHref(ThisMonth.AddMonths(-1))" @onclick="CloseAsync">@Tr("Last month")</a>
+                <a class="chip chip--sm" href="@RangeHref(new DateOnly(Today.Year, 1, 1), new DateOnly(Today.Year, 12, 31))" @onclick="CloseAsync">@Tr("This year")</a>
+                <a class="chip chip--sm" href="@RangeHref(ThisMonth.AddMonths(-11), ThisMonth.AddMonths(1).AddDays(-1))" @onclick="CloseAsync">@Tr("Last 12 months")</a>
+                <a class="chip chip--sm" href="@AllTimeHref" @onclick="CloseAsync">@Tr("All time")</a>
             </div>
         </section>
 
         <section class="period-section">
-            <h3 class="period-section__title">Month</h3>
+            <h3 class="period-section__title">@Tr("Month")</h3>
             @if (_months is null)
             {
-                <p class="muted" aria-busy="true">Loading…</p>
+                <p class="muted" aria-busy="true">@Tr("Loading…")</p>
             }
             else if (_months.Count == 0)
             {
-                <p class="muted">No records yet.</p>
+                <p class="muted">@Tr("No records yet.")</p>
             }
             else
             {
-                <div class="chip-group" role="group" aria-label="Year">
+                <div class="chip-group" role="group" aria-label="@Tr("Year")">
                     @foreach (var year in Years)
                     {
                         <button type="button" class="chip chip--sm" aria-pressed="@(year == _year ? "true" : "false")" @onclick="() => _year = year">@year</button>
                     }
                 </div>
-                <div class="period-months" role="group" aria-label="@($"Months of {_year}")">
+                <div class="period-months" role="group" aria-label="@Tr("Months of {0}", _year)">
                     @foreach (var month in _months.Where(m => m.Year == _year).OrderBy(m => m.Month))
                     {
                         <a class="chip chip--sm" aria-current="@(month == Month ? "true" : null)" href="@MonthHref(month)" @onclick="CloseAsync">
@@ -45,10 +45,10 @@
         </section>
 
         <section class="period-section">
-            <h3 class="period-section__title">Custom range</h3>
+            <h3 class="period-section__title">@Tr("Custom range")</h3>
             <EditForm Model="_range" OnSubmit="ApplyRange" class="form-stack" id="record-period-range">
-                <DateField id="period-from" Label="From" Shortcuts="false" @bind-Value="_range.From" />
-                <DateField id="period-to" Label="To (inclusive)" Shortcuts="false" @bind-Value="_range.To" />
+                <DateField id="period-from" Label="@Tr("From")" Shortcuts="false" @bind-Value="_range.From" />
+                <DateField id="period-to" Label="@Tr("To (inclusive)")" Shortcuts="false" @bind-Value="_range.To" />
                 @if (_rangeError is not null)
                 {
                     <p class="field__error" role="alert">@_rangeError</p>
@@ -57,7 +57,7 @@
         </section>
     </ChildContent>
     <Footer>
-        <button type="submit" form="record-period-range" class="btn btn-primary">Show range</button>
+        <button type="submit" form="record-period-range" class="btn btn-primary">@Tr("Show range")</button>
     </Footer>
 </Sheet>
 
@@ -140,7 +140,7 @@
     {
         if (_range.To < _range.From)
         {
-            _rangeError = "The end date is before the start date.";
+            _rangeError = Tr("The end date is before the start date.");
             return;
         }
 
