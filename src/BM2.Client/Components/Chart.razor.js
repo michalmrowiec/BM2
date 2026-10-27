@@ -42,10 +42,31 @@ function baseOption() {
     };
 }
 
+// Numbers on value axes and in tooltips follow the page language (ECharts formats them as en-US).
+function localize(option) {
+    const lang = document.documentElement.lang || undefined;
+    const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
+    const percent = new Intl.NumberFormat(lang, { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const axes = [option.yAxis, option.xAxis].flat().filter(axis => axis?.type === "value");
+    for (const axis of axes) {
+        axis.axisLabel = { formatter: value => number.format(value), ...axis.axisLabel };
+    }
+
+    option.tooltip = { valueFormatter: value => (typeof value === "number" ? number.format(value) : value), ...option.tooltip };
+    const template = option.tooltip.formatter;
+    if (typeof template === "string" && template.includes("{c}")) {
+        option.tooltip.formatter = params => template
+            .replace("{b}", params.name)
+            .replace("{c}", number.format(params.value))
+            .replace("{d}", percent.format(params.percent / 100).replace("%", ""));
+    }
+    return option;
+}
+
 function render(entry) {
     if (!entry.option) return;
     const style = getComputedStyle(entry.element);
-    entry.chart.setOption(resolveTokens({ ...baseOption(), ...entry.option }, style), true);
+    entry.chart.setOption(localize(resolveTokens({ ...baseOption(), ...entry.option }, style)), true);
 }
 
 function redrawAll() {

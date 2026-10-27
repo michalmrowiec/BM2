@@ -58,5 +58,16 @@ public static partial class Strings
         ["You don't have permission to do this."] = "Nie masz uprawnień do tej czynności.",
         ["Too many requests. Wait a minute and try again."] = "Zbyt wiele żądań. Poczekaj minutę i spróbuj ponownie.",
         ["Too many requests"] = "Zbyt wiele żądań",
+        // Default FluentValidation messages (rules without WithMessage) and their property names.
+        ["'{0}' must not be empty."] = "Pole „{0}” nie może być puste.",
+        ["'{0}' has a range of values which does not include '{1}'."] = "Pole „{0}” ma nieprawidłową wartość: {1}.",
+        ["The length of '{0}' must be {1} characters or fewer. You entered {2} characters."] = "Pole „{0}” może mieć najwyżej {1} znaków (wpisano {2}).",
+        ["Kind"] = "Rodzaj",
+        ["Mode"] = "Tryb",
+        ["Schedule"] = "Harmonogram",
+        ["Schedule Frequency"] = "Częstotliwość",
+        ["Schedule End"] = "Zakończenie",
+        ["Tag Ids"] = "Tagi",
+        ["Query"] = "Zapytanie",
     };
 }
