@@ -512,7 +512,7 @@ button.list-row:hover { background: var(--wash); }
     width: 100%;
     min-height: var(--tap);
     padding: 0 var(--space-4);
-    border: 1px solid var(--rule);
+    border: 1px solid var(--control-border);
     border-radius: var(--radius);
     background: var(--sheet);
     color: var(--ink);
@@ -2312,7 +2312,7 @@ button.account-card {
     box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
 }
 
-.accent-swatch--terracotta { background: linear-gradient(135deg, #d9481f 50%, #ff7a50 50%); }
+.accent-swatch--terracotta { background: linear-gradient(135deg, #c9411a 50%, #ff7a50 50%); }
 .accent-swatch--ochre { background: linear-gradient(135deg, #9c6210 50%, #f2b84b 50%); }
 .accent-swatch--ink { background: linear-gradient(135deg, #2c4a9e 50%, #8ea8ff 50%); }
 .accent-swatch--green { background: linear-gradient(135deg, #1f6b4f 50%, #6fcf9f 50%); }
