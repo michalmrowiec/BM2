@@ -194,7 +194,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Formularz na telefonie (< 48rem):** strona z `.record-form__submit` chowa dolne menu (`body:has(...)`), Save jest
   przyklejony do dołu na pełną szerokość. **Marquee:** element `.marquee` z dzieckiem `.marquee__inner` – gdy tekst
   się nie mieści, `BM2.Client.lib.module.js` ustawia `data-marquee` i przewija go tam i z powrotem; przy
-  `prefers-reduced-motion` wielokropek. Suma dnia na liście rekordów jest przygaszona (`--ink-muted`, `--text-xs`).
+  `prefers-reduced-motion` wielokropek. Suma dnia na liście rekordów jest przygaszona (`--ink-muted`, `--text-xs`, font UI jak zysk na kartach kont).
 - **Dotyk i kolory:** bez `-webkit-tap-highlight-color`, focus tylko `:focus-visible` (`--focus`), wciśnięcie = tło
   `--wash`. Przyciski i ikony akcji neutralne (`--ink-muted` → `--ink`) albo w akcencie (`--vivid`/`--link`) – bez
   stałego niebieskiego; `--tag-blue` tylko jako kolor tagu wybrany przez użytkownika. `--attention` (Pending) = amber.

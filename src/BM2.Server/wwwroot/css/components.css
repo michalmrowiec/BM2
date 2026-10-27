@@ -1364,6 +1364,14 @@ button.account-card {
 
 .month-switcher .chip { flex-shrink: 0; }
 
+/* Very narrow phones show the abbreviated month (the button's aria-label keeps the full one). */
+.month-switcher__short { display: none; }
+
+@media (max-width: 25rem) {
+    .month-switcher__full { display: none; }
+    .month-switcher__short { display: inline; }
+}
+
 .month-switcher__label {
     flex: 1;
     min-width: 0;
@@ -1379,7 +1387,7 @@ button.account-card {
 
 /* Phones: header buttons show only their icons (the label stays for screen readers), the month fits one line. */
 @media (max-width: 30rem) {
-    .month-switcher__label { font-size: var(--text-s); }
+    .month-switcher__label { font-size: var(--text-m); }
 
     /* Longer Polish labels (e.g. four record types) must fit without clipping. */
     .segmented--block .segmented__option {
@@ -1487,8 +1495,11 @@ button.account-card {
     font-weight: 500;
 }
 
-/* The day total is context, not a balance: muted, without the plus/minus colors. */
-.record-day__total .amount { color: var(--ink-muted); }
+/* The day total is context, not a balance: muted, in the UI font (like the gain on account cards), no plus/minus colors. */
+.record-day__total .amount {
+    font: inherit;
+    color: var(--ink-muted);
+}
 
 /* Today stands out, so planned rows above it don't hide where today starts. */
 .record-day__header--today { color: var(--ink); }
