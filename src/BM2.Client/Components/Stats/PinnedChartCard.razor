@@ -7,8 +7,8 @@
 @* A pinned stats view on Home: small chart, one line of numbers, link to the full screen and Unpin. *@
 <article class="card pinned-chart">
     <header class="pinned-chart__header">
-        <a class="pinned-chart__title" href="@Href">@Pin.Title</a>
-        <button type="button" class="icon-button" aria-label="@Tr("Unpin {0}", Pin.Title)" title="@Tr("Unpin")" @onclick="() => OnUnpin.InvokeAsync(Pin)">
+        <a class="pinned-chart__title" href="@Href">@Title</a>
+        <button type="button" class="icon-button" aria-label="@Tr("Unpin {0}", Title)" title="@Tr("Unpin")" @onclick="() => OnUnpin.InvokeAsync(Pin)">
             <Icon Name="close" />
         </button>
     </header>
@@ -23,7 +23,7 @@
     else
     {
         <p class="pinned-chart__figure">@_figure</p>
-        <Chart Options="_options" Label="@($"{Pin.Title}: {_figureText}")" Class="chart--small" />
+        <Chart Options="_options" Label="@($"{Title}: {_figureText}")" Class="chart--small" />
     }
 </article>
 
@@ -39,6 +39,9 @@
     [Parameter, EditorRequired] public PinnedChartItem Pin { get; set; } = null!;
 
     [Parameter] public EventCallback<PinnedChartItem> OnUnpin { get; set; }
+
+    // Generated titles are stored in the language they were pinned in; matching them against known patterns re-translates them.
+    private string Title => TrMessage(Pin.Title);
 
     private string Href => Pin.Kind switch
     {

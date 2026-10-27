@@ -38,10 +38,10 @@ i rozmiary elementów interaktywnych na Start, Operacje, formularzu operacji, St
 
 ## Co zostaje
 
-- Osie wykresów ECharts formatują liczby po angielsku (`-20,000`) niezależnie od języka – do ustawienia
-  `axisLabel.formatter` z kulturą.
-- Domyślne komunikaty FluentValidation bez `WithMessage` (np. `IsInEnum`) zawierają angielskie nazwy właściwości.
-- Tytuły przypiętych wykresów są zapisywane w języku, w którym je przypięto.
+- Domknięte 2026-10-28: liczby na osiach i w tooltipach wykresów wg `lang` strony (`Chart.razor.js`, `Intl.NumberFormat`);
+  domyślne komunikaty FluentValidation (`NotNull`, `IsInEnum`, `MaximumLength`) i ich nazwy pól tłumaczone wzorcami
+  w `Strings.Pl.Messages.cs`; domyślne tytuły przypiętych wykresów tłumaczone przy wyświetlaniu (`TrMessage`).
+  Ograniczenia: tytuł przypięty po polsku nie wraca na angielski, a zakres własnych dat w tytule zostaje w języku przypięcia.
 - Teksty z danych użytkownika (nazwy kont, kategorii z importu) zostają w oryginale – to nie jest tłumaczenie UI.
 - Nie sprawdzone narzędziami: czytnik ekranu (TalkBack/VoiceOver), powiększenie 200%/400% (1.4.4, 1.4.10),
   pełna nawigacja klawiaturą po wszystkich ekranach (sprawdzone na kodzie, nie ręcznie).
