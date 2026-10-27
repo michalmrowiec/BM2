@@ -1,0 +1,166 @@
+@page "/more/settings"
+@attribute [Authorize]
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>@Tr("Settings") · BM2</PageTitle>
+
+<header class="page-header page-header--back">
+    <BackButton Fallback="more" />
+    <h1 class="page-title">@Tr("Settings")</h1>
+</header>
+
+<h2 class="section-title">@Tr("Account and security")</h2>
+<ul class="menu-list">
+    <li>
+        <a href="Account/Manage">
+            <Icon Name="user" />
+            <span>@Tr("Profile and password")</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <a href="Account/Manage/Passkeys">
+            <Icon Name="key" />
+            <span>@Tr("Passkeys")</span>
+            <Icon Name="chevron-right" Class="menu-list__trail" />
+        </a>
+    </li>
+    <li>
+        <form action="Account/Logout" method="post">
+            <AntiforgeryToken />
+            <input type="hidden" name="ReturnUrl" value="" />
+            <button type="submit">
+                <Icon Name="logout" />
+                <span>@Tr("Log out")</span>
+            </button>
+        </form>
+    </li>
+</ul>
+
+<h2 class="section-title">@Tr("Appearance")</h2>
+<ul class="menu-list">
+    <li>
+        <button type="button" data-theme-toggle>
+            <Icon Name="contrast" />
+            <span>@Tr("Switch theme")</span>
+            <span class="menu-list__trail">@Tr("Light") · @Tr("Dark")</span>
+        </button>
+    </li>
+    @if (RendererInfo.IsInteractive)
+    {
+        @* Saved in this browser, like the theme; big totals stay in the display font. *@
+        <li>
+            <button type="button" aria-pressed="@(_plainAmounts ? "true" : "false")" @onclick="ToggleAmountsAsync">
+                <Icon Name="type" />
+                <span>@Tr("Plain font for amounts")</span>
+                <span class="menu-list__trail">@(_plainAmounts ? Tr("On") : Tr("Off"))</span>
+            </button>
+        </li>
+        <li>
+            <button type="button" aria-haspopup="dialog" @onclick="() => _accentOpen = true">
+                <span class="accent-swatch accent-swatch--@_accent" aria-hidden="true"></span>
+                <span>@Tr("Accent color")</span>
+                <span class="menu-list__trail">@AccentName(_accent)</span>
+            </button>
+        </li>
+        @* theme.js toggles it, like the eye button in the header. *@
+        <li>
+            <button type="button" data-balances-toggle aria-pressed="@(_private ? "true" : "false")" @onclick="() => _private = !_private">
+                <Icon Name="@(_private ? "eye-off" : "eye")" />
+                <span>@Tr("Private mode")</span>
+                <span class="menu-list__trail">@(_private ? Tr("On") : Tr("Off"))</span>
+            </button>
+        </li>
+    }
+</ul>
+
+@if (RendererInfo.IsInteractive)
+{
+    <h2 class="section-title">@Tr("Language and region")</h2>
+    <ul class="menu-list">
+        @* Full reload through the server, so the cookie is set and WebAssembly starts in the new culture. *@
+        <li>
+            <button type="button" @onclick="() => SetLanguage(!_polish)">
+                <Icon Name="languages" />
+                <span>@Tr("Language")</span>
+                <span class="menu-list__trail">@(_polish ? "Polski" : "English")</span>
+            </button>
+        </li>
+        <li>
+            <button type="button" aria-pressed="@(CurrencyLabel.PlnAsZloty ? "true" : "false")" @onclick="TogglePlnAsync">
+                <Icon Name="coins" />
+                <span>@Tr("Show PLN as zł")</span>
+                <span class="menu-list__trail">@(CurrencyLabel.PlnAsZloty ? Tr("On") : Tr("Off"))</span>
+            </button>
+        </li>
+    </ul>
+}
+
+<Sheet Open="_accentOpen" OpenChanged="v => _accentOpen = v" Title="@Tr("Accent color")">
+    <p class="muted">@Tr("Colors the add button, links and highlights. Applies right away and is saved in this browser.")</p>
+    <ul class="menu-list accent-picker">
+        @foreach (var (key, name) in Accents)
+        {
+            <li>
+                <button type="button" aria-pressed="@(_accent == key ? "true" : "false")" @onclick="() => SetAccentAsync(key)">
+                    <span class="accent-swatch accent-swatch--@key" aria-hidden="true"></span>
+                    <span>@Tr(name)</span>
+                    @if (_accent == key)
+                    {
+                        <Icon Name="check" Class="menu-list__trail" />
+                    }
+                </button>
+            </li>
+        }
+    </ul>
+</Sheet>
+
+@code {
+    // Keys match data-accent in tokens.css; terracotta is the default (no attribute).
+    private const string DefaultAccent = "terracotta";
+
+    private static readonly IReadOnlyList<(string Key, string Name)> Accents =
+        [(DefaultAccent, "Terracotta"), ("ochre", "Ochre"), ("ink", "Ink blue"), ("green", "Bottle green"), ("plum", "Plum")];
+
+    private bool _plainAmounts;
+    private bool _private;
+    private string _accent = DefaultAccent;
+    private bool _accentOpen;
+    private bool _polish = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "pl";
+
+    private static string AccentName(string key) => Tr(Accents.FirstOrDefault(a => a.Key == key).Name ?? "Terracotta");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _plainAmounts = await JS.InvokeAsync<string?>("bm2Prefs.get", "amounts") == "plain";
+            _private = await JS.InvokeAsync<string?>("bm2Prefs.get", "balances") == "hidden";
+            var accent = await JS.InvokeAsync<string?>("bm2Prefs.get", "accent");
+            _accent = Accents.FirstOrDefault(a => a.Key == accent).Key ?? DefaultAccent;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleAmountsAsync()
+    {
+        _plainAmounts = !_plainAmounts;
+        await JS.InvokeVoidAsync("bm2Prefs.set", "amounts", _plainAmounts ? "plain" : null);
+    }
+
+    private async Task TogglePlnAsync()
+    {
+        CurrencyLabel.PlnAsZloty = !CurrencyLabel.PlnAsZloty;
+        await JS.InvokeVoidAsync("bm2Prefs.set", "pln", CurrencyLabel.PlnAsZloty ? null : "code");
+    }
+
+    private void SetLanguage(bool polish) =>
+        Navigation.NavigateTo($"culture/{(polish ? "pl" : "en")}?returnUrl={Uri.EscapeDataString("/more/settings")}", forceLoad: true);
+
+    private async Task SetAccentAsync(string key)
+    {
+        _accent = key;
+        await JS.InvokeVoidAsync("bm2Prefs.set", "accent", key == DefaultAccent ? null : key);
+    }
+}
