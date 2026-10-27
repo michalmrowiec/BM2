@@ -99,6 +99,12 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   przy potwierdzeniu. `UpdatePair` (edycja) przenosi datę, nazwę i kwotę (przy tej samej walucie); `DELETE ?pair=true`
   usuwa obie strony. UI: menu ⋯ przy portfelu w `WalletSwitcher` → `SendMoneyForm`; sekcja „Sent to other wallets”
   w Recurring; znaczek „↔ / → portfel” na liście rekordów.
+- **Zaproszenia do aplikacji:** `AppInvitation` (twórca, opcjonalny e-mail, 7 dni, jednorazowe, cofane; token jak
+  w zaproszeniach do portfeli – `InvitationToken`, w bazie tylko hash), endpointy `/api/app-invitations` (lista,
+  tworzenie z limitem `MaxActivePerUser` = 10 aktywnych → 409, cofanie; tylko własne, cudze → 404). Link
+  `/Account/Register?invite={token}` – ten sam parametr co zaproszenie do portfela, `RegistrationGate` i `Register`
+  sprawdzają oba rodzaje; rejestracja potwierdza e-mail, zużywa link i nie daje dostępu do portfeli. Token widać tylko
+  przy tworzeniu. UI: Settings → „Invite to BM2” (`/more/settings/invites`).
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne
   waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Home ładuje wszystko jednym `GET dashboard`.
