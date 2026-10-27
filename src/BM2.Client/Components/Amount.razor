@@ -1,6 +1,6 @@
 @using System.Globalization
 
-<span class="amount num @SignClass @(Large ? "amount--large" : null)" @key="Key">@Text</span>
+<span class="amount num @SignClass @(Large ? "amount--large" : null)" @key="Key"><span>@Text</span></span>
 
 @code {
     [Parameter] public decimal Value { get; set; }

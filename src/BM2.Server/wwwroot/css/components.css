@@ -73,9 +73,19 @@
 
 .theme-toggle .icon { display: none; }
 
-:root[data-theme-mode="light"] .theme-toggle .theme-icon-light,
-:root[data-theme-mode="dark"] .theme-toggle .theme-icon-dark,
-:root:not([data-theme-mode="light"]):not([data-theme-mode="dark"]) .theme-toggle .theme-icon-system {
+:root:not([data-theme="dark"]) .theme-toggle .theme-icon-light,
+:root[data-theme="dark"] .theme-toggle .theme-icon-dark {
+    display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .theme-toggle .theme-icon-light { display: none; }
+    :root:not([data-theme]) .theme-toggle .theme-icon-dark { display: block; }
+}
+
+.balances-toggle .icon { display: none; }
+:root:not([data-balances="hidden"]) .balances-toggle .balances-icon-shown,
+:root[data-balances="hidden"] .balances-toggle .balances-icon-hidden {
     display: block;
 }
 
@@ -1124,7 +1134,7 @@ button.account-card {
 .segmented__option[data-value="Expense"] { --type-color: var(--tag-red); }
 .segmented__option[data-value="Income"] { --type-color: var(--tag-green); }
 .segmented__option[data-value="Refund"] { --type-color: var(--tag-amber); }
-.segmented__option[data-value="Transfer"] { --type-color: var(--tag-blue); }
+.segmented__option[data-value="Transfer"] { --type-color: var(--ink); }
 
 .record-form__refund {
     display: flex;
@@ -1626,7 +1636,8 @@ button.account-card {
 .record-status .icon { width: 0.9em; height: 0.9em; }
 .record-row--pending .record-status { color: var(--attention); }
 
-.record-row__confirm { flex: none; margin-right: var(--space-1); color: var(--attention); }
+.record-row__confirm { flex: none; margin-right: var(--space-1); color: var(--ink-muted); }
+.record-row__confirm:is(:hover, :active) { color: var(--ink); }
 
 /* Record details sheet: amount, a label/value list, then the actions */
 .record-details {
@@ -2575,11 +2586,11 @@ button.account-card {
 }
 
 .avatar--send {
-    background: color-mix(in srgb, var(--tag-blue) 16%, var(--sheet-raised));
-    color: var(--tag-blue);
+    background: color-mix(in srgb, var(--link) 16%, var(--sheet-raised));
+    color: var(--link);
 }
 
-.send-rules .list-row { border-left: 3px solid var(--tag-blue); }
+.send-rules .list-row { border-left: 3px solid var(--link); }
 
 .send-rules__amount {
     display: grid;
@@ -2588,6 +2599,24 @@ button.account-card {
 }
 
 .record-row__pair {
-    color: var(--tag-blue);
+    color: var(--link);
     font-weight: 500;
+}
+
+/* Touch feedback: no browser tap highlight (base.css); controls get a quiet wash while pressed. */
+:is(.bottom-nav__item, .icon-button, .menu-list a, .menu-list button, a.list-row, button.list-row):active {
+    background: var(--wash);
+}
+
+/* Hide balances (eye button in the header, bm2Prefs "balances"): totals and balances become dots, single records stay.
+   Amounts inside these blocks, and any .secret element, swap their content for the dots. */
+:root[data-balances="hidden"] :is(:is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount, .secret) > * {
+    display: none;
+}
+
+:root[data-balances="hidden"] :is(:is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount, .secret)::after {
+    content: "•••••";
+    content: "•••••" / "hidden";
+    color: var(--ink-muted);
+    letter-spacing: 0.08em;
 }

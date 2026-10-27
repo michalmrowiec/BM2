@@ -1,0 +1,19 @@
+@* Clicks are handled by wwwroot/js/theme.js (also before WebAssembly starts); this only reads the initial state. *@
+@inject IJSRuntime JS
+
+<button type="button" class="icon-button balances-toggle" data-balances-toggle aria-pressed="@_pressed"
+        aria-label="Hide balances" title="Hide balances">
+    <Icon Name="eye" Class="balances-icon-shown" />
+    <Icon Name="eye-off" Class="balances-icon-hidden" />
+</button>
+
+@code {
+    private string? _pressed;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _pressed = await JS.InvokeAsync<string?>("bm2Prefs.get", "balances") == "hidden" ? "true" : "false";
+        StateHasChanged();
+    }
+}

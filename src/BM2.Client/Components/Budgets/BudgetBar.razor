@@ -12,28 +12,28 @@
         <span class="budget__state">
             @if (Over)
             {
-                <Icon Name="alert" /> @($"Over by {Format(Item.Spent - Item.Limit)}")
+                <Icon Name="alert" /> <span class="secret"><span>@($"Over by {Format(Item.Spent - Item.Limit)}")</span></span>
             }
             else
             {
-                @($"{Format(Item.Limit - Item.Spent)} left")
+                <span class="secret"><span>@($"{Format(Item.Limit - Item.Spent)} left")</span></span>
             }
         </span>
     </div>
     <progress class="budget__bar" max="100" value="@Percent.ToString(CultureInfo.InvariantCulture)" aria-hidden="true"></progress>
-    <span class="budget__numbers num">@Format(Item.Spent) of @Format(Item.Limit) @Currency</span>
+    <span class="budget__numbers num secret"><span>@Format(Item.Spent) of @Format(Item.Limit) @Currency</span></span>
     @if (Item.Planned > 0)
     {
-        <span class="budget__note">
+        <span class="budget__note secret"><span>
             Planned: @Format(Item.Planned) more.
             @(Item.Spent + Item.Planned > Item.Limit ? $"With it you'd be over by {Format(Item.Spent + Item.Planned - Item.Limit)}." : "Still within the limit.")
-        </span>
+        </span></span>
     }
     @if (Item.OtherSpent.Count > 0)
     {
-        <span class="budget__note">
+        <span class="budget__note secret"><span>
             Not counted: @string.Join(", ", Item.OtherSpent.Select(o => $"{Format(o.Amount)} {o.Currency}")) on accounts in other currencies.
-        </span>
+        </span></span>
     }
 </div>
 

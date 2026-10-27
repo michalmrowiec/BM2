@@ -99,7 +99,7 @@ else
     private RenderFragment Row(AccountItem account) =>
         @<ListRow Title="@account.Name" Subtitle="@Subtitle(account)" OnClick="@ClickOf(account)">
             <Leading><Icon Name="@(account.Kind == AccountKind.Investment ? "trend" : "bank")" /></Leading>
-            <Trailing><Amount Value="account.Valuation ?? account.Balance" Currency="@account.Currency" /></Trailing>
+            <Trailing><span class="secret"><Amount Value="account.Valuation ?? account.Balance" Currency="@account.Currency" /></span></Trailing>
         </ListRow>;
 
     private static string Subtitle(AccountItem account) =>

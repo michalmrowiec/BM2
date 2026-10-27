@@ -169,11 +169,21 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   kwoty – klasa `.num`). Ikony przez komponent `Icon`: Lucide (ISC, `lucide-static` 1.61.0) wstawione lokalnie jako
   markup SVG, licencja w `BM2.Client/wwwroot/icons/LICENSE-lucide.txt`; nowe ikony dopisuj z tej samej wersji.
   Kwoty zawsze ze znakiem `+`/`−`.
-- Motyw jasny/ciemny/systemowy obsługuje `wwwroot/js/theme.js` (przycisk z atrybutem `data-theme-toggle`). Bez skryptów
+- Motyw obsługuje `wwwroot/js/theme.js` (przycisk `data-theme-toggle`: light ↔ dark; bez zapisanego wyboru motyw systemu). Bez skryptów
   inline (przyszły CSP). Tam też preferencje z More (`window.bm2Prefs`, `localStorage`, atrybuty na `<html>`): font kwot
   (token `--font-num`, domyślnie Fraunces; `data-amounts="plain"` = Inter, duże sumy `.amount--large` zostają we
   Fraunces) i kolor akcentu (`data-accent`: ochre/ink/green/plum, brak = terakota; wartości `--accent*` na końcu
   `tokens.css`, z nich `--vivid`, `--link`, `--focus`).
+- **Hide balances:** przycisk z okiem w nagłówku (`BalancesToggle`, `data-balances-toggle`, obsługa w `theme.js`,
+  `bm2Prefs` „balances” → `data-balances="hidden"` na `<html>`, więc działa od prerenderu). Ukrywa sumy i salda
+  (nie pojedyncze rekordy): `.amount` w blokach wymienionych w regule na końcu `components.css` oraz każdy element
+  `.secret` (jego dzieci zastępują kropki). Nowa suma/saldo poza tymi blokami → owiń w `<span class="secret">`.
+- **Dotyk i kolory:** bez `-webkit-tap-highlight-color`, focus tylko `:focus-visible` (`--focus`), wciśnięcie = tło
+  `--wash`. Przyciski i ikony akcji neutralne (`--ink-muted` → `--ink`) albo w akcencie (`--vivid`/`--link`) – bez
+  stałego niebieskiego; `--tag-blue` tylko jako kolor tagu wybrany przez użytkownika. `--attention` (Pending) = amber.
+- **Przejścia stron:** tapnięcie zakładki dolnego menu (Home/Records/Stats/More) przesuwa treść `main` w stronę
+  zakładki przez View Transitions (`BM2.Client.lib.module.js` → `data-slide`, CSS w `motion.css`); bez wsparcia lub
+  przy `prefers-reduced-motion` zwykła nawigacja z wejściem `.page-enter`.
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
 - Wszystkie teksty UI w zasobach (EN domyślnie, PL). Daty i kwoty formatowane wg kultury użytkownika.

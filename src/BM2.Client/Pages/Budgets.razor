@@ -46,8 +46,8 @@ else
 {
     var spent = _overview.Items.Sum(b => b.Spent);
     var limit = _overview.Items.Sum(b => b.Limit);
-    <p class="budget-total num">
-        @spent.ToString("N2") of @limit.ToString("N2") @_overview.Currency
+    <p class="budget-total num secret">
+        <span>@spent.ToString("N2") of @limit.ToString("N2") @_overview.Currency</span>
         <span class="muted">· @(spent > limit ? $"over by {spent - limit:N2}" : $"{limit - spent:N2} left")</span>
     </p>
     <ul class="budget-list stagger">

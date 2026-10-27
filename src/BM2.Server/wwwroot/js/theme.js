@@ -1,7 +1,8 @@
-// Applies the saved theme, amount font and accent before first paint and handles [data-theme-toggle] buttons (system → light → dark).
+// Applies the saved theme and preferences before first paint. Handles [data-theme-toggle] (light ↔ dark; follows the
+// system until the first choice) and [data-balances-toggle] (hide totals and balances).
 (() => {
     const storageKey = "bm2-theme";
-    const modes = ["system", "light", "dark"];
+    const modes = ["system", "light", "dark"]; // "system" = nothing saved yet
     const themeColors = { light: "#f3efe6", dark: "#161412" };
     const root = document.documentElement;
     const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
@@ -29,8 +30,8 @@
 
     apply(read());
 
-    // Preferences set in More, as data-* on <html>: amounts ("plain" = UI font) and accent (none = terracotta).
-    const prefs = ["amounts", "accent"];
+    // Preferences as data-* on <html>: amounts ("plain" = UI font), accent (none = terracotta), balances ("hidden").
+    const prefs = ["amounts", "accent", "balances"];
     const readPref = name => {
         try { return localStorage.getItem(`bm2-${name}`); } catch { return null; }
     };
@@ -38,7 +39,14 @@
         if (value) root.dataset[name] = value;
         else delete root.dataset[name];
     };
-    const applyPrefs = () => prefs.forEach(name => applyPref(name, readPref(name)));
+    const syncBalancesToggles = () => {
+        const pressed = root.dataset.balances === "hidden" ? "true" : "false";
+        document.querySelectorAll("[data-balances-toggle]").forEach(button => button.setAttribute("aria-pressed", pressed));
+    };
+    const applyPrefs = () => {
+        prefs.forEach(name => applyPref(name, readPref(name)));
+        syncBalancesToggles();
+    };
     applyPrefs();
 
     window.bm2Prefs = {
@@ -50,6 +58,7 @@
                 else localStorage.removeItem(`bm2-${name}`);
             } catch { /* storage unavailable: the choice lasts for this page only */ }
             applyPref(name, value);
+            if (name === "balances") syncBalancesToggles();
         },
     };
 
@@ -58,9 +67,15 @@
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     document.addEventListener("click", event => {
+        const balances = event.target instanceof Element ? event.target.closest("[data-balances-toggle]") : null;
+        if (balances) window.bm2Prefs.set("balances", root.dataset.balances === "hidden" ? null : "hidden");
+    });
+
+    document.addEventListener("click", event => {
         const toggle = event.target instanceof Element ? event.target.closest("[data-theme-toggle]") : null;
         if (!toggle) return;
-        const next = modes[(modes.indexOf(root.dataset.themeMode) + 1) % modes.length];
+        const dark = root.dataset.theme === "dark" || (!root.dataset.theme && systemDark.matches);
+        const next = dark ? "light" : "dark";
         write(next);
 
         if (!document.startViewTransition || reducedMotion.matches) {
@@ -79,6 +94,7 @@
 
     // Enhanced navigation can patch <html> attributes; restore the theme afterwards.
     document.addEventListener("DOMContentLoaded", () => {
+        syncBalancesToggles();
         window.Blazor?.addEventListener?.("enhancedload", () => {
             apply(read());
             applyPrefs();

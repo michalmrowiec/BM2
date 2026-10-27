@@ -103,8 +103,8 @@
     --tag-brown: #8a5a3c;
     --tag-slate: #475569;
 
-    /* Calm accent for records waiting for a ✓; follows the theme through --tag-blue (amber next to ink blue) */
-    --attention: var(--accent-attention, var(--tag-blue));
+    /* Calm accent for records waiting for a ✓; follows the theme through --tag-amber */
+    --attention: var(--tag-amber);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -173,8 +173,8 @@
 
 :root[data-amounts="plain"] { --font-num: var(--font-ui); }
 
-/* Other accents (More → Accent color). Light text on --accent keeps 4.5:1; ink blue moves the ✓ accent to amber. */
+/* Other accents (More → Accent color). Light text on --accent keeps 4.5:1. */
 :root[data-accent="ochre"] { --accent: #9c6210; --accent-link: #8a5a0f; --accent-dark: #f2b84b; --on-accent-dark: #2a1a00; --accent-link-dark: #f2b84b; }
-:root[data-accent="ink"] { --accent: #2c4a9e; --accent-link: #2c4a9e; --accent-dark: #8ea8ff; --on-accent-dark: #0b1230; --accent-link-dark: #9db4ff; --accent-attention: var(--tag-amber); }
+:root[data-accent="ink"] { --accent: #2c4a9e; --accent-link: #2c4a9e; --accent-dark: #8ea8ff; --on-accent-dark: #0b1230; --accent-link-dark: #9db4ff; }
 :root[data-accent="green"] { --accent: #1f6b4f; --accent-link: #1f6b4f; --accent-dark: #6fcf9f; --on-accent-dark: #06140d; --accent-link-dark: #7fd8ab; }
 :root[data-accent="plum"] { --accent: #8b2f5c; --accent-link: #8b2f5c; --accent-dark: #f08bb8; --on-accent-dark: #2a0a19; --accent-link-dark: #f5a3c7; }

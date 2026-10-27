@@ -10,6 +10,7 @@ export function afterWebAssemblyStarted() {
     document.addEventListener("beforeinput", blockInvalidMoney);
     document.addEventListener("input", cleanMoney);
     document.addEventListener("keydown", keepComboboxEnter);
+    document.addEventListener("click", slideBetweenTabs, true);
 
     setTimeout(() => {
         document.documentElement.classList.add("motion-ready");
@@ -21,13 +22,49 @@ export function afterWebAssemblyStarted() {
             let index = 0;
             for (const record of records) {
                 for (const node of record.addedNodes) {
-                    if (!(node instanceof HTMLElement)) continue;
+                    if (!(node instanceof HTMLElement) || document.documentElement.dataset.slide) continue;
                     node.style.setProperty("--enter-delay", `${Math.min(index++, 3) * 50}ms`);
                     node.classList.add("page-enter");
                 }
             }
         }).observe(main, { childList: true });
     }, 400);
+}
+
+// Switching main tabs slides the page toward the tapped tab (View Transitions; see css/motion.css).
+const tabs = ["", "records", "stats", "more"];
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const tabIndex = href => tabs.indexOf(new URL(href, document.baseURI).pathname.replace(/^\/|\/$/g, ""));
+
+function slideBetweenTabs(event) {
+    const link = event.target instanceof Element ? event.target.closest("a.bottom-nav__item") : null;
+    if (!link || !document.startViewTransition || !window.Blazor?.navigateTo || reducedMotion.matches
+        || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+    }
+
+    const from = tabIndex(location.href);
+    const to = tabIndex(link.href);
+    if (from < 0 || to < 0 || from === to) return;
+
+    // Navigate ourselves (before Blazor sees the click) so the old page is captured first.
+    event.preventDefault();
+    event.stopPropagation();
+    const root = document.documentElement;
+    root.dataset.slide = to > from ? "forward" : "back";
+
+    const main = document.getElementById("main");
+    const transition = document.startViewTransition(() => new Promise(resolve => {
+        const done = () => {
+            observer.disconnect();
+            resolve();
+        };
+        const observer = new MutationObserver(done);
+        observer.observe(main, { childList: true });
+        setTimeout(done, 300);
+        window.Blazor.navigateTo(link.href);
+    }));
+    transition.finished.finally(() => delete root.dataset.slide);
 }
 
 // Enter on a highlighted combobox suggestion, or in a field marked data-enter-picks, picks (in Blazor) instead of
