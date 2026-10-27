@@ -62,7 +62,11 @@ else
                     <span class="list-row__trailing">
                         @if (member.IsMe)
                         {
-                            <button type="button" class="btn btn-ghost btn-sm" @onclick="AskLeaveWallet">@Tr("Leave")</button>
+                            @* The last owner can't leave (the server refuses), so the button isn't offered. *@
+                            if (member.Role != MemberRole.Owner || _members.Members.Count(m => m.Role == MemberRole.Owner) > 1)
+                            {
+                                <button type="button" class="btn btn-ghost btn-sm" @onclick="AskLeaveWallet">@Tr("Leave")</button>
+                            }
                         }
                         else if (CanManage)
                         {
