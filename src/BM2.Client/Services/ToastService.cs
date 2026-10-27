@@ -26,7 +26,7 @@ public sealed class ToastService
         _ = DismissLaterAsync(toast.Id);
     }
 
-    public void ShowError() => Show("Something went wrong. Try again.", ToastKind.Error);
+    public void ShowError() => Show(Localization.Strings.Tr("Something went wrong. Try again."), ToastKind.Error);
 
     public void Dismiss(Guid id)
     {

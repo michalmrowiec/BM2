@@ -6,7 +6,7 @@
     <div class="sheet__panel" @onclick:stopPropagation="true">
         <header class="sheet__header">
             <h2 id="@_titleId" class="sheet__title">@Title</h2>
-            <button type="button" class="icon-button" aria-label="Close" @onclick="RequestCloseAsync">
+            <button type="button" class="icon-button" aria-label="@Tr("Close")" @onclick="RequestCloseAsync">
                 <Icon Name="close" />
             </button>
         </header>

@@ -60,7 +60,7 @@
     {
         if (!AmountParser.TryParse(value, CultureInfo.CurrentCulture, out result, out var decimals))
         {
-            validationErrorMessage = "Enter a number.";
+            validationErrorMessage = Tr("Enter a number.");
             return false;
         }
 
@@ -68,7 +68,7 @@
         if (decimals > Decimals)
         {
             result = null;
-            validationErrorMessage = $"Use at most {Decimals} decimal places.";
+            validationErrorMessage = Tr("Use at most {0} decimal places.", Decimals);
             return false;
         }
 

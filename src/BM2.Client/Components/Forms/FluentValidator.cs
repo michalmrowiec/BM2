@@ -1,3 +1,4 @@
+using BM2.Client.Localization;
 using BM2.Client.Services;
 using FluentValidation;
 using FluentValidation.Results;
@@ -66,7 +67,7 @@ public sealed class FluentValidator : ComponentBase, IDisposable
         _messages!.Clear();
         foreach (var error in Validate())
         {
-            _messages.Add(_context!.Field(error.PropertyName), error.ErrorMessage);
+            _messages.Add(_context!.Field(error.PropertyName), Strings.TrMessage(error.ErrorMessage));
         }
 
         _context!.NotifyValidationStateChanged();
@@ -78,7 +79,7 @@ public sealed class FluentValidator : ComponentBase, IDisposable
         _messages!.Clear(field);
         foreach (var error in Validate().Where(error => error.PropertyName == field.FieldName))
         {
-            _messages.Add(field, error.ErrorMessage);
+            _messages.Add(field, Strings.TrMessage(error.ErrorMessage));
         }
 
         _context!.NotifyValidationStateChanged();

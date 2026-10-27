@@ -17,19 +17,19 @@
         else if (_sendTo is { } target)
         {
             <SendMoneyForm Source="current" Target="target" OnSent="OnSentAsync" />
-            <button type="button" class="btn btn-ghost btn-block" @onclick="() => _sendTo = null">Back to wallets</button>
+            <button type="button" class="btn btn-ghost btn-block" @onclick="() => _sendTo = null">@Tr("Back to wallets")</button>
         }
         else if (_menuFor is { } menuWallet)
         {
             <ul class="list">
                 <li>
-                    <ListRow Title="Send money" Subtitle="@($"An expense in {current.Name}, an income in {menuWallet.Name}")"
+                    <ListRow Title="@Tr("Send money")" Subtitle="@Tr("An expense in {0}, an income in {1}", current.Name, menuWallet.Name)"
                              OnClick="() => { _sendTo = menuWallet; _menuFor = null; }">
                         <Leading><Icon Name="transfer" /></Leading>
                     </ListRow>
                 </li>
                 <li>
-                    <ListRow Title="@($"Open {menuWallet.Name}")" OnClick="() => SelectAsync(menuWallet.Id)">
+                    <ListRow Title="@Tr("Open {0}", menuWallet.Name)" OnClick="() => SelectAsync(menuWallet.Id)">
                         <Leading><Icon Name="wallet" /></Leading>
                     </ListRow>
                 </li>
@@ -50,13 +50,13 @@
                                 @if (isCurrent)
                                 {
                                     <Icon Name="check" />
-                                    <span class="sr-only">Current wallet</span>
+                                    <span class="sr-only">@Tr("Current wallet")</span>
                                 }
                             </Trailing>
                         </ListRow>
                         @if (!isCurrent)
                         {
-                            <button type="button" class="icon-button" aria-label="@($"More for {wallet.Name}")" @onclick="() => _menuFor = wallet">
+                            <button type="button" class="icon-button" aria-label="@Tr("More for {0}", wallet.Name)" @onclick="() => _menuFor = wallet">
                                 <Icon Name="dots" />
                             </button>
                         }
@@ -64,7 +64,7 @@
                 }
             </ul>
             <button type="button" class="btn btn-secondary btn-block" @onclick="() => _creating = true">
-                <Icon Name="plus" /> New wallet
+                <Icon Name="plus" /> @Tr("New wallet")
             </button>
         }
     </Sheet>
@@ -76,9 +76,9 @@
     private WalletListItem? _menuFor;
     private WalletListItem? _sendTo;
 
-    private string SheetTitle => _creating ? "New wallet"
-        : _sendTo is { } target ? $"Send money to {target.Name}"
-        : _menuFor?.Name ?? "Wallets";
+    private string SheetTitle => _creating ? Tr("New wallet")
+        : _sendTo is { } target ? Tr("Send money to {0}", target.Name)
+        : _menuFor?.Name ?? Tr("Wallets");
 
     private void OnOpenChanged(bool open)
     {

@@ -3,7 +3,7 @@
 @inject IJSRuntime JS
 
 @* Goes back to the previous app page; without one (opened directly) goes to Fallback. *@
-<a class="icon-button @Class" href="@Fallback" aria-label="@Label" title="@Label"
+<a class="icon-button @Class" href="@Fallback" aria-label="@(Label ?? Tr("Back"))" title="@(Label ?? Tr("Back"))"
    @onclick="GoBackAsync" @onclick:preventDefault="true">
     <Icon Name="@Icon" />
 </a>
@@ -13,7 +13,7 @@
 
     [Parameter] public string Icon { get; set; } = "arrow-left";
 
-    [Parameter] public string Label { get; set; } = "Back";
+    [Parameter] public string? Label { get; set; }
 
     [Parameter] public string? Class { get; set; }
 

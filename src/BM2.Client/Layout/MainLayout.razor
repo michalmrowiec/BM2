@@ -3,7 +3,7 @@
 @inject AppNavigation AppNavigation
 @inject NavigationManager Navigation
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a class="skip-link" href="#main">@Tr("Skip to content")</a>
 
 <header class="app-header">
     <div class="app-header__lead">
@@ -27,7 +27,7 @@
         <ThemeToggle />
         <AuthorizeView>
             <NotAuthorized>
-                <a class="btn btn-secondary btn-sm" href="Account/Login">Log in</a>
+                <a class="btn btn-secondary btn-sm" href="Account/Login">@Tr("Log in")</a>
             </NotAuthorized>
         </AuthorizeView>
     </div>
@@ -46,8 +46,8 @@
 </AuthorizeView>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    @Tr("An unhandled error has occurred.")
+    <a href="." class="reload">@Tr("Reload")</a>
     <span class="dismiss">🗙</span>
 </div>
 
