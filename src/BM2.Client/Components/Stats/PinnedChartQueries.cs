@@ -29,7 +29,7 @@ public static class PinnedChartQueries
             .. (tagIds ?? []).Select(id => ("tagIds", (string?)id.ToString()))]);
 
     public static string Forecast(StatsState state) =>
-        new ForecastQuery { Currency = state.Currency, Months = state.ForecastMonths, Step = state.ForecastStep, Averages = state.ForecastAverages }
+        new ForecastQuery { Currency = state.Currency, Months = state.ForecastMonths, Step = state.ForecastStep, Trend = state.ForecastTrend }
             .ToQueryString();
 
     /// <summary>The stats API call for a pin; Type is the record type a category chart shows.</summary>

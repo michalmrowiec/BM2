@@ -9,7 +9,7 @@
 @inject ApiClient Api
 @inject StatsState State
 
-<StatsHeader Title="@Tr("Forecast")">@Tr("Where the balance is heading, from what is already scheduled.")</StatsHeader>
+<StatsHeader Title="@Tr("Forecast")">@Tr("Where the balance is heading: what is scheduled plus the trend of your history.")</StatsHeader>
 
 @if (Wallet is null)
 {
@@ -26,8 +26,8 @@ else
                          Hint="@Tr("Only accounts in this currency are counted.")" />
         }
         <label class="check">
-            <input type="checkbox" checked="@State.ForecastAverages" @onchange="e => SetAsync(() => State.ForecastAverages = e.Value is true)" />
-            <span>@Tr("Include everyday spending – the average of the last 3 months from categories without recurring expenses, spread evenly")</span>
+            <input type="checkbox" checked="@State.ForecastTrend" @onchange="e => SetAsync(() => State.ForecastTrend = e.Value is true)" />
+            <span>@Tr("Include the trend – income and everyday spending from up to 24 months of history, without recurring rules and their categories")</span>
         </label>
     </EditForm>
 
@@ -43,8 +43,43 @@ else
             <div><dt>@Tr("On {0}", Day(_data.Points[^1].Date))</dt><dd><Amount Value="_data.End" Currency="@_data.Currency" /></dd></div>
             <div><dt>@Tr("Lowest, {0}", Day(_data.Lowest.Date))</dt><dd><Amount Value="_data.Lowest.Balance" Currency="@_data.Currency" /></dd></div>
             <div><dt>@Tr("Change")</dt><dd><Amount Value="change" Currency="@_data.Currency" /></dd></div>
+            @if (_data.Points[^1].Spread > 0)
+            {
+                var spread = _data.Points[^1].Spread;
+                <div>
+                    <dt>@Tr("Likely range on {0}", Day(_data.Points[^1].Date))</dt>
+                    <dd><Amount Value="_data.End - spread" Currency="@_data.Currency" /> – <Amount Value="_data.End + spread" Currency="@_data.Currency" /></dd>
+                </div>
+            }
         </dl>
-        <Chart Options="_chart" Label="@Tr("Forecast balance until {0}. The figures above and the list below give the numbers.", Day(_data.Points[^1].Date))" />
+        <Chart Options="_chart" Label="@Tr("Forecast balance until {0}, with dashed lines for the likely range. The figures above and the table below give the numbers.", Day(_data.Points[^1].Date))" />
+        <details class="stats-numbers">
+            <summary>@Tr("Show numbers")</summary>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@Tr("Month")</th>
+                        <th scope="col">@Tr("In")</th>
+                        <th scope="col">@Tr("Out")</th>
+                        <th scope="col">@Tr("Balance")</th>
+                        <th scope="col">±</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var month in _data.Months)
+                    {
+                        <tr>
+                            <th scope="row">@month.Month.ToString("MMM yyyy", CultureInfo.CurrentCulture)</th>
+                            <td class="num">@Whole(month.Income)</td>
+                            <td class="num">@Whole(month.Expense)</td>
+                            <td class="num">@Whole(month.Balance)</td>
+                            <td class="num">@Whole(month.Spread)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="muted">@Tr("In and out include the trend and known items; ± is the likely range at the month's end. Amounts in {0}.", _data.Currency)</p>
+        </details>
         <p class="muted">@Explanation</p>
 
         <div class="stats-actions">
@@ -65,17 +100,48 @@ else
                 }
             </ul>
         }
+
+        <h2 class="section-title">@Tr("How much will I have?")</h2>
+        <EditForm Model="_calc" class="card stats-filters">
+            <MoneyInput Label="@Tr("Starting balance")" Currency="@_data.Currency" AllowNegative="true" @bind-Value="_calc.Start" Hint="@Tr("Today's balance by default.")" />
+            <MoneyInput Label="@Tr("Income per month")" Currency="@_data.Currency" @bind-Value="_calc.Income" />
+            <MoneyInput Label="@Tr("Spending per month")" Currency="@_data.Currency" @bind-Value="_calc.Expense"
+                        Hint="@Tr("Both start from the forecast's monthly average.")" />
+            <MoneyInput Label="@Tr("Interest per year, %")" @bind-Value="_calc.Rate" Hint="@Tr("Optional; added monthly while the balance is above zero.")" />
+            <MoneyInput Label="@Tr("Months")" Decimals="0" @bind-Value="_calc.Months" />
+            @if (Calculate() is { } result)
+            {
+                <dl class="stats-figures">
+                    <div><dt>@Tr("After {0}", Plural((int)(_calc.Months ?? 0), "{0} month", "{0} months"))</dt><dd><Amount Value="result.Total" Currency="@_data.Currency" /></dd></div>
+                    <div><dt>@Tr("Of which interest")</dt><dd><Amount Value="result.Interest" Currency="@_data.Currency" /></dd></div>
+                </dl>
+            }
+        </EditForm>
     }
 }
 
 @code {
     private IReadOnlyList<(int, string)> MonthOptions =>
-        [(3, Tr("{0} months", 3)), (6, Tr("{0} months", 6)), (12, Tr("{0} months", 12))];
+        [(3, Tr("{0} months", 3)), (6, Tr("{0} months", 6)), (12, Tr("{0} months", 12)), (24, Tr("{0} months", 24))];
     private IReadOnlyList<(ForecastStep, string)> StepOptions => [(ForecastStep.Day, Tr("Daily")), (ForecastStep.Week, Tr("Weekly"))];
 
     private WalletSnapshot? _loadedFor;
     private ForecastData? _data;
     private object _chart = new();
+    private readonly CalculatorModel _calc = new();
+
+    private sealed class CalculatorModel
+    {
+        public decimal? Start { get; set; }
+
+        public decimal? Income { get; set; }
+
+        public decimal? Expense { get; set; }
+
+        public decimal? Rate { get; set; }
+
+        public decimal? Months { get; set; }
+    }
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
@@ -85,6 +151,27 @@ else
     private static string Day(DateOnly date) => date.ToString("d MMM yyyy", CultureInfo.CurrentCulture);
 
     private static string Money(decimal value, string currency) => $"{value.ToString("N2", CultureInfo.CurrentCulture)} {currency}";
+
+    private static string Whole(decimal value) => value.ToString("N0", CultureInfo.CurrentCulture);
+
+    /// <summary>Month by month: interest on a positive balance first (rate / 12), then income minus spending.</summary>
+    private (decimal Total, decimal Interest)? Calculate()
+    {
+        if (_calc.Months is not { } m || m < 1 || m > 600)
+        {
+            return null;
+        }
+
+        decimal balance = _calc.Start ?? 0, interest = 0, rate = (_calc.Rate ?? 0) / 100 / 12;
+        for (var i = 0; i < m; i++)
+        {
+            var gain = balance > 0 ? Math.Round(balance * rate, 2) : 0;
+            interest += gain;
+            balance += gain + (_calc.Income ?? 0) - (_calc.Expense ?? 0);
+        }
+
+        return (balance, interest);
+    }
 
     private (string, string) PinView() =>
         (Tr("Forecast · {0} months · {1}", State.ForecastMonths, State.Currency), PinnedChartQueries.Forecast(State));
@@ -111,14 +198,29 @@ else
                 + Tr("It adds the coming occurrences of {0} and {1}. ",
                     Plural(d.RecurringCount, "{0} recurring rule", "{0} recurring rules"),
                     Plural(d.RecordCount, "{0} planned, pending or future-dated record", "{0} planned, pending or future-dated records"));
-            text += State.ForecastAverages && d.DailyAverage > 0
-                ? Tr("Everyday spending is estimated at {0} a day – the average from {1} to {2} in {3} that have no recurring expense. ",
-                    Money(d.DailyAverage, d.Currency),
-                    d.AverageFrom.ToString("MMMM", CultureInfo.CurrentCulture),
-                    d.AverageFrom.AddMonths(2).ToString("MMMM", CultureInfo.CurrentCulture),
-                    Plural(d.AveragedCategoryCount, "{0} category", "{0} categories"))
-                : Tr("Everyday spending is not included, so only known items move the line. ");
-            return text + Tr("It is an estimate: anything not recorded or scheduled is not in it.");
+            if (d.Trend is not { Model: not ForecastModel.None } t)
+            {
+                return text + Tr("The trend is not included, so only known items move the line. ")
+                    + Tr("It is an estimate: anything not recorded or scheduled is not in it.");
+            }
+
+            var model = t.Model switch
+            {
+                ForecastModel.Seasonal => Tr("a line with monthly seasons"),
+                ForecastModel.Linear => Tr("a straight line (seasons need 12 months)"),
+                _ => Tr("a plain average (a line needs 6 months)"),
+            };
+            text += Tr("The trend comes from {0} since {1}, fitted as {2}: this month about {3} in and {4} out, changing by {5} and {6} a month. ",
+                Tr("{0} months", t.Months), t.From.ToString("MMM yyyy", CultureInfo.CurrentCulture), model,
+                Money(t.Income, d.Currency), Money(t.Expense, d.Currency),
+                Money(t.IncomeSlope, d.Currency), Money(t.ExpenseSlope, d.Currency));
+            if (t.ExcludedCategoryCount > 0)
+            {
+                text += Tr("It leaves out {0} with recurring rules, which are counted from the rules. ",
+                    Plural(t.ExcludedCategoryCount, "{0} category", "{0} categories"));
+            }
+
+            return text + Tr("The dashed lines show the likely range (about 80%), which widens the further ahead you look.");
         }
     }
 
@@ -157,13 +259,18 @@ else
             Currency = State.Currency,
             Months = State.ForecastMonths,
             Step = State.ForecastStep,
-            Averages = State.ForecastAverages,
+            Trend = State.ForecastTrend,
             Today = DateOnly.FromDateTime(DateTime.Now),
         };
         _data = (await Api.GetAsync<ForecastData>($"api/wallets/{Wallet!.Id}/stats/forecast" + query.ToQueryString())).Value;
         if (_data is not null)
         {
             _chart = StatsCharts.Forecast(_data.Points);
+            var months = State.ForecastMonths;
+            _calc.Start = _data.Start;
+            _calc.Income = Math.Round(_data.Months.Sum(m => m.Income) / months, 2);
+            _calc.Expense = Math.Round(_data.Months.Sum(m => m.Expense) / months, 2);
+            _calc.Months = months;
         }
     }
 }
