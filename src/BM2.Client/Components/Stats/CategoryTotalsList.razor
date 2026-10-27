@@ -2,20 +2,32 @@
 @using BM2.Contracts.Stats
 @using BM2.Contracts.Wallets
 
-@* Category totals as text: icon, share, record count and amount; optional color swatches matching a donut. *@
+@* Category totals as text: icon, share, record count and amount; optional color swatches matching a donut.
+   With OnToggle the swatch is a checkbox that leaves the category out; shares then count only the rest. *@
 <ul class="stats-list">
     @for (var i = 0; i < Items.Count; i++)
     {
         var item = Items[i];
         var swatch = StatsCharts.SwatchOf(i);
         var selectable = OnSelect.HasDelegate && item.CategoryId is not null;
-        <li @key="(item.CategoryId, item.Type)">
-            <ListRow Title="@StatsCharts.NameOf(Wallet, item.CategoryId)"
-                     Subtitle="@($"{StatsCharts.Share(item.Total, Total)} · {StatsCharts.Records(item.Count)}")"
+        var hidden = IsHidden(item);
+        var toggles = OnToggle.HasDelegate;
+        var name = StatsCharts.NameOf(Wallet, item.CategoryId);
+        <li @key="(item.CategoryId, item.Type)" class="@(toggles ? hidden ? "stats-list__item is-hidden" : "stats-list__item" : null)">
+            @if (toggles)
+            {
+                <label class="stats-toggle" title="@(hidden ? "Include in chart and total" : "Leave out of chart and total")">
+                    <input type="checkbox" checked="@(!hidden)" @onchange="() => OnToggle.InvokeAsync(item.CategoryId)"
+                           aria-label="@($"Include {name}")" />
+                    <span class="stats-swatch stats-swatch--@swatch" aria-hidden="true"></span>
+                </label>
+            }
+            <ListRow Title="@name"
+                     Subtitle="@(hidden ? $"Left out · {StatsCharts.Records(item.Count)}" : $"{StatsCharts.Share(item.Total, Total)} · {StatsCharts.Records(item.Count)}")"
                      Class="@(selectable && item.CategoryId == SelectedId ? "stats-list__row is-selected" : "stats-list__row")"
                      OnClick="@(selectable ? EventCallback.Factory.Create(this, () => OnSelect.InvokeAsync(item.CategoryId!.Value)) : default)">
                 <Leading>
-                    @if (Swatches)
+                    @if (Swatches && !toggles)
                     {
                         <span class="stats-swatch stats-swatch--@swatch" aria-hidden="true"></span>
                     }
@@ -40,5 +52,11 @@
 
     [Parameter] public EventCallback<Guid> OnSelect { get; set; }
 
-    private decimal Total => Items.Sum(i => i.Total);
+    [Parameter] public IReadOnlySet<Guid?>? Hidden { get; set; }
+
+    [Parameter] public EventCallback<Guid?> OnToggle { get; set; }
+
+    private decimal Total => Items.Where(i => !IsHidden(i)).Sum(i => i.Total);
+
+    private bool IsHidden(CategoryTotal item) => Hidden?.Contains(item.CategoryId) == true;
 }

@@ -38,6 +38,9 @@ namespace BM2.Server.Data.Migrations
                         .HasColumnType("char(3)")
                         .IsFixedLength();
 
+                    b.Property<bool>("ExcludeFromTotal")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
 
@@ -54,6 +57,11 @@ namespace BM2.Server.Data.Migrations
                     b.Property<decimal>("OpeningBalance")
                         .HasPrecision(19, 4)
                         .HasColumnType("decimal(19,4)");
+
+                    b.Property<bool>("ShowOnDashboard")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<Guid>("WalletId")
                         .HasColumnType("uniqueidentifier");

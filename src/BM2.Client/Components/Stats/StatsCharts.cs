@@ -31,9 +31,12 @@ public static class StatsCharts
 
     public static string Records(int count) => count == 1 ? "1 record" : $"{count} records";
 
-    public static object Donut(IReadOnlyList<(string Id, string Name, decimal Value)> slices, string currency)
+    /// <param name="hidden">Ids of slices to leave out; the others keep their colors.</param>
+    public static object Donut(
+        IReadOnlyList<(string Id, string Name, decimal Value)> slices, string currency, IReadOnlyCollection<string>? hidden = null)
     {
-        var total = slices.Sum(s => s.Value);
+        var shown = slices.Select((s, i) => (Slice: s, Index: i)).Where(x => hidden?.Contains(x.Slice.Id) != true).ToList();
+        var total = shown.Sum(x => x.Slice.Value);
         return new
         {
             tooltip = new { trigger = "item", formatter = "{b}<br/>{c} " + currency + " ({d}%)" },
@@ -54,13 +57,13 @@ public static class StatsCharts
                     radius = new[] { "58%", "86%" },
                     label = new { show = false },
                     itemStyle = new { borderColor = "var(--sheet)", borderWidth = 2 },
-                    data = slices.Select((s, i) => new
+                    data = shown.Select(x => new
                     {
-                        id = s.Id,
-                        name = s.Name,
+                        id = x.Slice.Id,
+                        name = x.Slice.Name,
                         // A slice can't be negative (refunds above spending); the list still shows the real total.
-                        value = Math.Max(s.Value, 0),
-                        itemStyle = new { color = $"var({TokenOf(SwatchOf(i))})" },
+                        value = Math.Max(x.Slice.Value, 0),
+                        itemStyle = new { color = $"var({TokenOf(SwatchOf(x.Index))})" },
                     }).ToList(),
                 },
             },

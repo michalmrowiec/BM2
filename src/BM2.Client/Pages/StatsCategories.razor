@@ -33,14 +33,31 @@ else
     }
     else
     {
-        var total = Slices.Sum(s => s.Total);
+        var total = Slices.Where(s => !_hidden.Contains(s.CategoryId)).Sum(s => s.Total);
+        var hiddenCount = Slices.Count(s => _hidden.Contains(s.CategoryId));
         <div class="stats-split">
             <Chart Class="chart--donut" Options="_donut" OnItemClick="SelectAsync"
                    Label="@($"{TypeNoun} by category, {total:N2} {Currency} in total. The list shows every amount.")" />
-            <CategoryTotalsList Items="Slices" Wallet="Wallet" Currency="@Currency" Swatches="true"
-                                SelectedId="_trendId" OnSelect="id => SelectAsync(id.ToString())" />
+            <div>
+                <p class="stats-hidden">
+                    @if (hiddenCount > 0)
+                    {
+                        <span>@hiddenCount left out of the chart and total</span>
+                        <button type="button" class="btn btn-secondary btn-sm" @onclick="ResetHidden">Reset</button>
+                    }
+                    else
+                    {
+                        <span class="muted">Untick a color dot to leave that category out of the chart and total.</span>
+                    }
+                </p>
+                <CategoryTotalsList Items="Slices" Wallet="Wallet" Currency="@Currency" Swatches="true"
+                                    SelectedId="_trendId" OnSelect="id => SelectAsync(id.ToString())"
+                                    Hidden="_hidden" OnToggle="ToggleHidden" />
+            </div>
         </div>
-        <p class="stats-total">Total <Amount Value="StatsCharts.Signed(total, State.Type)" Currency="@Currency" /></p>
+        <p class="stats-total">
+            Total@(hiddenCount > 0 ? " of the rest" : "") <Amount Value="StatsCharts.Signed(total, State.Type)" Currency="@Currency" />
+        </p>
     }
 
     @if (_trendId is { } trendId && _trend is not null)
@@ -115,6 +132,7 @@ else
         if (_loadedFor?.Id != Wallet.Id)
         {
             _trendId = null;
+            _hidden.Clear();
         }
 
         _loadedFor = Wallet;
@@ -196,7 +214,26 @@ else
         }
     }
 
+    // Categories left out of the donut and total; kept for this screen only.
+    private readonly HashSet<Guid?> _hidden = [];
+
+    private void ToggleHidden(Guid? id)
+    {
+        if (!_hidden.Remove(id))
+        {
+            _hidden.Add(id);
+        }
+
+        BuildDonut();
+    }
+
+    private void ResetHidden()
+    {
+        _hidden.Clear();
+        BuildDonut();
+    }
+
     private void BuildDonut() => _donut = StatsCharts.Donut(
         Slices.Select(s => (s.CategoryId?.ToString() ?? "", StatsCharts.NameOf(Wallet!, s.CategoryId), s.Total)).ToList(),
-        Currency);
+        Currency, _hidden.Select(id => id?.ToString() ?? "").ToList());
 }

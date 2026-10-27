@@ -83,6 +83,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   Duża liczba na Home = cały portfel (gotówka + wartości inwestycji, rozbicie „Cash · Investments”); prognoza tylko
   gotówka. `ValuationSheet` (Home i Accounts): szybka wycena na dziś, wykres wartość vs wpłacone (`PaidIn` w historii). `stats/monthly` ma `Invested` =
   transfery gotówka → inwestycje minus z powrotem. Wyceny: odczyt z dostępem do konta, zapis `CanWriteAccount`.
+- **Flagi konta:** `ExcludeFromTotal` (konto nie wlicza się do wartości portfela na Home ani do rozbicia
+  „Cash · Investments”; prognoza też je pomija) i `ShowOnDashboard` (karta konta na Home, domyślnie tak).
+  Przychodzą w `AccountItem` ze snapshotu portfela (`GetWallet`), `GET dashboard` ich nie powtarza.
 - **Send money (między portfelami):** nie transfer, tylko para rekordów: wydatek tu + przychód w innym portfelu, wspólny
   `PairId` (każdy ma `PairWalletId` = drugi portfel). `SaveRecordRequest.Pair` (`RecordPair`: portfel, konto, kategoria
   przychodu, kwota w walucie konta docelowego) tylko przy tworzeniu wydatku; druga strona powstaje, gdy wydatek jest
@@ -99,6 +102,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   przez `Chart.razor.js`. Przy wykresie zawsze te same liczby tekstem (lista/tabela). Statystyki: `stats/categories`,
   `stats/monthly`, `stats/category-months` (rekordy `Completed` i `Pending`, bez transferów, jedna waluta kont, `tagIds` = dowolny
   z tagów); filtry ekranów Stats współdzieli scoped `StatsState` + komponent `StatsFilters`; kliknięcie słupka (id `Typ:yyyy-MM-dd`) lub kategorii otwiera `RecordsPreview` z rekordami.
+  Na „By category” kropka koloru w `CategoryTotalsList` (`Hidden` + `OnToggle`) to checkbox: odznaczona kategoria
+  zostaje na liście wyszarzona, a donut (`StatsCharts.Donut(..., hidden)`, kolory bez zmian), suma i udziały liczą
+  resztę; „Reset” przywraca. Stan tylko w komponencie strony.
 - **Prognoza, eksport, przypięte wykresy:** `stats/forecast` liczy na serwerze saldo dziś (Completed/Pending do dziś)
   + wystąpienia reguł od `NextIndex` (`RecurrenceSchedule`) + rekordy po dzisiejszej dacie (i zaległe `Planned` na dziś)
   + opcjonalnie średnia dzienna wydatków z 3 pełnych miesięcy z kategorii bez cyklicznych wydatków. `records/export`

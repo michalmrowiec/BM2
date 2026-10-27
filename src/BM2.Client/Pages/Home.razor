@@ -40,13 +40,14 @@
             <h1 class="page-title">@wallet.Name</h1>
 
             var active = wallet.Accounts.Where(a => !a.IsArchived).ToList();
-            var accounts = active.Where(a => a.Kind == AccountKind.Cash).ToList();
-            var investments = active.Where(a => a.Kind == AccountKind.Investment).ToList();
+            var counted = active.Where(a => !a.ExcludeFromTotal).ToList();
+            var accounts = active.Where(a => a.Kind == AccountKind.Cash && a.ShowOnDashboard).ToList();
+            var investments = active.Where(a => a.Kind == AccountKind.Investment && a.ShowOnDashboard).ToList();
             if (active.Count > 0)
             {
                 <section class="balance" aria-label="Total balance">
                     @* Whole wallet: cash balances plus investment values; the forecast stays cash only. *@
-                    @foreach (var total in active.GroupBy(a => a.Currency).Select(g => (
+                    @foreach (var total in counted.GroupBy(a => a.Currency).Select(g => (
                                   Currency: g.Key,
                                   Cash: g.Where(a => a.Kind == AccountKind.Cash).Sum(a => a.Balance),
                                   Invested: g.Where(a => a.Kind == AccountKind.Investment).Sum(a => a.Valuation ?? a.Balance),

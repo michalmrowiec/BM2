@@ -2312,6 +2312,36 @@ button.account-card {
 
 .stats-total { margin: var(--space-3) 0; }
 
+/* Category toggles: the swatch is a checkbox; a left-out category stays listed, faded. */
+.stats-hidden {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: 2.25rem;
+    margin: 0 0 var(--space-2);
+    font-size: 0.875rem;
+}
+
+.stats-list__item { display: flex; align-items: stretch; }
+.stats-list__item > .list-row { flex: 1; min-width: 0; }
+.stats-list__item.is-hidden > .list-row { opacity: 0.5; }
+
+.stats-toggle {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    cursor: pointer;
+}
+
+.stats-toggle input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.stats-toggle .stats-swatch { width: 1rem; height: 1rem; }
+.stats-toggle input:not(:checked) + .stats-swatch { background: transparent; box-shadow: inset 0 0 0 2px var(--ink-muted); }
+.stats-toggle input:focus-visible + .stats-swatch { outline: 2px solid var(--focus); outline-offset: 3px; }
+
 /* Stats overview tiles */
 .stats-hub {
     display: grid;

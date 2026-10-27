@@ -15,6 +15,8 @@ internal sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.Property(a => a.Currency).IsCurrencyCode();
         builder.HasIndex(a => new { a.WalletId, a.Name }).IsUnique();
         builder.Property(a => a.Kind).HasDefaultValue(AccountKind.Cash).HasSentinel(AccountKind.Cash);
+        // Sentinel true: only an explicit false is sent, existing rows get the default.
+        builder.Property(a => a.ShowOnDashboard).HasDefaultValue(true).HasSentinel(true);
 
         // No cascade: wallet deletion removes accounts in code (SQL Server rejects multiple cascade paths).
         builder.HasOne<Wallet>().WithMany().HasForeignKey(a => a.WalletId).OnDelete(DeleteBehavior.NoAction);
