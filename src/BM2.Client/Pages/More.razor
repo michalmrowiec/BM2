@@ -1,10 +1,11 @@
 @page "/more"
 @attribute [Authorize]
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
-<PageTitle>More · BM2</PageTitle>
+<PageTitle>@Tr("More") · BM2</PageTitle>
 
-<h1 class="page-title">More</h1>
+<h1 class="page-title">@Tr("More")</h1>
 
 @if (RendererInfo.IsInteractive)
 {
@@ -15,71 +16,71 @@
     <li>
         <a href="wallets">
             <Icon Name="wallet" />
-            <span>Wallets</span>
+            <span>@Tr("Wallets")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <a href="accounts">
             <Icon Name="bank" />
-            <span>Accounts</span>
+            <span>@Tr("Accounts")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <a href="members">
             <Icon Name="users" />
-            <span>Members and invitations</span>
+            <span>@Tr("Members and invitations")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <a href="categories">
             <Icon Name="category" />
-            <span>Categories</span>
+            <span>@Tr("Categories")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <a href="budgets">
             <Icon Name="piggy" />
-            <span>Budgets</span>
+            <span>@Tr("Budgets")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <a href="templates">
             <Icon Name="bolt" />
-            <span>Templates</span>
+            <span>@Tr("Templates")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <a href="recurring">
             <Icon Name="repeat" />
-            <span>Recurring</span>
+            <span>@Tr("Recurring")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <a href="tags">
             <Icon Name="tag" />
-            <span>Tags</span>
+            <span>@Tr("Tags")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <a href="Account/Manage">
             <Icon Name="user" />
-            <span>Account and security</span>
+            <span>@Tr("Account and security")</span>
             <Icon Name="chevron-right" Class="menu-list__trail" />
         </a>
     </li>
     <li>
         <button type="button" data-theme-toggle>
             <Icon Name="contrast" />
-            <span>Switch theme</span>
-            <span class="menu-list__trail">Light · Dark</span>
+            <span>@Tr("Switch theme")</span>
+            <span class="menu-list__trail">@Tr("Light") · @Tr("Dark")</span>
         </button>
     </li>
     @if (RendererInfo.IsInteractive)
@@ -88,15 +89,23 @@
         <li>
             <button type="button" aria-pressed="@(_plainAmounts ? "true" : "false")" @onclick="ToggleAmountsAsync">
                 <Icon Name="type" />
-                <span>Plain font for amounts</span>
-                <span class="menu-list__trail">@(_plainAmounts ? "On" : "Off")</span>
+                <span>@Tr("Plain font for amounts")</span>
+                <span class="menu-list__trail">@(_plainAmounts ? Tr("On") : Tr("Off"))</span>
             </button>
         </li>
         <li>
             <button type="button" aria-haspopup="dialog" @onclick="() => _accentOpen = true">
                 <span class="accent-swatch accent-swatch--@_accent" aria-hidden="true"></span>
-                <span>Accent color</span>
+                <span>@Tr("Accent color")</span>
                 <span class="menu-list__trail">@AccentName(_accent)</span>
+            </button>
+        </li>
+        @* Full reload through the server, so the cookie is set and WebAssembly starts in the new culture. *@
+        <li>
+            <button type="button" @onclick="() => SetLanguage(!_polish)">
+                <Icon Name="languages" />
+                <span>@Tr("Language")</span>
+                <span class="menu-list__trail">@(_polish ? "Polski" : "English")</span>
             </button>
         </li>
     }
@@ -106,21 +115,22 @@
             <input type="hidden" name="ReturnUrl" value="" />
             <button type="submit">
                 <Icon Name="logout" />
-                <span>Log out</span>
+                <span>@Tr("Log out")</span>
             </button>
         </form>
     </li>
 </ul>
 
-<Sheet Open="_accentOpen" OpenChanged="v => _accentOpen = v" Title="Accent color">
-    <p class="muted">Colors the add button, links and highlights. Applies right away and is saved in this browser.</p>
+
+<Sheet Open="_accentOpen" OpenChanged="v => _accentOpen = v" Title="@Tr("Accent color")">
+    <p class="muted">@Tr("Colors the add button, links and highlights. Applies right away and is saved in this browser.")</p>
     <ul class="menu-list accent-picker">
         @foreach (var (key, name) in Accents)
         {
             <li>
                 <button type="button" aria-pressed="@(_accent == key ? "true" : "false")" @onclick="() => SetAccentAsync(key)">
                     <span class="accent-swatch accent-swatch--@key" aria-hidden="true"></span>
-                    <span>@name</span>
+                    <span>@Tr(name)</span>
                     @if (_accent == key)
                     {
                         <Icon Name="check" Class="menu-list__trail" />
@@ -141,8 +151,9 @@
     private bool _plainAmounts;
     private string _accent = DefaultAccent;
     private bool _accentOpen;
+    private bool _polish = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "pl";
 
-    private static string AccentName(string key) => Accents.FirstOrDefault(a => a.Key == key).Name ?? "Terracotta";
+    private static string AccentName(string key) => Tr(Accents.FirstOrDefault(a => a.Key == key).Name ?? "Terracotta");
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -160,6 +171,9 @@
         _plainAmounts = !_plainAmounts;
         await JS.InvokeVoidAsync("bm2Prefs.set", "amounts", _plainAmounts ? "plain" : null);
     }
+
+    private void SetLanguage(bool polish) =>
+        Navigation.NavigateTo($"culture/{(polish ? "pl" : "en")}?returnUrl={Uri.EscapeDataString("/more")}", forceLoad: true);
 
     private async Task SetAccentAsync(string key)
     {

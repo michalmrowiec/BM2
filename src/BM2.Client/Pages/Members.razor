@@ -12,13 +12,13 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<PageTitle>Members · BM2</PageTitle>
+<PageTitle>@Tr("Members") · BM2</PageTitle>
 
 <header class="page-header">
-    <h1 class="page-title">Members</h1>
+    <h1 class="page-title">@Tr("Members")</h1>
     @if (CanManage)
     {
-        <button type="button" class="btn btn-primary btn-sm invite-button" @onclick="OpenInvite"><Icon Name="plus" /> Invite</button>
+        <button type="button" class="btn btn-primary btn-sm invite-button" @onclick="OpenInvite"><Icon Name="plus" /> @Tr("Invite")</button>
     }
 </header>
 
@@ -28,15 +28,15 @@
 }
 else if (Wallet.Role is null)
 {
-    <p class="muted">These accounts of @Wallet.Name were shared with you.</p>
+    <p class="muted">@Tr("These accounts of {0} were shared with you.", Wallet.Name)</p>
     <ul class="list">
         @foreach (var account in Wallet.Accounts)
         {
             <li>
-                <ListRow Title="@account.Name" Subtitle="@(account.CanWrite ? "Editor" : "Viewer")">
+                <ListRow Title="@account.Name" Subtitle="@(account.CanWrite ? Tr("Editor") : Tr("Viewer"))">
                     <Leading><Icon Name="bank" /></Leading>
                     <Trailing>
-                        <button type="button" class="btn btn-ghost btn-sm" @onclick="() => AskLeaveShare(account.Id, account.Name)">Leave</button>
+                        <button type="button" class="btn btn-ghost btn-sm" @onclick="() => AskLeaveShare(account.Id, account.Name)">@Tr("Leave")</button>
                     </Trailing>
                 </ListRow>
             </li>
@@ -45,7 +45,7 @@ else if (Wallet.Role is null)
 }
 else if (_members is null)
 {
-    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
 }
 else
 {
@@ -56,24 +56,24 @@ else
                 <div class="list-row">
                     <span class="list-row__leading"><Icon Name="user" /></span>
                     <span class="list-row__text">
-                        <span class="list-row__title">@member.Email @(member.IsMe ? "(you)" : null)</span>
+                        <span class="list-row__title">@member.Email @(member.IsMe ? Tr("(you)") : null)</span>
                         <span class="list-row__subtitle">@Options.RoleLabel(member.Role)</span>
                     </span>
                     <span class="list-row__trailing">
                         @if (member.IsMe)
                         {
-                            <button type="button" class="btn btn-ghost btn-sm" @onclick="AskLeaveWallet">Leave</button>
+                            <button type="button" class="btn btn-ghost btn-sm" @onclick="AskLeaveWallet">@Tr("Leave")</button>
                         }
                         else if (CanManage)
                         {
-                            <select class="role-select" aria-label="@($"Role of {member.Email}")" value="@member.Role"
+                            <select class="role-select" aria-label="@Tr("Role of {0}", member.Email)" value="@member.Role"
                                     @onchange="e => ChangeRoleAsync(MemberPath(member.UserId), e)">
                                 @foreach (var option in Options.WalletRoles)
                                 {
                                     <option value="@option.Value">@option.Label</option>
                                 }
                             </select>
-                            <button type="button" class="icon-button" aria-label="@($"Remove {member.Email}")"
+                            <button type="button" class="icon-button" aria-label="@Tr("Remove {0}", member.Email)"
                                     @onclick="() => AskRemove(MemberPath(member.UserId), member.Email)">
                                 <Icon Name="trash" />
                             </button>
@@ -86,7 +86,7 @@ else
 
     @if (_members.AccountShares.Count > 0)
     {
-        <h2 class="section-title">Shared accounts</h2>
+        <h2 class="section-title">@Tr("Shared accounts")</h2>
         <ul class="list">
             @foreach (var share in _members.AccountShares)
             {
@@ -94,20 +94,20 @@ else
                     <div class="list-row">
                         <span class="list-row__leading"><Icon Name="bank" /></span>
                         <span class="list-row__text">
-                            <span class="list-row__title">@share.Email @(share.IsMe ? "(you)" : null)</span>
+                            <span class="list-row__title">@share.Email @(share.IsMe ? Tr("(you)") : null)</span>
                             <span class="list-row__subtitle">@share.AccountName · @Options.RoleLabel(share.Role)</span>
                         </span>
                         @if (CanManage)
                         {
                             <span class="list-row__trailing">
-                                <select class="role-select" aria-label="@($"Role of {share.Email} on {share.AccountName}")" value="@share.Role"
+                                <select class="role-select" aria-label="@Tr("Role of {0} on {1}", share.Email, share.AccountName)" value="@share.Role"
                                         @onchange="e => ChangeRoleAsync(SharePath(share.AccountId, share.UserId), e)">
                                     @foreach (var option in Options.AccountRoles)
                                     {
                                         <option value="@option.Value">@option.Label</option>
                                     }
                                 </select>
-                                <button type="button" class="icon-button" aria-label="@($"Stop sharing {share.AccountName} with {share.Email}")"
+                                <button type="button" class="icon-button" aria-label="@Tr("Stop sharing {0} with {1}", share.AccountName, share.Email)"
                                         @onclick="() => AskRemove(SharePath(share.AccountId, share.UserId), share.Email)">
                                     <Icon Name="trash" />
                                 </button>
@@ -121,16 +121,16 @@ else
 
     @if (_members.Invitations.Count > 0)
     {
-        <h2 class="section-title">Pending invitations</h2>
+        <h2 class="section-title">@Tr("Pending invitations")</h2>
         <ul class="list">
             @foreach (var invitation in _members.Invitations)
             {
                 <li>
-                    <ListRow Title="@($"{Options.RoleLabel(invitation.Role)} · {invitation.AccountName ?? "whole wallet"}")"
-                             Subtitle="@($"Expires {invitation.ExpiresAt.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture)}")">
+                    <ListRow Title="@($"{Options.RoleLabel(invitation.Role)} · {invitation.AccountName ?? Tr("whole wallet")}")"
+                             Subtitle="@Tr("Expires {0}", invitation.ExpiresAt.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture))">
                         <Leading><Icon Name="share" /></Leading>
                         <Trailing>
-                            <button type="button" class="btn btn-ghost btn-sm" @onclick="() => RevokeAsync(invitation.Id)">Revoke</button>
+                            <button type="button" class="btn btn-ghost btn-sm" @onclick="() => RevokeAsync(invitation.Id)">@Tr("Revoke")</button>
                         </Trailing>
                     </ListRow>
                 </li>
@@ -139,29 +139,29 @@ else
     }
 }
 
-<Sheet Open="_inviteOpen" OpenChanged="v => _inviteOpen = v" Title="Invite someone">
+<Sheet Open="_inviteOpen" OpenChanged="v => _inviteOpen = v" Title="@Tr("Invite someone")">
     @if (_link is null)
     {
         <EditForm Model="_invite" OnValidSubmit="CreateInviteAsync" class="form-stack">
-            <SelectField TValue="Guid?" id="invite-scope" Label="Access to" Options="ScopeOptions" @bind-Value="_invite.AccountId"
+            <SelectField TValue="Guid?" id="invite-scope" Label="@Tr("Access to")" Options="ScopeOptions" @bind-Value="_invite.AccountId"
                          @bind-Value:after="OnScopeChanged" />
-            <SelectField TValue="MemberRole" id="invite-role" Label="Role" Options="RoleOptions" @bind-Value="_invite.Role"
+            <SelectField TValue="MemberRole" id="invite-role" Label="@Tr("Role")" Options="RoleOptions" @bind-Value="_invite.Role"
                          Hint="@RoleHint" />
-            <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">Create link</button>
+            <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@Tr("Create link")</button>
         </EditForm>
     }
     else
     {
-        <p>Send this link to the person you're inviting. It works once and expires in 7 days.</p>
+        <p>@Tr("Send this link to the person you're inviting. It works once and expires in 7 days.")</p>
         <div class="field">
-            <label class="field__label" for="invite-link">Invitation link</label>
+            <label class="field__label" for="invite-link">@Tr("Invitation link")</label>
             <input id="invite-link" class="field__control" readonly value="@_link" />
         </div>
         <div class="invite__actions">
-            <button type="button" class="btn btn-primary" @onclick="CopyAsync"><Icon Name="copy" /> Copy link</button>
+            <button type="button" class="btn btn-primary" @onclick="CopyAsync"><Icon Name="copy" /> @Tr("Copy link")</button>
             @if (_canShare)
             {
-                <button type="button" class="btn btn-secondary" @onclick="ShareAsync"><Icon Name="share" /> Share</button>
+                <button type="button" class="btn btn-secondary" @onclick="ShareAsync"><Icon Name="share" /> @Tr("Share")</button>
             }
         </div>
     }
@@ -192,16 +192,16 @@ else
     private bool CanManage => Wallet?.Permissions.ManageMembers == true;
 
     private IReadOnlyList<(Guid? Value, string Label)> ScopeOptions =>
-        [(null, "Whole wallet"), .. (Wallet?.Accounts ?? []).Where(a => !a.IsArchived).Select(a => ((Guid?)a.Id, $"Only {a.Name}"))];
+        [(null, Tr("Whole wallet")), .. (Wallet?.Accounts ?? []).Where(a => !a.IsArchived).Select(a => ((Guid?)a.Id, Tr("Only {0}", a.Name)))];
 
     private IReadOnlyList<(MemberRole Value, string Label)> RoleOptions =>
         _invite.AccountId is null ? Options.WalletRoles : Options.AccountRoles;
 
     private string RoleHint => _invite.Role switch
     {
-        MemberRole.Owner => "Can do everything, including inviting people and deleting the wallet.",
-        MemberRole.Editor => "Can add and edit records, categories and tags.",
-        _ => "Can only look.",
+        MemberRole.Owner => Tr("Can do everything, including inviting people and deleting the wallet."),
+        MemberRole.Editor => Tr("Can add and edit records, categories and tags."),
+        _ => Tr("Can only look."),
     };
 
     protected override async Task OnParametersSetAsync()
@@ -281,11 +281,11 @@ else
         try
         {
             await _module!.InvokeVoidAsync("copy", _link);
-            Toasts.Show("Link copied.", ToastKind.Success);
+            Toasts.Show(Tr("Link copied."), ToastKind.Success);
         }
         catch (JSException)
         {
-            Toasts.Show("Couldn't copy. Select the link and copy it yourself.", ToastKind.Error);
+            Toasts.Show(Tr("Couldn't copy. Select the link and copy it yourself."), ToastKind.Error);
         }
     }
 
@@ -311,7 +311,7 @@ else
         var result = await Api.PutAsync($"api/wallets/{Wallet!.Id}/{path}", new UpdateRoleRequest(role));
         if (result.Problem is { Status: 409 })
         {
-            Toasts.Show("A wallet needs at least one owner.", ToastKind.Error);
+            Toasts.Show(Tr("A wallet needs at least one owner."), ToastKind.Error);
         }
         else if (!result.Ok)
         {
@@ -326,14 +326,14 @@ else
         var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/invitations/{invitationId}");
         if (result.Ok)
         {
-            Toasts.Show("Invitation revoked.");
+            Toasts.Show(Tr("Invitation revoked."));
         }
 
         await LoadAsync(force: true);
     }
 
     private void AskRemove(string path, string email) => Ask(
-        $"Remove {email}?", "Remove", "They lose access right away. You can invite them again later.",
+        Tr("Remove {0}?", email), Tr("Remove"), Tr("They lose access right away. You can invite them again later."),
         async () =>
         {
             var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/{path}");
@@ -346,7 +346,7 @@ else
         });
 
     private void AskLeaveWallet() => Ask(
-        $"Leave {Wallet!.Name}?", "Leave", "You lose access to this wallet until someone invites you again.",
+        Tr("Leave {0}?", Wallet!.Name), Tr("Leave"), Tr("You lose access to this wallet until someone invites you again."),
         async () =>
         {
             var me = _members!.Members.Single(m => m.IsMe).UserId;
@@ -354,7 +354,7 @@ else
         });
 
     private void AskLeaveShare(Guid accountId, string accountName) => Ask(
-        $"Leave {accountName}?", "Leave", "You lose access to this account until someone invites you again.",
+        Tr("Leave {0}?", accountName), Tr("Leave"), Tr("You lose access to this account until someone invites you again."),
         async () =>
         {
             var me = await Api.GetAsync<BM2.Contracts.Profile.MeResponse>("api/me");
@@ -369,7 +369,7 @@ else
         var result = await Api.DeleteAsync($"api/wallets/{Wallet!.Id}/{path}");
         if (result.Problem is { Status: 409 })
         {
-            Toasts.Show("Make someone else an owner first.", ToastKind.Error);
+            Toasts.Show(Tr("Make someone else an owner first."), ToastKind.Error);
             return;
         }
 
