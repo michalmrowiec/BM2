@@ -8,13 +8,13 @@
 @inject ApiClient Api
 @inject ToastService Toasts
 
-<PageTitle>Accounts · BM2</PageTitle>
+<PageTitle>@Tr("Accounts") · BM2</PageTitle>
 
 <header class="page-header">
-    <h1 class="page-title">Accounts</h1>
+    <h1 class="page-title">@Tr("Accounts")</h1>
     @if (Wallet?.Permissions.ManageAccounts == true)
     {
-        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> New</button>
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> @Tr("New")</button>
     }
 </header>
 
@@ -24,8 +24,8 @@
 }
 else if (Wallet.Accounts.Count == 0)
 {
-    <EmptyState IconName="bank" Title="No accounts yet">
-        Add cash, a bank account or savings to start tracking money.
+    <EmptyState IconName="bank" Title="@Tr("No accounts yet")">
+        @Tr("Add cash, a bank account or savings to start tracking money.")
     </EmptyState>
 }
 else
@@ -40,7 +40,7 @@ else
     @if (Wallet.Accounts.Any(a => a.IsArchived))
     {
         <details class="disclosure">
-            <summary class="section-title">Archived</summary>
+            <summary class="section-title">@Tr("Archived")</summary>
             <ul class="list">
                 @foreach (var account in Wallet.Accounts.Where(a => a.IsArchived))
                 {
@@ -53,13 +53,13 @@ else
 
 @if (Wallet is not null)
 {
-    <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v" Title="@(_editing?.Name ?? "New account")">
+    <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v" Title="@(_editing?.Name ?? Tr("New account"))">
         <AccountForm @key="_editing?.Id" WalletId="Wallet.Id" Account="_editing" DefaultCurrency="@Wallet.BaseCurrency"
                      OnSaved="OnSavedAsync" />
         @if (_editing is not null)
         {
             <button type="button" class="btn btn-ghost btn-block danger-text" @onclick="AskDelete">
-                <Icon Name="trash" /> Delete account
+                <Icon Name="trash" /> @Tr("Delete account")
             </button>
         }
     </Sheet>
@@ -68,14 +68,14 @@ else
                     Open="_valuing is not null" OpenChanged="v => { if (!v) _valuing = null; }" OnChanged="WalletState.RefreshAsync">
         @if (Wallet.Permissions.ManageAccounts)
         {
-            <button type="button" class="btn btn-ghost btn-block" @onclick="EditValued"><Icon Name="edit" /> Edit account</button>
+            <button type="button" class="btn btn-ghost btn-block" @onclick="EditValued"><Icon Name="edit" /> @Tr("Edit account")</button>
         }
     </ValuationSheet>
 
-    <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@($"Delete {_editing?.Name}?")"
-                   ConfirmLabel="Delete account" Danger="true" RequireText="@_editing?.Name" OnConfirm="DeleteAsync">
-        <p>The account and all its records will be deleted, including transfers to other accounts. This can't be undone.</p>
-        <p class="muted">To keep the history, archive the account instead.</p>
+    <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@Tr("Delete {0}?", _editing?.Name)"
+                   ConfirmLabel="@Tr("Delete account")" Danger="true" RequireText="@_editing?.Name" OnConfirm="DeleteAsync">
+        <p>@Tr("The account and all its records will be deleted, including transfers to other accounts. This can't be undone.")</p>
+        <p class="muted">@Tr("To keep the history, archive the account instead.")</p>
     </ConfirmDialog>
 }
 
@@ -103,7 +103,7 @@ else
         </ListRow>;
 
     private static string Subtitle(AccountItem account) =>
-        string.Join(" · ", new[] { account.Currency, account.Kind == AccountKind.Investment ? "Investment" : null, account.IsArchived ? "Archived" : null }
+        string.Join(" · ", new[] { account.Currency, account.Kind == AccountKind.Investment ? Tr("Investment") : null, account.IsArchived ? Tr("Archived") : null }
             .OfType<string>());
 
     // Investment accounts open their value and valuations; others the editor.
@@ -129,7 +129,7 @@ else
     {
         _editorOpen = false;
         await WalletState.RefreshAsync();
-        Toasts.Show("Account saved.", ToastKind.Success);
+        Toasts.Show(Tr("Account saved."), ToastKind.Success);
     }
 
     private void AskDelete()
@@ -145,7 +145,7 @@ else
         if (result.Ok)
         {
             await WalletState.RefreshAsync();
-            Toasts.Show("Account deleted.");
+            Toasts.Show(Tr("Account deleted."));
         }
         else
         {

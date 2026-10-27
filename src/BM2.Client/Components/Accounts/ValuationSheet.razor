@@ -4,7 +4,7 @@
 @inject ToastService Toasts
 
 @* Investment account: value against the net amount paid in, a quick valuation for today and the history. *@
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Account?.Name ?? "Investment")">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Account?.Name ?? Tr("Investment"))">
     @* A local copy: the form re-renders on its own after the parent clears Account on close. *@
     @if (Account is { } account)
     {
@@ -13,12 +13,12 @@
         <div class="valuation-summary">
             <Amount Value="value" Currency="@account.Currency" Large="true" Sign="@(value < 0 ? AmountSign.Minus : AmountSign.None)" />
             <span class="muted">
-                @(account.ValuedOn is { } on ? $"Valued on {on:d}" : "No valuation yet: shows what you paid in")
+                @(account.ValuedOn is { } on ? Tr("Valued on {0:d}", on) : Tr("No valuation yet: shows what you paid in"))
             </span>
             <dl class="valuation-summary__facts">
-                <div><dt>Paid in</dt><dd><Amount Value="account.Balance" Currency="@account.Currency" Sign="@(account.Balance < 0 ? AmountSign.Minus : AmountSign.None)" /></dd></div>
+                <div><dt>@Tr("Paid in")</dt><dd><Amount Value="account.Balance" Currency="@account.Currency" Sign="@(account.Balance < 0 ? AmountSign.Minus : AmountSign.None)" /></dd></div>
                 <div>
-                    <dt>Gain</dt>
+                    <dt>@Tr("Gain")</dt>
                     <dd><Amount Value="Math.Abs(gain)" Currency="@account.Currency" Sign="@(gain < 0 ? AmountSign.Minus : AmountSign.Plus)" /></dd>
                 </div>
             </dl>
@@ -27,46 +27,46 @@
         @if (account.CanWrite)
         {
             <EditForm Model="_model" OnValidSubmit="SaveAsync" class="form-stack">
-                <MoneyInput Label="@(_otherDate ? "Value" : "Current value")" Currency="@account.Currency" @bind-Value="_model.Value"
+                <MoneyInput Label="@(_otherDate ? Tr("Value") : Tr("Current value"))" Currency="@account.Currency" @bind-Value="_model.Value"
                             SelectOnFocus="true"
-                            Hint="What the account is worth now. One valuation per day: saving again the same day replaces it." />
+                            Hint="@Tr("What the account is worth now. One valuation per day: saving again the same day replaces it.")" />
                 @if (_otherDate)
                 {
-                    <DateField Label="Valued on" @bind-Value="_model.ValuedOn" />
+                    <DateField Label="@Tr("Valued on")" @bind-Value="_model.ValuedOn" />
                 }
                 else
                 {
                     <button type="button" class="btn btn-ghost btn-sm" @onclick="() => _otherDate = true">
-                        <Icon Name="calendar" /> Other date
+                        <Icon Name="calendar" /> @Tr("Other date")
                     </button>
                 }
-                <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">Save value</button>
+                <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@Tr("Save value")</button>
             </EditForm>
         }
 
         @if (_items?.Count > 1)
         {
-            <Chart Options="_chart" Label="Value and paid in over time. The history below gives the numbers." />
+            <Chart Options="_chart" Label="@Tr("Value and paid in over time. The history below gives the numbers.")" />
         }
 
         <a class="btn btn-ghost btn-block" href="@($"records?accountId={account.Id}&all=true")">
-            <Icon Name="transfer" /> Transfers and records
+            <Icon Name="transfer" /> @Tr("Transfers and records")
         </a>
 
         @if (_items?.Count > 0)
         {
             <details class="disclosure">
-                <summary class="section-title">History (@_items.Count)</summary>
+                <summary class="section-title">@Tr("History ({0})", _items.Count)</summary>
                 <ul class="list">
                     @foreach (var item in _items)
                     {
                         <li>
-                            <ListRow Title="@item.ValuedOn.ToString("d")" Subtitle="@($"Paid in {item.PaidIn:N2}")">
+                            <ListRow Title="@item.ValuedOn.ToString("d")" Subtitle="@Tr("Paid in {0:N2}", item.PaidIn)">
                                 <Trailing>
                                     <Amount Value="item.Value" Currency="@account.Currency" Sign="AmountSign.None" />
                                     @if (account.CanWrite)
                                     {
-                                        <button type="button" class="icon-button" aria-label="@($"Delete valuation of {item.ValuedOn:d}")"
+                                        <button type="button" class="icon-button" aria-label="@Tr("Delete valuation of {0:d}", item.ValuedOn)"
                                                 @onclick="() => DeleteAsync(item)">
                                             <Icon Name="trash" />
                                         </button>
@@ -79,7 +79,7 @@
             </details>
         }
 
-        <p class="muted">Paid in = transfers to this account minus transfers out of it. Gain = value − paid in.</p>
+        <p class="muted">@Tr("Paid in = transfers to this account minus transfers out of it. Gain = value − paid in.")</p>
 
         @ChildContent
     }
@@ -137,7 +137,7 @@
     {
         if (_model.Value is not { } value || value < 0)
         {
-            Toasts.Show("Enter a value of 0 or more.", ToastKind.Error);
+            Toasts.Show(Tr("Enter a value of 0 or more."), ToastKind.Error);
             return;
         }
 
@@ -146,11 +146,11 @@
         _busy = false;
         if (!result.Ok)
         {
-            Toasts.Show(result.Problem?.Detail ?? "Couldn't save the value.", ToastKind.Error);
+            Toasts.Show(result.Problem?.Detail ?? Tr("Couldn't save the value."), ToastKind.Error);
             return;
         }
 
-        Toasts.Show("Value saved.", ToastKind.Success);
+        Toasts.Show(Tr("Value saved."), ToastKind.Success);
         await LoadAsync();
         await OnChanged.InvokeAsync();
     }

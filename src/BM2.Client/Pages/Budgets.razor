@@ -9,21 +9,21 @@
 @inject ApiClient Api
 @inject ToastService Toasts
 
-<PageTitle>Budgets · BM2</PageTitle>
+<PageTitle>@Tr("Budgets") · BM2</PageTitle>
 
 <header class="page-header">
-    <h1 class="page-title">Budgets</h1>
+    <h1 class="page-title">@Tr("Budgets")</h1>
     @if (CanManage && Available.Count > 0)
     {
-        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> New</button>
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> @Tr("New")</button>
     }
 </header>
-<p class="muted">A monthly limit per expense category. It repeats every month; unused money does not carry over.</p>
+<p class="muted">@Tr("A monthly limit per expense category. It repeats every month; unused money does not carry over.")</p>
 
 <div class="month-nav">
-    <button type="button" class="icon-button" aria-label="Previous month" @onclick="() => MoveAsync(-1)"><Icon Name="arrow-left" /></button>
+    <button type="button" class="icon-button" aria-label="@Tr("Previous month")" @onclick="() => MoveAsync(-1)"><Icon Name="arrow-left" /></button>
     <span class="month-nav__label">@_month.ToString("MMMM yyyy")</span>
-    <button type="button" class="icon-button" aria-label="Next month" @onclick="() => MoveAsync(1)"><Icon Name="arrow-right" /></button>
+    <button type="button" class="icon-button" aria-label="@Tr("Next month")" @onclick="() => MoveAsync(1)"><Icon Name="arrow-right" /></button>
 </div>
 
 @if (Wallet is null || _overview is null)
@@ -32,12 +32,12 @@
 }
 else if (_overview.Items.Count == 0)
 {
-    <EmptyState IconName="piggy" Title="No budgets yet">
-        <ChildContent>Set a monthly limit for a category, like 1,000 for groceries, and see how much is left.</ChildContent>
+    <EmptyState IconName="piggy" Title="@Tr("No budgets yet")">
+        <ChildContent>@Tr("Set a monthly limit for a category, like 1,000 for groceries, and see how much is left.")</ChildContent>
         <Actions>
             @if (CanManage && Available.Count > 0)
             {
-                <button type="button" class="btn btn-primary" @onclick="() => OpenEditor(null)">Add budget</button>
+                <button type="button" class="btn btn-primary" @onclick="() => OpenEditor(null)">@Tr("Add budget")</button>
             }
         </Actions>
     </EmptyState>
@@ -47,8 +47,8 @@ else
     var spent = _overview.Items.Sum(b => b.Spent);
     var limit = _overview.Items.Sum(b => b.Limit);
     <p class="budget-total num secret">
-        <span>@spent.ToString("N2") of @limit.ToString("N2") @_overview.Currency</span>
-        <span class="muted">· @(spent > limit ? $"over by {spent - limit:N2}" : $"{limit - spent:N2} left")</span>
+        <span>@Tr("{0} of {1} {2}", spent.ToString("N2"), limit.ToString("N2"), _overview.Currency)</span>
+        <span class="muted">· @(spent > limit ? Tr("over by {0}", (spent - limit).ToString("N2")) : Tr("{0} left", (limit - spent).ToString("N2")))</span>
     </p>
     <ul class="budget-list stagger">
         @foreach (var item in BudgetBar.ByUsage(_overview.Items))
@@ -56,7 +56,7 @@ else
             <li @key="item.Id">
                 @if (CanManage)
                 {
-                    <button type="button" class="budget-list__button" aria-label="@($"Edit budget for {CategoryOf(item)?.Name}")"
+                    <button type="button" class="budget-list__button" aria-label="@Tr("Edit budget for {0}", CategoryOf(item)?.Name)"
                             @onclick="() => OpenEditor(item)">
                         <BudgetBar Item="item" Currency="@_overview.Currency" Category="CategoryOf(item)" />
                     </button>
@@ -71,21 +71,21 @@ else
 }
 
 <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v"
-       Title="@(_editing is null ? "New budget" : $"Budget for {CategoryOf(_editing)?.Name}")">
+       Title="@(_editing is null ? Tr("New budget") : Tr("Budget for {0}", CategoryOf(_editing)?.Name))">
     <EditForm Model="_model" OnValidSubmit="SaveAsync" class="form-stack">
         <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToRequest()" />
         @if (_editing is null)
         {
-            <SelectField Label="Category" Options="Available" @bind-Value="_model.CategoryId" />
+            <SelectField Label="@Tr("Category")" Options="Available" @bind-Value="_model.CategoryId" />
         }
-        <MoneyInput Label="Monthly limit" Currency="@Wallet?.BaseCurrency" @bind-Value="_model.Limit"
-                    Hint="Applies to every month until you change it. Only accounts in this currency count." />
-        <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(_editing is null ? "Add budget" : "Save")</button>
+        <MoneyInput Label="@Tr("Monthly limit")" Currency="@Wallet?.BaseCurrency" @bind-Value="_model.Limit"
+                    Hint="@Tr("Applies to every month until you change it. Only accounts in this currency count.")" />
+        <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(_editing is null ? Tr("Add budget") : Tr("Save"))</button>
     </EditForm>
     @if (_editing is not null)
     {
         <button type="button" class="btn btn-ghost btn-block danger-text" disabled="@_busy" @onclick="DeleteAsync">
-            <Icon Name="trash" /> Remove budget
+            <Icon Name="trash" /> @Tr("Remove budget")
         </button>
     }
 </Sheet>
@@ -161,7 +161,7 @@ else
         if (result.Ok)
         {
             _editorOpen = false;
-            Toasts.Show("Budget saved.", ToastKind.Success);
+            Toasts.Show(Tr("Budget saved."), ToastKind.Success);
             await LoadAsync(force: true);
         }
         else if (result.Problem!.HasFieldErrors)
@@ -182,7 +182,7 @@ else
         if (result.Ok)
         {
             _editorOpen = false;
-            Toasts.Show("Budget removed. Records are not affected.");
+            Toasts.Show(Tr("Budget removed. Records are not affected."));
             await LoadAsync(force: true);
         }
         else
