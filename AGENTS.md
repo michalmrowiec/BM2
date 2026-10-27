@@ -18,10 +18,11 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   (i krótko je odnotuj). Dopytuj tylko przy istotnych decyzjach produktowych/architektonicznych.
 - Gdy powstaje działające demo – uruchom je lokalnie i podaj link do przetestowania.
 - **Tryb obecny (od 2026-10-24): najpierw funkcje, najniższym kosztem.** Funkcje robimy tak, jak opisuje je
-  użytkownik: krótkie potwierdzenie w czacie zamiast speca i planu, bez nowych testów, bez pełnego WCAG i bez i18n
-  (UI tylko po angielsku, teksty wprost w komponentach). Zostaje to, co nic nie kosztuje: autoryzacja przez
-  `WalletAccessFilter`, zgodność z MSSQL 2012, istniejące komponenty i tokeny, kod się buduje. Zasady o testach,
-  WCAG i i18n poniżej obowiązują ponownie przy uzupełnianiu braków przed wdrożeniem (razem z utwardzeniem 1C).
+  użytkownik: krótkie potwierdzenie w czacie zamiast speca i planu, bez nowych testów i bez pełnego audytu WCAG.
+  Zostaje to, co nic nie kosztuje: autoryzacja przez `WalletAccessFilter`, zgodność z MSSQL 2012, istniejące
+  komponenty i tokeny, kod się buduje, **każdy nowy tekst UI przez `Tr(...)` z wpisem PL** (od 2026-10-27, patrz
+  sekcja i18n). Zasady o testach i WCAG poniżej obowiązują ponownie przy uzupełnianiu braków przed wdrożeniem
+  (razem z utwardzeniem 1C).
 - Commity na `dev` są dozwolone bez pytania (gałąź robocza `dev`, główna `master`). Push, merge do `master`
   i operacje nieodwracalne – tylko na wyraźną prośbę.
 - **Język:** rozmowa i dokumentacja (`docs/`) po polsku; kod, identyfikatory, komentarze i commity po angielsku
@@ -186,7 +187,21 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   przy `prefers-reduced-motion` zwykła nawigacja z wejściem `.page-enter`.
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
-- Wszystkie teksty UI w zasobach (EN domyślnie, PL). Daty i kwoty formatowane wg kultury użytkownika.
+- WCAG: tekst ≥ 4,5:1 na `--paper`/`--sheet`/`--wash` w obu motywach i każdym akcencie (nowy akcent → sprawdź),
+  obramowanie pól `--control-border` (≥ 3:1). Przegląd i to, co zostało: [docs/wcag-2.2-przeglad.md](docs/wcag-2.2-przeglad.md).
+- **i18n (EN domyślnie, PL):** słownik w `BM2.Client/Localization` – angielski tekst jest kluczem i wartością
+  domyślną, polski w `Strings.Pl.<Obszar>.cs` (indeksator `["EN"] = "PL",`). W komponentach `@Tr("…")`,
+  `@Tr("{0} of {1}", a, b)` (import statyczny w `_Imports.razor` klienta i serwera), liczba mnoga
+  `Plural(n, "{0} record", "{0} records")` z wpisem PL `"one|few|many"`. Nie wołaj `Tr` w polach `static readonly`
+  (prerender dzieli statyki między żądania) – używaj `=>`. Komponenty bazowe nie tłumaczą `Label`/`Title`
+  (to mogą być nazwy użytkownika) – tłumaczy wołający. Komunikaty z API, walidatorów i DataAnnotations tłumaczy
+  `Strings.TrMessage` na granicy (`ApiClient`, `FluentValidator`, `TrValidationMessage`/`TrValidationSummary`
+  na stronach konta) – kod domeny i Contracts zostaje po angielsku, wystarczy wpis w `Strings.Pl.Messages.cs`
+  (liczby jako `{0}`). Język = cookie `.AspNetCore.Culture` (`GET /culture/{en|pl}?returnUrl=`, pełne
+  przeładowanie; More → Language, linki na logowaniu/rejestracji); serwer `UseBm2Localization` (tylko cookie),
+  `<html lang>` z kultury, klient czyta `lang` w `Program.cs` przed startem (`Strings.Apply`), pełne dane ICU
+  (`BlazorWebAssemblyLoadAllGlobalizationData`). Kultury `en-GB` i `pl-PL` – daty i kwoty zawsze z
+  `CultureInfo.CurrentCulture`, `InvariantCulture` tylko dla URL/API.
 
 ## Wydajność
 
