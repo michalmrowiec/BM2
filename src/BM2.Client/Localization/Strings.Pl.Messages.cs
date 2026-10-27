@@ -58,5 +58,9 @@ public static partial class Strings
         ["You don't have permission to do this."] = "Nie masz uprawnień do tej czynności.",
         ["Too many requests. Wait a minute and try again."] = "Zbyt wiele żądań. Poczekaj minutę i spróbuj ponownie.",
         ["Too many requests"] = "Zbyt wiele żądań",
+        ["Enter a valid email address."] = "Wpisz poprawny adres e-mail.",
+        ["Email is too long."] = "Adres e-mail jest za długi.",
+        ["You can have at most 10 active invitations. Revoke one first."] = "Możesz mieć najwyżej 10 aktywnych zaproszeń. Najpierw cofnij jedno z nich.",
+        ["This invitation is for a different email address."] = "To zaproszenie jest dla innego adresu e-mail.",
     };
 }

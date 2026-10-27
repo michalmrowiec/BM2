@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using BM2.Server.Data
+@using BM2.Domain.Invitations
 @using BM2.Server.Features.Invitations
 
 @inject UserManager<ApplicationUser> UserManager
@@ -22,7 +23,11 @@
 <PageTitle>@Tr("Register")</PageTitle>
 
 <h1>@Tr("Register")</h1>
-@if (Invite is not null)
+@if (appInvitation is not null)
+{
+    <p class="lead">@Tr("You were invited to BM2. Create your account to start.")</p>
+}
+else if (Invite is not null)
 {
     <p class="lead">@Tr("Create your account to join the shared wallet you were invited to.")</p>
 }
@@ -58,6 +63,7 @@
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
+    private AppInvitation? appInvitation;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
@@ -70,9 +76,14 @@
 
     private string? Message => identityErrors is null ? null : Tr("Error: {0}", string.Join(", ", identityErrors.Select(error => TrMessage(error.Description))));
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Input ??= new();
+        appInvitation = Invite is null ? null : await AppInvitationLookup.FindUsableAsync(Db, Invite, Time.GetUtcNow(), CancellationToken.None);
+        if (appInvitation?.Email is { } email && Input.Email.Length == 0)
+        {
+            Input.Email = email;
+        }
     }
 
     public async Task RegisterUser(EditContext editContext)
@@ -81,8 +92,19 @@
         var invitation = Invite is null ? null : await InvitationLookup.FindAsync(Db, Invite, CancellationToken.None);
         var invited = invitation is not null
             && (await InvitationAcceptance.CheckAsync(Db, invitation, Time.GetUtcNow(), CancellationToken.None)).IsSuccess;
-        if (!Environment.IsDevelopment() && !invited)
+        if (invited)
         {
+            appInvitation = null;
+        }
+
+        if (!Environment.IsDevelopment() && !invited && appInvitation is null)
+        {
+            return;
+        }
+
+        if (appInvitation is not null && !appInvitation.AllowsEmail(Input.Email))
+        {
+            identityErrors = [new IdentityError { Description = "This invitation is for a different email address." }];
             return;
         }
 
@@ -100,6 +122,21 @@
         }
 
         Logger.LogInformation("User created a new account with password.");
+
+        if (appInvitation is not null)
+        {
+            // Same as a wallet invitation below, but it only opens registration.
+            var confirmation = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+            await UserManager.ConfirmEmailAsync(user, confirmation);
+            if (appInvitation.Use(user.Id, Input.Email, Time.GetUtcNow()).IsSuccess)
+            {
+                await Db.SaveChangesAsync();
+            }
+
+            await SignInManager.SignInAsync(user, isPersistent: true);
+            RedirectManager.RedirectTo("");
+            return;
+        }
 
         if (invited)
         {
