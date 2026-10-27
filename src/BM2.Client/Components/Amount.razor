@@ -32,7 +32,7 @@
         AmountSign.Plus => "+",
         AmountSign.Minus => "−",
         _ => "",
-    } + Math.Abs(Value).ToString("N2", CultureInfo.CurrentCulture) + " " + Currency;
+    } + Math.Abs(Value).ToString("N2", CultureInfo.CurrentCulture) + " " + CurrencyLabel.Of(Currency);
 
     // A new key replays the entrance animation when the amount changes.
     private string Key => Text;

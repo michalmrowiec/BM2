@@ -18,6 +18,7 @@ export function afterWebAssemblyStarted() {
     document.addEventListener("input", cleanMoney);
     document.addEventListener("keydown", keepComboboxEnter);
     document.addEventListener("click", slideBetweenTabs, true);
+    watchMarquees();
 
     setTimeout(() => {
         document.documentElement.classList.add("motion-ready");
@@ -136,4 +137,39 @@ function cleanMoney(event) {
     const caret = Math.min(cleaned.length, Math.max(0, (input.selectionStart ?? value.length) - (value.length - cleaned.length)));
     input.value = cleaned;
     input.setSelectionRange(caret, caret);
+}
+
+// .marquee boxes whose text doesn't fit get [data-marquee] and scroll vars (css: .marquee); reduced motion keeps the ellipsis.
+function watchMarquees() {
+    let queued = false;
+    const measure = () => {
+        queued = false;
+        for (const box of document.querySelectorAll(".marquee")) {
+            const inner = box.firstElementChild;
+            // offsetWidth ignores the running transform, so measuring doesn't feed back into the animation.
+            const overflow = inner && !reducedMotion.matches ? Math.ceil(inner.offsetWidth - box.clientWidth) : 0;
+            if (overflow > 1) {
+                const shift = `-${overflow}px`;
+                if (box.style.getPropertyValue("--marquee-shift") !== shift) {
+                    box.style.setProperty("--marquee-shift", shift);
+                    // The scroll is 30% of the loop at about 25 px/s.
+                    box.style.setProperty("--marquee-time", `${Math.max(6, overflow / 25 / 0.3).toFixed(1)}s`);
+                }
+                box.dataset.marquee = "";
+            } else if (box.dataset.marquee !== undefined) {
+                delete box.dataset.marquee;
+            }
+        }
+    };
+    const queue = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(measure);
+    };
+
+    new MutationObserver(queue).observe(document.body, { childList: true, subtree: true, characterData: true });
+    window.addEventListener("resize", queue);
+    reducedMotion.addEventListener("change", queue);
+    document.fonts?.ready.then(queue);
+    queue();
 }

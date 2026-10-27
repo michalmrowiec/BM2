@@ -30,8 +30,9 @@
 
     apply(read());
 
-    // Preferences as data-* on <html>: amounts ("plain" = UI font), accent (none = terracotta), balances ("hidden").
-    const prefs = ["amounts", "accent", "balances"];
+    // Preferences as data-* on <html>: amounts ("plain" = UI font), accent (none = terracotta), balances ("hidden"),
+    // pln ("code" = PLN instead of zł; read by the client at start).
+    const prefs = ["amounts", "accent", "balances", "pln"];
     const readPref = name => {
         try { return localStorage.getItem(`bm2-${name}`); } catch { return null; }
     };

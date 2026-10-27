@@ -183,6 +183,13 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   `bm2Prefs` „balances” → `data-balances="hidden"` na `<html>`, więc działa od prerenderu). Ukrywa sumy i salda
   (nie pojedyncze rekordy): `.amount` w blokach wymienionych w regule na końcu `components.css` oraz każdy element
   `.secret` (jego dzieci zastępują kropki). Nowa suma/saldo poza tymi blokami → owiń w `<span class="secret">`.
+- **Waluta „zł”:** kod waluty przy kwotach zawsze przez `CurrencyLabel.Of(code)` (PLN → „zł”, gdy włączone
+  „Show PLN as zł” w More; `bm2Prefs` „pln” = „code” wyłącza, klient czyta to w `Program.cs`, prerender zawsze „zł”).
+  Kod w selektorach i etykietach typu „Amount in {0}” zostaje jako kod. Logo w pasku: „BM.” (tytuły stron „BM2”).
+- **Formularz na telefonie (< 48rem):** strona z `.record-form__submit` chowa dolne menu (`body:has(...)`), Save jest
+  przyklejony do dołu na pełną szerokość. **Marquee:** element `.marquee` z dzieckiem `.marquee__inner` – gdy tekst
+  się nie mieści, `BM2.Client.lib.module.js` ustawia `data-marquee` i przewija go tam i z powrotem; przy
+  `prefers-reduced-motion` wielokropek. Suma dnia na liście rekordów jest przygaszona (`--ink-muted`, `--text-xs`).
 - **Dotyk i kolory:** bez `-webkit-tap-highlight-color`, focus tylko `:focus-visible` (`--focus`), wciśnięcie = tło
   `--wash`. Przyciski i ikony akcji neutralne (`--ink-muted` → `--ink`) albo w akcencie (`--vivid`/`--link`) – bez
   stałego niebieskiego; `--tag-blue` tylko jako kolor tagu wybrany przez użytkownika. `--attention` (Pending) = amber.

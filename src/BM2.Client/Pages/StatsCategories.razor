@@ -37,7 +37,7 @@ else
         var hiddenCount = Slices.Count(s => _hidden.Contains(s.CategoryId));
         <div class="stats-split">
             <Chart Class="chart--donut" Options="_donut" OnItemClick="SelectAsync"
-                   Label="@(State.Type == RecordType.Income ? Tr("Income by category, {0:N2} {1} in total. The list shows every amount.", total, Currency) : Tr("Expenses by category, {0:N2} {1} in total. The list shows every amount.", total, Currency))" />
+                   Label="@(State.Type == RecordType.Income ? Tr("Income by category, {0:N2} {1} in total. The list shows every amount.", total, CurrencyLabel.Of(Currency)) : Tr("Expenses by category, {0:N2} {1} in total. The list shows every amount.", total, CurrencyLabel.Of(Currency)))" />
             <div>
                 <p class="stats-hidden">
                     @if (hiddenCount > 0)

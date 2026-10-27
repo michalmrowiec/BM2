@@ -86,7 +86,7 @@
 
     private void SetFigure(string label, decimal value, string currency, string? note)
     {
-        _figureText = $"{label} {value.ToString("N2", CultureInfo.CurrentCulture)} {currency}" + (note is null ? "" : $", {note}");
+        _figureText = $"{label} {value.ToString("N2", CultureInfo.CurrentCulture)} {CurrencyLabel.Of(currency)}" + (note is null ? "" : $", {note}");
         _figure = @<text>@label <Amount Value="value" Currency="@currency" />@(note is null ? "" : $" · {note}")</text>;
     }
 }

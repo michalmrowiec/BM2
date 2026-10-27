@@ -40,11 +40,11 @@ public static class StatsCharts
         var total = shown.Sum(x => x.Slice.Value);
         return new
         {
-            tooltip = new { trigger = "item", formatter = "{b}<br/>{c} " + currency + " ({d}%)" },
+            tooltip = new { trigger = "item", formatter = "{b}<br/>{c} " + CurrencyLabel.Of(currency) + " ({d}%)" },
             title = new
             {
                 text = total.ToString("N0", CultureInfo.CurrentCulture),
-                subtext = currency,
+                subtext = CurrencyLabel.Of(currency),
                 left = "center",
                 top = "38%",
                 textStyle = new { color = "var(--ink)", fontFamily = NumberFont, fontSize = 22, fontWeight = 600 },

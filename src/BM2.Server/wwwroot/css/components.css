@@ -1294,6 +1294,28 @@ button.account-card {
     }
 }
 
+/* Phones: an open form hides the bottom navigation and Save takes its place at the bottom edge. */
+.bottom-nav {
+    transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease), visibility var(--dur);
+}
+
+@media (max-width: 47.99rem) {
+    body:has(.record-form__submit) .bottom-nav {
+        visibility: hidden;
+        opacity: 0;
+        transform: translate(-50%, calc(100% + var(--space-3) + env(safe-area-inset-bottom)));
+    }
+
+    body:has(.record-form__submit) .app-main {
+        padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+    }
+
+    .record-form__submit {
+        bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+        min-height: 3.25rem;
+    }
+}
+
 /* Records */
 .records-loading { animation: fade-in var(--dur) ease-out 120ms both; }
 
@@ -1455,7 +1477,12 @@ button.account-card {
 .record-day__total {
     display: flex;
     gap: var(--space-3);
+    font-size: var(--text-xs);
+    font-weight: 500;
 }
+
+/* The day total is context, not a balance: muted, without the plus/minus colors. */
+.record-day__total .amount { color: var(--ink-muted); }
 
 /* Today stands out, so planned rows above it don't hide where today starts. */
 .record-day__header--today { color: var(--ink); }
@@ -1515,24 +1542,35 @@ button.account-card {
     min-width: 0;
 }
 
-/* Up to two lines, so names stay readable on phones; the details sheet shows everything. */
-.record-row__title {
-    display: -webkit-box;
-    overflow: hidden;
-    font-weight: 500;
-    overflow-wrap: anywhere;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-}
+/* One line each; text that doesn't fit scrolls (.marquee), the details sheet shows everything. */
+.record-row__title { font-weight: 500; }
 
 /* Line 2 is one run of text, so a narrow row cuts the tags at the end, not the category and account. */
 .record-row__meta {
-    overflow: hidden;
     font-size: var(--text-s);
     color: var(--ink-muted);
+}
+
+/* Overflowing text: an ellipsis, or with motion a calm scroll there and back. JS sets [data-marquee] and the vars. */
+.marquee {
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .marquee[data-marquee] { text-overflow: clip; }
+
+    .marquee[data-marquee] > .marquee__inner {
+        display: inline-block;
+        animation: marquee var(--marquee-time, 8s) ease-in-out infinite;
+    }
+}
+
+@keyframes marquee {
+    0%, 20% { transform: translateX(0); }
+    50%, 65% { transform: translateX(var(--marquee-shift, 0)); }
+    90%, 100% { transform: translateX(0); }
 }
 
 /* Tags read as part of line 2: a dot in the tag color (outline when none), then the name */

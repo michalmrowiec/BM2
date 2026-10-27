@@ -16,8 +16,9 @@ builder.Services.AddBm2Client();
 var host = builder.Build();
 
 // The server renders <html lang> from the culture cookie; use it before the first render so nothing flashes in English.
-var language = await host.Services.GetRequiredService<IJSRuntime>()
-    .InvokeAsync<string?>("document.documentElement.getAttribute", "lang");
+var js = host.Services.GetRequiredService<IJSRuntime>();
+var language = await js.InvokeAsync<string?>("document.documentElement.getAttribute", "lang");
 Strings.Apply(Strings.CultureFor(language));
+BM2.Client.Components.CurrencyLabel.PlnAsZloty = await js.InvokeAsync<string?>("bm2Prefs.get", "pln") != "code";
 
 await host.RunAsync();

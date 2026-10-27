@@ -58,14 +58,15 @@
                             <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
                         }
                         <span class="record-row__text">
-                            <span class="record-row__title">
+                            @* .marquee: text that doesn't fit scrolls sideways (BM2.Client.lib.module.js). *@
+                            <span class="record-row__title marquee"><span class="marquee__inner">
                                 @view.Title
                                 @if (item.RecurringRuleId is not null)
                                 {
                                     <span class="record-row__auto" title="@Tr("Added by a recurring rule")"><Icon Name="repeat" /><span class="sr-only">@Tr("Recurring")</span></span>
                                 }
-                            </span>
-                            <span class="record-row__meta">
+                            </span></span>
+                            <span class="record-row__meta marquee"><span class="marquee__inner">
                                 <span class="record-row__where">@view.Meta</span>
                                 @if (item.PairWalletId is { } pairWallet)
                                 {
@@ -81,7 +82,7 @@
                                         <span class="tag-dot" aria-hidden="true"></span>@tag.Name
                                     </span>
                                 }
-                            </span>
+                            </span></span>
                         </span>
                         <span class="record-row__end">
                             <Amount Value="view.Amount" Currency="@view.Currency" Sign="view.Sign" />

@@ -18,6 +18,7 @@ public static partial class Strings
         ["Light"] = "Jasny",
         ["Dark"] = "Ciemny",
         ["Plain font for amounts"] = "Zwykła czcionka kwot",
+        ["Show PLN as zł"] = "Pokazuj PLN jako zł",
         ["On"] = "Wł.",
         ["Off"] = "Wył.",
         ["Accent color"] = "Kolor akcentu",

@@ -21,7 +21,7 @@
         </span>
     </div>
     <progress class="budget__bar" max="100" value="@Percent.ToString(CultureInfo.InvariantCulture)" aria-hidden="true"></progress>
-    <span class="budget__numbers num secret"><span>@Tr("{0} of {1} {2}", Format(Item.Spent), Format(Item.Limit), Currency)</span></span>
+    <span class="budget__numbers num secret"><span>@Tr("{0} of {1} {2}", Format(Item.Spent), Format(Item.Limit), CurrencyLabel.Of(Currency))</span></span>
     @if (Item.Planned > 0)
     {
         <span class="budget__note secret"><span>
@@ -32,7 +32,7 @@
     @if (Item.OtherSpent.Count > 0)
     {
         <span class="budget__note secret"><span>
-            @Tr("Not counted: {0} on accounts in other currencies.", string.Join(", ", Item.OtherSpent.Select(o => $"{Format(o.Amount)} {o.Currency}")))
+            @Tr("Not counted: {0} on accounts in other currencies.", string.Join(", ", Item.OtherSpent.Select(o => $"{Format(o.Amount)} {CurrencyLabel.Of(o.Currency)}")))
         </span></span>
     }
 </div>

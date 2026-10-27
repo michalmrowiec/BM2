@@ -94,6 +94,13 @@
             </button>
         </li>
         <li>
+            <button type="button" aria-pressed="@(CurrencyLabel.PlnAsZloty ? "true" : "false")" @onclick="TogglePlnAsync">
+                <Icon Name="coins" />
+                <span>@Tr("Show PLN as zł")</span>
+                <span class="menu-list__trail">@(CurrencyLabel.PlnAsZloty ? Tr("On") : Tr("Off"))</span>
+            </button>
+        </li>
+        <li>
             <button type="button" aria-haspopup="dialog" @onclick="() => _accentOpen = true">
                 <span class="accent-swatch accent-swatch--@_accent" aria-hidden="true"></span>
                 <span>@Tr("Accent color")</span>
@@ -170,6 +177,12 @@
     {
         _plainAmounts = !_plainAmounts;
         await JS.InvokeVoidAsync("bm2Prefs.set", "amounts", _plainAmounts ? "plain" : null);
+    }
+
+    private async Task TogglePlnAsync()
+    {
+        CurrencyLabel.PlnAsZloty = !CurrencyLabel.PlnAsZloty;
+        await JS.InvokeVoidAsync("bm2Prefs.set", "pln", CurrencyLabel.PlnAsZloty ? null : "code");
     }
 
     private void SetLanguage(bool polish) =>

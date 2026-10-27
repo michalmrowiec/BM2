@@ -62,7 +62,7 @@ else
             {
                 <li @key="row.CategoryId">
                     <ListRow Title="@StatsCharts.NameOf(Wallet, row.CategoryId)"
-                             Subtitle="@Tr("Total {0} {1} · {2}", StatsCharts.Signed(row.Total, State.Type).ToString("N2", CultureInfo.CurrentCulture), Currency, StatsCharts.Share(row.Total, total))">
+                             Subtitle="@Tr("Total {0} {1} · {2}", StatsCharts.Signed(row.Total, State.Type).ToString("N2", CultureInfo.CurrentCulture), CurrencyLabel.Of(Currency), StatsCharts.Share(row.Total, total))">
                         <Leading><RecordAvatar Category="StatsCharts.CategoryOf(Wallet, row.CategoryId)" Type="State.Type" Fallback="?" /></Leading>
                         <Trailing>
                             <span class="stats-average">
