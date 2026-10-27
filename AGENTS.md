@@ -191,7 +191,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Symbole walut:** kod waluty przy kwotach zawsze przez `CurrencyLabel.Of(code)` (PLN → „zł”, EUR → „€”, USD → „$”,
   GBP → „£”, JPY → „¥”, inne zostają kodem; zawsze po kwocie) – przełącznik „Currency symbols (zł, €, $)” w Settings;
   `bm2Prefs` „pln” = „code” wyłącza, klient czyta to w `Program.cs`, prerender zawsze symbole). W trybie prywatnym
-  ukryte kwoty tracą kolor znaku (waluta w `--ink`, gwiazdki `--ink-muted`).
+  ukryte kwoty tracą kolor znaku (gwiazdki i waluta w `--ink`).
   Kod w selektorach i etykietach typu „Amount in {0}” zostaje jako kod. Logo w pasku: „BM.” (tytuły stron „BM2”).
 - **Formularz na telefonie (< 48rem):** strona z `.record-form__submit` chowa dolne menu (`body:has(...)`), Save jest
   przyklejony do dołu na pełną szerokość. **Marquee:** element `.marquee` z dzieckiem `.marquee__inner` – gdy tekst

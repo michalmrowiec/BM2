@@ -2687,6 +2687,6 @@ button.account-card {
     content: "***" / "hidden";
     display: inline-block;
     transform: translateY(0.28em);
-    color: var(--ink-muted);
+    color: var(--ink);
     letter-spacing: 0.06em;
 }
