@@ -34,6 +34,24 @@
     background: var(--vivid);
 }
 
+.demo-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    margin-left: var(--space-2);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--vivid);
+    border-radius: var(--radius-pill);
+    color: var(--link);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.demo-badge:active {
+    background: var(--wash);
+}
+
 .app-header__actions {
     display: flex;
     align-items: center;
