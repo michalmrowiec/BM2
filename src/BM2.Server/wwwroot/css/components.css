@@ -1337,7 +1337,10 @@ button.account-card {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    min-width: 0;
 }
+
+.month-switcher .chip { flex-shrink: 0; }
 
 .month-switcher__label {
     flex: 1;
@@ -1347,6 +1350,9 @@ button.account-card {
     font-weight: 600;
     text-align: center;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-inline: var(--space-2);
 }
 
 /* Phones: header buttons show only their icons (the label stays for screen readers), the month fits one line. */
