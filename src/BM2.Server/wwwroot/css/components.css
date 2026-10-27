@@ -1379,7 +1379,13 @@ button.account-card {
 
 /* Phones: header buttons show only their icons (the label stays for screen readers), the month fits one line. */
 @media (max-width: 30rem) {
-    .month-switcher__label { font-size: var(--text-m); }
+    .month-switcher__label { font-size: var(--text-s); }
+
+    /* Longer Polish labels (e.g. four record types) must fit without clipping. */
+    .segmented--block .segmented__option {
+        padding: 0 var(--space-1);
+        font-size: var(--text-s);
+    }
 
     .page-header__actions .btn__label {
         position: absolute;
