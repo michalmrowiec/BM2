@@ -38,7 +38,7 @@ public sealed class StatsState
 
     public ForecastStep ForecastStep { get; set; } = ForecastStep.Week;
 
-    public bool ForecastAverages { get; set; } = true;
+    public bool ForecastTrend { get; set; } = true;
 
     /// <summary>Months (1–12) of the anchor year counted in averages; null means the default.</summary>
     public IReadOnlyCollection<int>? AverageMonths { get; set; }

@@ -110,9 +110,14 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   Na „By category” kropka koloru w `CategoryTotalsList` (`Hidden` + `OnToggle`) to checkbox: odznaczona kategoria
   zostaje na liście wyszarzona, a donut (`StatsCharts.Donut(..., hidden)`, kolory bez zmian), suma i udziały liczą
   resztę; „Reset” przywraca. Stan tylko w komponencie strony.
-- **Prognoza, eksport, przypięte wykresy:** `stats/forecast` liczy na serwerze saldo dziś (Completed/Pending do dziś)
-  + wystąpienia reguł od `NextIndex` (`RecurrenceSchedule`) + rekordy po dzisiejszej dacie (i zaległe `Planned` na dziś)
-  + opcjonalnie średnia dzienna wydatków z 3 pełnych miesięcy z kategorii bez cyklicznych wydatków. `records/export`
+- **Prognoza, eksport, przypięte wykresy:** `stats/forecast` (3/6/12/24 mies.) liczy na serwerze saldo dziś
+  (Completed/Pending do dziś) + wystąpienia reguł od `NextIndex` (`RecurrenceSchedule`) + rekordy po dzisiejszej dacie
+  (i zaległe `Planned` na dziś) + opcjonalnie (`trend`) trend przychodów i wydatków (`MonthlyTrend` w Domain: regresja
+  liniowa, od 12 mies. sezonowość miesięczna ściągana c/(c+1), 6–11 mies. sama linia, mniej – średnia; nigdy < 0)
+  z maks. 24 pełnych miesięcy, bez rekordów z reguł i bez kategorii aktywnych reguł (wydatkowe/przychodowe osobno),
+  rozłożony równo na dni miesiąca. Pasmo ~80% (`Spread` = 1,28·σ·√miesięcy). Wynik: punkty, tabela miesięcy
+  (`ForecastMonth`), opis trendu; kalkulator „ile będę mieć” liczy klient (start = saldo dziś, przychód/wydatki =
+  średnia z prognozy, odsetki miesięcznie od dodatniego salda). `records/export`
   bierze filtry listy (`format=csv|xlsx`, limit 50 tys.); CSV ręcznie (UTF-8 BOM, `;`, kropka dziesiętna, ochrona
   przed formułami), XLSX przez ClosedXML (SixLabors.Fonts przypięte do 1.0.x – nowsze nie są Apache-2.0); klient
   pobiera zwykłym linkiem `download`. `PinnedChart` (portfel + użytkownik, `Kind`, `Title`, `Query` jako zwykły tekst)

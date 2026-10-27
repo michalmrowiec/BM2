@@ -72,8 +72,8 @@ public enum ForecastStep
 }
 
 /// <summary>Balance forecast for accounts in one currency (no currency means the wallet's base currency).</summary>
-/// <param name="Months">3, 6 or 12.</param>
-/// <param name="Averages">Spread average variable spending of the last 3 months over the forecast.</param>
+/// <param name="Months">3, 6, 12 or 24.</param>
+/// <param name="Trend">Add the income and spending trend from history (categories without recurring rules).</param>
 /// <param name="Today">The device's date.</param>
 public sealed class ForecastQuery
 {
@@ -83,7 +83,7 @@ public sealed class ForecastQuery
 
     public ForecastStep? Step { get; init; }
 
-    public bool? Averages { get; init; }
+    public bool? Trend { get; init; }
 
     public DateOnly? Today { get; init; }
 
@@ -92,12 +92,42 @@ public sealed class ForecastQuery
         Currency is null ? null : $"currency={Uri.EscapeDataString(Currency)}",
         Months is null ? null : $"months={Months.Value.ToString(CultureInfo.InvariantCulture)}",
         Step is null ? null : $"step={Step}",
-        Averages is null ? null : $"averages={(Averages.Value ? "true" : "false")}",
+        Trend is null ? null : $"trend={(Trend.Value ? "true" : "false")}",
         Today is null ? null : $"today={Today.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}",
     }.Where(p => p is not null));
 }
 
-public sealed record ForecastPoint(DateOnly Date, decimal Balance);
+/// <param name="Spread">Half-width of the ~80% uncertainty band around <paramref name="Balance"/>.</param>
+public sealed record ForecastPoint(DateOnly Date, decimal Balance, decimal Spread = 0);
+
+/// <summary>How much history the trend could use: none, an average (under 6 months), a line, a line with seasons (12+).</summary>
+public enum ForecastModel
+{
+    None = 0,
+    Average = 1,
+    Linear = 2,
+    Seasonal = 3,
+}
+
+/// <summary>Trend of income and spending (refunds netted) per month, without recurring rules and their categories.</summary>
+/// <param name="From">First month of history used.</param>
+/// <param name="Income">Expected income this month; <paramref name="IncomeSlope"/> is the change per month.</param>
+/// <param name="MonthlySpread">Half-width of the ~80% band for one month of net flow.</param>
+/// <param name="ExcludedCategoryCount">Categories left to recurring rules.</param>
+public sealed record ForecastTrend(
+    ForecastModel Model,
+    DateOnly From,
+    int Months,
+    decimal Income,
+    decimal IncomeSlope,
+    decimal Expense,
+    decimal ExpenseSlope,
+    decimal MonthlySpread,
+    int ExcludedCategoryCount);
+
+/// <summary>One calendar month of the forecast (the first and last are partial): trend plus known items.</summary>
+/// <param name="Balance">Balance at the month's last forecast day.</param>
+public sealed record ForecastMonth(DateOnly Month, decimal Income, decimal Expense, decimal Balance, decimal Spread);
 
 public enum ForecastSource
 {
@@ -112,8 +142,7 @@ public sealed record ForecastItem(string Label, ForecastSource Source, decimal A
 
 /// <param name="Start">Balance today (completed and pending records up to today).</param>
 /// <param name="Points">Balance at the end of each day or week, starting today.</param>
-/// <param name="DailyAverage">Average variable spending per day included (0 when off).</param>
-/// <param name="AverageFrom">First day of the 3 months the average comes from.</param>
+/// <param name="Trend">Null when the trend is off.</param>
 public sealed record ForecastData(
     string Currency,
     int AccountCount,
@@ -124,6 +153,5 @@ public sealed record ForecastData(
     IReadOnlyList<ForecastItem> Items,
     int RecurringCount,
     int RecordCount,
-    decimal DailyAverage,
-    DateOnly AverageFrom,
-    int AveragedCategoryCount);
+    ForecastTrend? Trend,
+    IReadOnlyList<ForecastMonth> Months);

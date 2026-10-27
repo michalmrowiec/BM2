@@ -175,7 +175,7 @@ public static class StatsCharts
         },
     };
 
-    /// <summary>Forecast balance as a line, with a dashed zero line.</summary>
+    /// <summary>Forecast balance as a line, with a dashed zero line and dashed band lines when there is a spread.</summary>
     public static object Forecast(IReadOnlyList<ForecastPoint> points) => new
     {
         grid = new { left = 4, right = 8, top = 12, bottom = 4, containLabel = true },
@@ -216,7 +216,17 @@ public static class StatsCharts
                     data = new[] { new { yAxis = 0 } },
                 },
             },
-        },
+        }.Concat(points.Any(p => p.Spread > 0) ? [Band(Tr("High"), points, 1), Band(Tr("Low"), points, -1)] : []).ToList(),
+    };
+
+    private static object Band(string name, IReadOnlyList<ForecastPoint> points, int sign) => new
+    {
+        name,
+        type = "line",
+        data = points.Select(p => p.Balance + sign * p.Spread).ToList(),
+        symbol = "none",
+        lineStyle = new { color = "var(--ink-muted)", width = 1, type = "dashed" },
+        itemStyle = new { color = "var(--ink-muted)" },
     };
 
     // Each bar's id ("Expense:2026-10-01") tells a click which records it stands for.
