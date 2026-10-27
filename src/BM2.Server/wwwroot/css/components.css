@@ -2652,15 +2652,19 @@ button.account-card {
     background: var(--wash);
 }
 
-/* Hide balances (eye button in the header, bm2Prefs "balances"): totals and balances become dots, single records stay.
-   Amounts inside these blocks, and any .secret element, swap their content for the dots. */
-:root[data-balances="hidden"] :is(:is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount, .secret) > * {
+/* Private mode (eye button in the header, bm2Prefs "balances"): totals and balances become "***", single records stay.
+   Amounts inside these blocks keep their currency ("*** zł"); any .secret element swaps all its content. */
+:root[data-balances="hidden"] :is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount > :not(.amount__currency),
+:root[data-balances="hidden"] .secret > * {
     display: none;
 }
 
-:root[data-balances="hidden"] :is(:is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount, .secret)::after {
-    content: "•••••";
-    content: "•••••" / "hidden";
+/* An asterisk sits high on the line; nudge it down to the middle of the digits. */
+:root[data-balances="hidden"] :is(:is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount, .secret)::before {
+    content: "***";
+    content: "***" / "hidden";
+    display: inline-block;
+    transform: translateY(0.28em);
     color: var(--ink-muted);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
 }

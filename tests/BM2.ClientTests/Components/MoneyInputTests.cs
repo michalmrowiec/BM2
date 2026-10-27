@@ -68,6 +68,6 @@ public class MoneyInputTests : BunitContext
         var cut = Render<MoneyFormHost>();
 
         cut.Find("input").GetAttribute("inputmode").ShouldBe("decimal");
-        cut.Find(".money-input__currency").TextContent.ShouldBe("PLN");
+        cut.Find(".money-input__currency").TextContent.ShouldBe("zł");
     }
 }

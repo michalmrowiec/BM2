@@ -34,7 +34,7 @@ public class RecordListTests : BunitContext
 
         var row = cut.Find(".record-row");
         row.TextContent.ShouldContain("Groceries");
-        row.TextContent.ShouldContain("−12.50 PLN");
+        row.TextContent.ShouldContain("−12.50 zł");
         row.TextContent.ShouldContain("Cash · House");
     }
 
@@ -61,7 +61,7 @@ public class RecordListTests : BunitContext
 
         var header = cut.Find(".record-day__header");
         header.TextContent.ShouldContain("Tuesday, 20 October");
-        header.TextContent.ShouldContain("−25.00 PLN");
+        header.TextContent.ShouldContain("−25.00 zł");
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class RecordListTests : BunitContext
         var cut = RenderList(Wallet(Cash, savings), transfer);
 
         cut.Find(".record-row").TextContent.ShouldContain("Transfer to Savings");
-        cut.Find(".record-row").TextContent.ShouldContain("−50.00 PLN");
+        cut.Find(".record-row").TextContent.ShouldContain("−50.00 zł");
     }
 
     [Fact]

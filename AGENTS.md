@@ -179,10 +179,12 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   (token `--font-num`, domyślnie Fraunces; `data-amounts="plain"` = Inter, duże sumy `.amount--large` zostają we
   Fraunces) i kolor akcentu (`data-accent`: ochre/ink/green/plum, brak = terakota; wartości `--accent*` na końcu
   `tokens.css`, z nich `--vivid`, `--link`, `--focus`).
-- **Hide balances:** przycisk z okiem w nagłówku (`BalancesToggle`, `data-balances-toggle`, obsługa w `theme.js`,
-  `bm2Prefs` „balances” → `data-balances="hidden"` na `<html>`, więc działa od prerenderu). Ukrywa sumy i salda
-  (nie pojedyncze rekordy): `.amount` w blokach wymienionych w regule na końcu `components.css` oraz każdy element
-  `.secret` (jego dzieci zastępują kropki). Nowa suma/saldo poza tymi blokami → owiń w `<span class="secret">`.
+- **Private mode (tryb prywatny):** przycisk z okiem w nagłówku (`BalancesToggle`, `data-balances-toggle`, obsługa
+  w `theme.js`, `bm2Prefs` „balances” → `data-balances="hidden"` na `<html>`, więc działa od prerenderu; klucze
+  zostały po „Hide balances”, żeby zachować wybór użytkowników). Ukrywa sumy i salda (nie pojedyncze rekordy):
+  `.amount` w blokach wymienionych w regule na końcu `components.css` pokazuje „*** waluta” (`Amount` ma walutę
+  w osobnym `.amount__currency`), każdy element `.secret` – samo „***”. Nowa suma/saldo poza tymi blokami → owiń
+  w `<span class="secret">`.
 - **Waluta „zł”:** kod waluty przy kwotach zawsze przez `CurrencyLabel.Of(code)` (PLN → „zł”, gdy włączone
   „Show PLN as zł” w More; `bm2Prefs` „pln” = „code” wyłącza, klient czyta to w `Program.cs`, prerender zawsze „zł”).
   Kod w selektorach i etykietach typu „Amount in {0}” zostaje jako kod. Logo w pasku: „BM.” (tytuły stron „BM2”).

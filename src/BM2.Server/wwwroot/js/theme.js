@@ -1,5 +1,5 @@
 // Applies the saved theme and preferences before first paint. Handles [data-theme-toggle] (light ↔ dark; follows the
-// system until the first choice) and [data-balances-toggle] (hide totals and balances).
+// system until the first choice) and [data-balances-toggle] (private mode: hide totals and balances).
 (() => {
     const storageKey = "bm2-theme";
     const modes = ["system", "light", "dark"]; // "system" = nothing saved yet

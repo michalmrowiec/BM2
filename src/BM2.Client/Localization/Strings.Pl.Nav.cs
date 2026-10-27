@@ -29,7 +29,7 @@ public static partial class Strings
         ["More for {0}"] = "Więcej dla: {0}",
         ["New wallet"] = "Nowy portfel",
         ["Send money to {0}"] = "Wyślij pieniądze do: {0}",
-        ["Hide balances"] = "Ukryj salda",
+        ["Private mode"] = "Tryb prywatny",
         ["Switch light or dark theme"] = "Przełącz motyw jasny lub ciemny",
         ["Switch theme"] = "Zmień motyw",
         ["Type {0} to confirm"] = "Wpisz {0}, aby potwierdzić",
