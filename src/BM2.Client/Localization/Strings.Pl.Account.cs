@@ -60,6 +60,7 @@ public static partial class Strings
         ["Resend email confirmation"] = "Wyślij ponownie potwierdzenie e-mail",
         ["Error: Invalid login attempt."] = "Błąd: nieprawidłowa próba logowania.",
         ["Two-factor authentication"] = "Uwierzytelnianie dwuskładnikowe",
+        ["2FA"] = "2FA",
         ["Your login is protected with an authenticator app. Enter your authenticator code below."] =
             "Logowanie jest chronione aplikacją uwierzytelniającą. Wpisz poniżej kod z aplikacji.",
         ["Authenticator code"] = "Kod z aplikacji",

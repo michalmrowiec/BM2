@@ -179,3 +179,31 @@ input[type="checkbox"] {
     font-weight: 600;
     text-decoration: none;
 }
+
+.steps {
+    display: grid;
+    gap: var(--space-5);
+    margin: 0 0 var(--space-4);
+    padding-left: 1.5rem;
+}
+
+.steps li::marker {
+    color: var(--ink-muted);
+    font-weight: 600;
+}
+
+.steps p { margin: 0 0 var(--space-3); }
+
+.steps kbd {
+    display: block;
+    margin-bottom: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--wash);
+    font-family: ui-monospace, monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.05em;
+    overflow-wrap: anywhere;
+    user-select: all;
+}

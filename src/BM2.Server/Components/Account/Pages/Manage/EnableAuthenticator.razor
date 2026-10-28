@@ -24,7 +24,7 @@ else
     <h3>@Tr("Configure authenticator app")</h3>
     <div>
         <p>@Tr("To use an authenticator app go through the following steps:")</p>
-        <ol class="list">
+        <ol class="steps">
             <li>
                 <p>
                     @Tr("Download a two-factor authenticator app like Microsoft Authenticator or Google Authenticator:")
@@ -35,14 +35,13 @@ else
                 </p>
             </li>
             <li>
-                <p>@Tr("Scan the QR code or enter this key into your authenticator app. Spaces and casing do not matter.") <kbd>@sharedKey</kbd></p>
-                <div class="alert alert-info">@((MarkupString)Tr("Learn how to <a href=\"https://go.microsoft.com/fwlink/?Linkid=852423\">enable QR code generation</a>."))</div>
-                <div></div>
-                <div data-url="@authenticatorUri"></div>
+                <p>@Tr("Enter this key into your authenticator app. Spaces and casing do not matter.")</p>
+                <kbd>@sharedKey</kbd>
+                <p><a href="@authenticatorUri">@Tr("Open in authenticator app")</a></p>
             </li>
             <li>
                 <p>
-                    @Tr("Once you have scanned the QR code or input the key above, your authenticator app will provide you with a unique code. Enter the code in the confirmation box below.")
+                    @Tr("Your authenticator app will then show a one-time code. Enter it below.")
                 </p>
                 <div class="row">
                     <div class="col-xl-6">
