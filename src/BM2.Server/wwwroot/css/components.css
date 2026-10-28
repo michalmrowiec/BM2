@@ -2480,6 +2480,7 @@ button.account-card {
 .stats-hub__text { font-size: var(--text-s); color: var(--ink-muted); }
 
 .page-header--back { justify-content: flex-start; }
+.page-header--back .page-title { margin-right: auto; }
 
 .stats-figures {
     display: grid;
