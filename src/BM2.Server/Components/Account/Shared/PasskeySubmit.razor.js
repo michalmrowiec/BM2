@@ -39,6 +39,20 @@ async function requestCredential(email, mediation, headers, signal) {
     return await navigator.credentials.get({ publicKey: options, mediation, signal });
 }
 
+// Some password managers (e.g. Dashlane) return standard base64 from toJSON(); the server requires base64url.
+function toBase64UrlJson(credential) {
+    const json = JSON.parse(JSON.stringify(credential));
+    const fix = value => typeof value === 'string'
+        ? value.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+        : value;
+    json.id = fix(json.id);
+    json.rawId = fix(json.rawId);
+    for (const key of Object.keys(json.response ?? {})) {
+        json.response[key] = fix(json.response[key]);
+    }
+    return json;
+}
+
 customElements.define('passkey-submit', class extends HTMLElement {
     static formAssociated = true;
 
@@ -93,7 +107,7 @@ customElements.define('passkey-submit', class extends HTMLElement {
         const formData = new FormData();
         try {
             const credential = await this.obtainCredential(useConditionalMediation, signal);
-            const credentialJson = JSON.stringify(credential);
+            const credentialJson = JSON.stringify(toBase64UrlJson(credential));
             formData.append(`${this.attrs.name}.CredentialJson`, credentialJson);
         } catch (error) {
             if (error.name === 'AbortError') {
