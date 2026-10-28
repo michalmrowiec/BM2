@@ -128,6 +128,12 @@ input[type="checkbox"] {
 
 @media (min-width: 52rem) {
     .nav.flex-column { flex-direction: column; }
+    /* Long labels (e.g. PL) must wrap inside the narrow sidebar. */
+    .nav.flex-column .nav-link {
+        white-space: normal;
+        padding-block: var(--space-2);
+        border-radius: var(--radius);
+    }
 }
 
 .nav-link {
