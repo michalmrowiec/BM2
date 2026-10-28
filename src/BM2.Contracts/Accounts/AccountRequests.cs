@@ -3,10 +3,12 @@ using FluentValidation;
 
 namespace BM2.Contracts.Accounts;
 
-public sealed record CreateAccountRequest(string Name, string Currency, decimal OpeningBalance, AccountKind Kind = AccountKind.Cash);
+public sealed record CreateAccountRequest(string Name, string Currency, decimal OpeningBalance, AccountKind Kind = AccountKind.Cash,
+    bool ExcludeFromTotal = false, bool ShowOnDashboard = true);
 
 public sealed record UpdateAccountRequest(
-    string Name, string Currency, decimal OpeningBalance, bool IsArchived, AccountKind Kind = AccountKind.Cash);
+    string Name, string Currency, decimal OpeningBalance, bool IsArchived, AccountKind Kind = AccountKind.Cash,
+    bool ExcludeFromTotal = false, bool ShowOnDashboard = true);
 
 public sealed class CreateAccountRequestValidator : AbstractValidator<CreateAccountRequest>
 {

@@ -11,51 +11,58 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<PageTitle>Records · BM2</PageTitle>
+<PageTitle>@Tr("Records") · BM2</PageTitle>
 
 <header class="page-header">
-    <h1 class="page-title">Records</h1>
+    <h1 class="page-title">@Tr("Records")</h1>
     <div class="page-header__actions">
         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _exportOpen = true">
-            <Icon Name="share" /><span class="btn__label">Export</span>
+            <Icon Name="share" /><span class="btn__label">@Tr("Export")</span>
         </button>
         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _filtersOpen = true">
-            <Icon Name="filter" /><span class="btn__label">Filters</span>
+            <Icon Name="filter" /><span class="btn__label">@Tr("Filters")</span>
             @if (ActiveFilters.Count > 0)
             {
-                <span class="badge" aria-label="@($"{ActiveFilters.Count} active")">@ActiveFilters.Count</span>
+                <span class="badge" aria-label="@Tr("{0} active", ActiveFilters.Count)">@ActiveFilters.Count</span>
             }
         </button>
     </div>
 </header>
 
 <div class="records-toolbar">
-    <div class="month-switcher" role="group" aria-label="Period">
-        @if (IsAllTime)
+    <div class="month-switcher" role="group" aria-label="@Tr("Period")">
+        @if (IsAllTime || IsRange)
         {
-            <span class="month-switcher__label">All time</span>
+            <button type="button" class="btn btn-ghost month-switcher__label" aria-haspopup="dialog" @onclick="() => _periodOpen = true">
+                @PeriodLabel <Icon Name="chevron-down" />
+            </button>
         }
         else
         {
-            <a class="icon-button" href="@MonthUrl(-1)" aria-label="Previous month"><Icon Name="arrow-left" /></a>
-            <span class="month-switcher__label" aria-live="polite">@MonthStart.ToString("MMMM yyyy", CultureInfo.CurrentCulture)</span>
-            <a class="icon-button" href="@MonthUrl(1)" aria-label="Next month"><Icon Name="arrow-right" /></a>
+            <a class="icon-button" href="@MonthUrl(-1)" aria-label="@Tr("Previous month")"><Icon Name="arrow-left" /></a>
+            <button type="button" class="btn btn-ghost month-switcher__label" aria-live="polite" aria-haspopup="dialog"
+                    aria-label="@Tr("{0}, choose period", PeriodLabel)" @onclick="() => _periodOpen = true">
+                <span class="month-switcher__full">@PeriodLabel</span>
+                <span class="month-switcher__short">@MonthStart.ToString("MMM yyyy", CultureInfo.CurrentCulture)</span>
+                <Icon Name="chevron-down" />
+            </button>
+            <a class="icon-button" href="@MonthUrl(1)" aria-label="@Tr("Next month")"><Icon Name="arrow-right" /></a>
         }
-        <a class="chip chip--sm" aria-pressed="@(IsAllTime ? "true" : "false")" href="@AllTimeUrl">All time</a>
+        <a class="chip chip--sm" aria-pressed="@(IsAllTime ? "true" : "false")" href="@AllTimeUrl">@Tr("All time")</a>
     </div>
     <label class="search-field">
         <Icon Name="search" />
-        <span class="sr-only">Search records</span>
-        <input type="search" placeholder="Search" value="@_search" @oninput="OnSearchInput" />
+        <span class="sr-only">@Tr("Search records")</span>
+        <input type="search" placeholder="@Tr("Search")" value="@_search" @oninput="OnSearchInput" />
     </label>
 </div>
 
 @if (ActiveFilters.Count > 0)
 {
-    <div class="chip-group active-filters" aria-label="Active filters">
+    <div class="chip-group active-filters" aria-label="@Tr("Active filters")">
         @foreach (var (key, label) in ActiveFilters)
         {
-            <a class="chip chip--sm" href="@Navigation.GetUriWithQueryParameter(key, (string?)null)" aria-label="@($"Remove filter {label}")">
+            <a class="chip chip--sm" href="@Navigation.GetUriWithQueryParameter(key, (string?)null)" aria-label="@Tr("Remove filter {0}", label)">
                 @label <Icon Name="close" />
             </a>
         }
@@ -64,15 +71,15 @@
 
 @if (_summary?.Totals.Count > 0)
 {
-    <div class="summary-bar" aria-label="Totals">
+    <div class="summary-bar" aria-label="@Tr("Totals")">
         @foreach (var total in _summary.Totals)
         {
             <div class="summary-bar__item">
-                <span class="summary-bar__label">In</span>
+                <span class="summary-bar__label">@Tr("In")</span>
                 <Amount Value="total.Income" Currency="@total.Currency" Sign="AmountSign.Plus" />
             </div>
             <div class="summary-bar__item">
-                <span class="summary-bar__label">Out</span>
+                <span class="summary-bar__label">@Tr("Out")</span>
                 <Amount Value="total.Expense" Currency="@total.Currency" Sign="AmountSign.Minus" />
             </div>
         }
@@ -98,18 +105,18 @@ else if (_loading)
                 </li>
             }
         </ul>
-        <span class="sr-only">Loading…</span>
+        <span class="sr-only">@Tr("Loading…")</span>
     </div>
 }
 else if (_failed)
 {
-    <EmptyState IconName="list" Title="Couldn't load records">Check your connection and try again.</EmptyState>
+    <EmptyState IconName="list" Title="@Tr("Couldn't load records")">@Tr("Check your connection and try again.")</EmptyState>
 }
 else if (_items.Count == 0)
 {
-    <EmptyState IconName="list" Title="Nothing here">
-        <ChildContent>No records match this period and these filters.</ChildContent>
-        <Actions><a class="btn btn-primary" href="records/new"><Icon Name="plus" /> Add record</a></Actions>
+    <EmptyState IconName="list" Title="@Tr("Nothing here")">
+        <ChildContent>@Tr("No records match this period and these filters.")</ChildContent>
+        <Actions><a class="btn btn-primary" href="records/new"><Icon Name="plus" /> @Tr("Add record")</a></Actions>
     </EmptyState>
 }
 else
@@ -118,7 +125,7 @@ else
     @if (_nextCursor is not null)
     {
         <div class="load-more" @ref="_sentinel">
-            <button type="button" class="btn btn-secondary" disabled="@_loadingMore" @onclick="LoadMoreAsync">@(_loadingMore ? "Loading…" : "Load more")</button>
+            <button type="button" class="btn btn-secondary" disabled="@_loadingMore" @onclick="LoadMoreAsync">@(_loadingMore ? Tr("Loading…") : Tr("Load more"))</button>
         </div>
     }
 }
@@ -128,17 +135,17 @@ else
     <RecordFilterSheet Open="_filtersOpen" OpenChanged="v => _filtersOpen = v" Wallet="Wallet" Value="CurrentFilter"
                        ValueChanged="ApplyFilters" />
 
-    <Sheet Open="_exportOpen" OpenChanged="v => _exportOpen = v" Title="Export records">
-        <SegmentedControl Label="Records to export" Options="ExportScopes" @bind-Value="_exportAll" Class="segmented--block" />
+    <RecordPeriodSheet Open="_periodOpen" OpenChanged="v => _periodOpen = v" WalletId="Wallet.Id" Month="MonthStart"
+                       From="RangeFrom" To="RangeTo" />
+
+    <Sheet Open="_exportOpen" OpenChanged="v => _exportOpen = v" Title="@Tr("Export records")">
+        <p>@Tr("Exports exactly the records listed now:") <strong>@PeriodLabel</strong>, @ExportFiltersText.</p>
         <p class="muted">
-            @(_exportAll
-                ? "Every record in this wallet you can see, from all time, ignoring the period and filters."
-                : $"The records shown: {(IsAllTime ? "all time" : MonthStart.ToString("MMMM yyyy"))}{(ActiveFilters.Count > 0 ? $", {ActiveFilters.Count} active filters" : ", no filters")}.")
-            Newest first, up to 50,000. Expenses and transfers out are negative. The file name includes the wallet name.
+            @Tr("To export everything, pick All time and clear the filters first. Newest first, up to 50,000. Expenses and transfers out are negative. The file name includes the wallet name.")
         </p>
         <div class="export-options">
-            <a class="btn btn-primary" href="@ExportUrl("xlsx")" download @onclick="() => _exportOpen = false">Excel (.xlsx)</a>
-            <a class="btn btn-secondary" href="@ExportUrl("csv")" download @onclick="() => _exportOpen = false">CSV (semicolon, UTF-8)</a>
+            <a class="btn btn-primary" href="@ExportUrl("xlsx")" download @onclick="() => _exportOpen = false">@Tr("Excel (.xlsx)")</a>
+            <a class="btn btn-secondary" href="@ExportUrl("csv")" download @onclick="() => _exportOpen = false">@Tr("CSV (semicolon, UTF-8)")</a>
         </div>
     </Sheet>
 }
@@ -155,8 +162,7 @@ else
     private bool _failed;
     private bool _filtersOpen;
     private bool _exportOpen;
-    private bool _exportAll;
-    private static readonly IReadOnlyList<(bool, string)> ExportScopes = [(false, "Current view"), (true, "All records")];
+    private bool _periodOpen;
     private string? _search;
     private CancellationTokenSource? _debounce;
     private ElementReference _sentinel;
@@ -167,6 +173,11 @@ else
     [SupplyParameterFromQuery] public string? Month { get; set; }
 
     [SupplyParameterFromQuery] public bool? All { get; set; }
+
+    /// <summary>Custom range, yyyy-MM-dd; <see cref="To"/> is inclusive here (the API's is exclusive).</summary>
+    [SupplyParameterFromQuery] public string? From { get; set; }
+
+    [SupplyParameterFromQuery] public string? To { get; set; }
 
     [SupplyParameterFromQuery] public Guid? AccountId { get; set; }
 
@@ -192,16 +203,62 @@ else
         ? month
         : new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1);
 
+    private DateOnly? RangeFrom => ParseDay(From);
+
+    private DateOnly? RangeTo => ParseDay(To);
+
+    private bool IsRange => !IsAllTime && (RangeFrom is not null || RangeTo is not null);
+
+    private string PeriodLabel
+    {
+        get
+        {
+            if (IsAllTime)
+            {
+                return Tr("All time");
+            }
+
+            if (!IsRange)
+            {
+                return MonthStart.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
+            }
+
+            var from = RangeFrom?.ToString("d MMM yyyy", CultureInfo.CurrentCulture);
+            var to = RangeTo?.ToString("d MMM yyyy", CultureInfo.CurrentCulture);
+            return from is null ? Tr("Until {0}", to!) : to is null ? Tr("From {0}", from) : $"{from} – {to}";
+        }
+    }
+
+    private string ExportFiltersText
+    {
+        get
+        {
+            var parts = ActiveFilters.Select(f => f.Label).ToList();
+            if (!string.IsNullOrWhiteSpace(Search))
+            {
+                parts.Add(Tr("search “{0}”", Search.Trim()));
+            }
+
+            return parts.Count == 0 ? Tr("no filters") : string.Join(", ", parts);
+        }
+    }
+
+    private static DateOnly? ParseDay(string? value) =>
+        DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day) ? day : null;
+
     private string ExportUrl(string format)
     {
-        var query = _exportAll ? "" : CurrentFilter.ToQueryString();
+        var query = CurrentFilter.ToQueryString();
         return $"api/wallets/{Wallet!.Id}/records/export{query}{(query.Length == 0 ? "?" : "&")}format={format}";
     }
 
-    private RecordFilter CurrentFilter => new()
+    private RecordFilter CurrentFilter => Filter(null);
+
+    private RecordFilter Filter(string? cursor) => new()
     {
-        From = IsAllTime ? null : MonthStart,
-        To = IsAllTime ? null : MonthStart.AddMonths(1),
+        From = IsAllTime ? null : IsRange ? RangeFrom : MonthStart,
+        To = IsAllTime ? null : IsRange ? RangeTo?.AddDays(1) : MonthStart.AddMonths(1),
+        Cursor = cursor,
         AccountId = AccountId,
         CategoryId = CategoryId,
         TagId = TagId,
@@ -225,10 +282,10 @@ else
             Add(filters, "accountId", Wallet.Accounts.FirstOrDefault(a => a.Id == AccountId)?.Name);
             Add(filters, "categoryId", Wallet.Categories.FirstOrDefault(c => c.Id == CategoryId)?.Name);
             Add(filters, "tagId", Wallet.Tags.FirstOrDefault(t => t.Id == TagId)?.Name);
-            Add(filters, "type", CurrentFilter.Type?.ToString());
-            Add(filters, "status", CurrentFilter.Status?.ToString());
-            Add(filters, "ruleId", RuleId is null ? null : "One recurring rule");
-            Add(filters, "recurring", Recurring == true ? "Added by recurring rules" : null);
+            Add(filters, "type", CurrentFilter.Type is { } t ? TemplateText.TypeLabel(t) : null);
+            Add(filters, "status", CurrentFilter.Status is { } s ? TemplateText.StatusLabel(s) : null);
+            Add(filters, "ruleId", RuleId is null ? null : Tr(Tr(Tr("One recurring rule"))));
+            Add(filters, "recurring", Recurring == true ? Tr(Tr(Tr("Added by recurring rules"))) : null);
             return filters;
         }
     }
@@ -237,6 +294,8 @@ else
     {
         ["all"] = IsAllTime ? null : true,
         ["month"] = null,
+        ["from"] = null,
+        ["to"] = null,
     });
 
     protected override void OnInitialized() => _self = DotNetObjectReference.Create(this);
@@ -316,12 +375,7 @@ else
         _loadingMore = true;
         StateHasChanged();
         var version = _version;
-        var filter = CurrentFilter;
-        var query = new RecordFilter
-        {
-            From = filter.From, To = filter.To, AccountId = filter.AccountId, CategoryId = filter.CategoryId, TagId = filter.TagId,
-            Type = filter.Type, Status = filter.Status, Search = filter.Search, Cursor = _nextCursor,
-        }.ToQueryString();
+        var query = Filter(_nextCursor).ToQueryString();
         var page = await Api.GetAsync<RecordPage>($"api/wallets/{Wallet.Id}/records{query}");
         if (version != _version)
         {

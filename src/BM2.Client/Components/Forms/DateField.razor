@@ -11,7 +11,7 @@
                    placeholder="@Pattern.ToLowerInvariant()" value="@CurrentValueAsString"
                    @onchange="e => CurrentValueAsString = e.Value?.ToString()"
                    aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
-            <button type="button" class="icon-button date-field__open" aria-label="@($"Choose {Label.ToLowerInvariant()} in a calendar")"
+            <button type="button" class="icon-button date-field__open" aria-label="@Tr("Choose {0} in a calendar", Label.ToLower(CultureInfo.CurrentCulture))"
                     aria-haspopup="dialog" @onclick="OpenCalendar">
                 <Icon Name="calendar" />
             </button>
@@ -19,8 +19,8 @@
         @if (Shortcuts)
         {
             <div class="date-field__shortcuts">
-                <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">Today</button>
-                <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">Yesterday</button>
+                <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">@Tr("Today")</button>
+                <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">@Tr("Yesterday")</button>
             </div>
         }
     </div>
@@ -73,7 +73,7 @@
             return true;
         }
 
-        validationErrorMessage = $"Enter a date like {Today.ToString(Pattern, CultureInfo.CurrentCulture)}.";
+        validationErrorMessage = Tr("Enter a date like {0}.", Today.ToString(Pattern, CultureInfo.CurrentCulture));
         return false;
     }
 }

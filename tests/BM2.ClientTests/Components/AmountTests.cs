@@ -12,7 +12,7 @@ public class AmountTests : BunitContext
 
         var cut = Render<Amount>(p => p.Add(x => x.Value, -12.5m).Add(x => x.Currency, "PLN"));
 
-        cut.Find(".amount").TextContent.ShouldBe("−12.50 PLN");
+        cut.Find(".amount").TextContent.ShouldBe("−12.50 zł");
         cut.Find(".amount").ClassList.ShouldContain("amount--negative");
     }
 
@@ -34,7 +34,7 @@ public class AmountTests : BunitContext
 
         var cut = Render<Amount>(p => p.Add(x => x.Value, 5m).Add(x => x.Currency, "PLN").Add(x => x.Sign, AmountSign.Minus));
 
-        cut.Find(".amount").TextContent.ShouldBe("−5.00 PLN");
+        cut.Find(".amount").TextContent.ShouldBe("−5.00 zł");
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class AmountTests : BunitContext
 
         var cut = Render<Amount>(p => p.Add(x => x.Value, 0m).Add(x => x.Currency, "PLN"));
 
-        cut.Find(".amount").TextContent.ShouldBe("0.00 PLN");
+        cut.Find(".amount").TextContent.ShouldBe("0.00 zł");
     }
 
     [Fact]
@@ -54,6 +54,6 @@ public class AmountTests : BunitContext
 
         var cut = Render<Amount>(p => p.Add(x => x.Value, -1234.5m).Add(x => x.Currency, "PLN"));
 
-        cut.Find(".amount").TextContent.ShouldBe("−1 234,50 PLN");
+        cut.Find(".amount").TextContent.ShouldBe("−1 234,50 zł");
     }
 }

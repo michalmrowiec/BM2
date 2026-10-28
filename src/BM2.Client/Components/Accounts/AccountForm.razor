@@ -5,31 +5,39 @@
 @* Adds an account, or edits one when Account is set. *@
 <EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToUpdateRequest()" />
-    <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
-    <SelectField Label="Currency" @bind-Value="_model.Currency" Options="Options.Currencies" />
+    <TextField Label="@Tr("Name")" @bind-Value="_model.Name" autocomplete="off" />
+    <SelectField Label="@Tr("Currency")" @bind-Value="_model.Currency" Options="Options.Currencies" />
     <div class="field">
-        <SegmentedControl TValue="AccountKind" Options="KindOptions" Value="_model.Kind" ValueChanged="k => _model.Kind = k" Label="Account type" />
+        <SegmentedControl TValue="AccountKind" Options="KindOptions" Value="_model.Kind" ValueChanged="k => _model.Kind = k" Label="@Tr("Account type")" />
         <p class="field__hint">
             @(_model.Kind == AccountKind.Investment
-                ? "Valued by the valuations you enter; kept out of the cash balance and forecast. Transfers to it show as invested."
-                : "Cash, a bank account or savings: its balance comes from records.")
+                ? Tr("Valued by the valuations you enter; kept out of the cash balance and forecast. Transfers to it show as invested.")
+                : Tr("Cash, a bank account or savings: its balance comes from records."))
         </p>
     </div>
-    <MoneyInput Label="Opening balance" Currency="@_model.Currency" @bind-Value="_model.OpeningBalance" AllowNegative="true"
-                Hint="What the account held when you started tracking it." />
+    <MoneyInput Label="@Tr("Opening balance")" Currency="@_model.Currency" @bind-Value="_model.OpeningBalance" AllowNegative="true"
+                Hint="@Tr("What the account held when you started tracking it.")" />
+    <label class="check">
+        <InputCheckbox @bind-Value="_model.ShowOnDashboard" />
+        <span>@Tr("Show on dashboard") <span class="muted">· @(_model.Kind == AccountKind.Investment ? Tr("a card with its value on Home") : Tr("a card with its balance on Home"))</span></span>
+    </label>
+    <label class="check">
+        <InputCheckbox @bind-Value="_model.ExcludeFromTotal" />
+        <span>@Tr("Exclude from wallet value") <span class="muted">· @Tr("left out of the total on Home and of the forecast")</span></span>
+    </label>
     @if (Account is not null)
     {
         <label class="check">
             <InputCheckbox @bind-Value="_model.IsArchived" />
-            <span>Archived <span class="muted">· hidden when adding records</span></span>
+            <span>@Tr("Archived") <span class="muted">· @Tr("hidden when adding records")</span></span>
         </label>
     }
-    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(Account is null ? "Add account" : "Save")</button>
+    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(Account is null ? Tr("Add account") : Tr("Save"))</button>
 </EditForm>
 
 @code {
     private static readonly UpdateAccountRequestValidator Validator = new();
-    private static readonly IReadOnlyList<(AccountKind, string)> KindOptions = [(AccountKind.Cash, "Cash"), (AccountKind.Investment, "Investment")];
+    private static IReadOnlyList<(AccountKind, string)> KindOptions => [(AccountKind.Cash, Tr("Cash")), (AccountKind.Investment, Tr("Investment"))];
     private FormModel _model = new();
     private FluentValidator? _validator;
     private bool _busy;
@@ -51,6 +59,8 @@
             OpeningBalance = Account.OpeningBalance,
             IsArchived = Account.IsArchived,
             Kind = Account.Kind,
+            ExcludeFromTotal = Account.ExcludeFromTotal,
+            ShowOnDashboard = Account.ShowOnDashboard,
         };
 
     private async Task SubmitAsync()
@@ -59,7 +69,8 @@
         var request = _model.ToUpdateRequest();
         var result = Account is null
             ? await Api.PostAsync<AccountItem>(
-                $"api/wallets/{WalletId}/accounts", new CreateAccountRequest(request.Name, request.Currency, request.OpeningBalance, request.Kind))
+                $"api/wallets/{WalletId}/accounts", new CreateAccountRequest(request.Name, request.Currency, request.OpeningBalance, request.Kind,
+                    request.ExcludeFromTotal, request.ShowOnDashboard))
             : await Api.PutAsync($"api/wallets/{WalletId}/accounts/{Account.Id}", request);
         _busy = false;
 
@@ -89,6 +100,10 @@
 
         public AccountKind Kind { get; set; } = AccountKind.Cash;
 
-        public UpdateAccountRequest ToUpdateRequest() => new(Name ?? "", Currency, OpeningBalance ?? 0, IsArchived, Kind);
+        public bool ExcludeFromTotal { get; set; }
+
+        public bool ShowOnDashboard { get; set; } = true;
+
+        public UpdateAccountRequest ToUpdateRequest() => new(Name ?? "", Currency, OpeningBalance ?? 0, IsArchived, Kind, ExcludeFromTotal, ShowOnDashboard);
     }
 }

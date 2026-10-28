@@ -1,0 +1,217 @@
+@page "/more/settings/invites"
+@attribute [Authorize]
+@using System.Globalization
+@using BM2.Contracts.Invitations
+@implements IAsyncDisposable
+@inject ApiClient Api
+@inject ToastService Toasts
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>@Tr("Invite to BM2") · BM2</PageTitle>
+
+<header class="page-header page-header--back">
+    <BackButton Fallback="more/settings" />
+    <h1 class="page-title">@Tr("Invite to BM2")</h1>
+    <button type="button" class="btn btn-primary btn-sm invite-button" @onclick="OpenCreate"><Icon Name="plus" /> @Tr("Invite")</button>
+</header>
+
+<p class="muted">@Tr("A link lets one person create their own BM2 account. It does not share your wallets or accounts.")</p>
+
+@if (_items is null)
+{
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
+}
+else if (_items.Count == 0)
+{
+    <p class="muted">@Tr("You haven't invited anyone yet.")</p>
+}
+else
+{
+    <ul class="list">
+        @foreach (var item in _items)
+        {
+            <li>
+                <ListRow Title="@(item.Email ?? Tr("Anyone with the link"))" Subtitle="@Describe(item)">
+                    <Leading><Icon Name="share" /></Leading>
+                    <Trailing>
+                        @if (item.Status == AppInvitationStatus.Active)
+                        {
+                            <button type="button" class="btn btn-ghost btn-sm" @onclick="() => RevokeAsync(item.Id)">@Tr("Revoke")</button>
+                        }
+                    </Trailing>
+                </ListRow>
+            </li>
+        }
+    </ul>
+}
+
+<Sheet Open="_createOpen" OpenChanged="v => _createOpen = v" Title="@Tr("Invite to BM2")">
+    @if (_link is null)
+    {
+        <EditForm Model="_model" OnValidSubmit="CreateAsync" class="form-stack">
+            <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToRequest()" />
+            <TextField id="invite-email" Type="email" Label="@Tr("Email (optional)")" @bind-Value="_model.Email"
+                       Hint="@Tr("When set, only this address can register with the link.")" />
+            <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@Tr("Create link")</button>
+        </EditForm>
+    }
+    else
+    {
+        <p>@Tr("Copy the link now: it is shown only once. It works once and expires in 7 days.")</p>
+        <div class="field">
+            <label class="field__label" for="invite-link">@Tr("Invitation link")</label>
+            <input id="invite-link" class="field__control" readonly value="@_link" />
+        </div>
+        <div class="invite__actions">
+            <button type="button" class="btn btn-primary" @onclick="CopyAsync"><Icon Name="copy" /> @Tr("Copy link")</button>
+            @if (_canShare)
+            {
+                <button type="button" class="btn btn-secondary" @onclick="ShareAsync"><Icon Name="share" /> @Tr("Share")</button>
+            }
+        </div>
+    }
+</Sheet>
+
+@code {
+    private static readonly CreateAppInvitationRequestValidator Validator = new();
+    private List<AppInvitationItem>? _items;
+    private FormModel _model = new();
+    private FluentValidator? _validator;
+    private string? _link;
+    private bool _createOpen;
+    private bool _busy;
+    private bool _canShare;
+    private IJSObjectReference? _module;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            await LoadAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && RendererInfo.IsInteractive)
+        {
+            // Same copy/share helpers as wallet invitations.
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Members.razor.js");
+            _canShare = await _module.InvokeAsync<bool>("canShare");
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Api.GetAsync<List<AppInvitationItem>>("api/app-invitations");
+        _items = result.Value ?? [];
+        if (!result.Ok)
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private string Describe(AppInvitationItem item) => item.Status switch
+    {
+        AppInvitationStatus.Active => Tr("Active · expires {0}", Format(item.ExpiresAt)),
+        AppInvitationStatus.Used => item.UsedBy is null ? Tr("Used") : Tr("Used by {0}", item.UsedBy),
+        AppInvitationStatus.Expired => Tr("Expired {0}", Format(item.ExpiresAt)),
+        _ => Tr("Revoked"),
+    };
+
+    private static string Format(DateTimeOffset moment) => moment.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture);
+
+    private void OpenCreate()
+    {
+        _model = new FormModel();
+        _link = null;
+        _createOpen = true;
+    }
+
+    private async Task CreateAsync()
+    {
+        _busy = true;
+        var result = await Api.PostAsync<CreatedInvitation>("api/app-invitations", _model.ToRequest());
+        _busy = false;
+        if (result.Ok)
+        {
+            _link = Navigation.ToAbsoluteUri("Account/Register?invite=" + result.Value!.Token).AbsoluteUri;
+            await LoadAsync();
+        }
+        else if (result.Problem!.HasFieldErrors)
+        {
+            _validator?.ShowServerErrors(result.Problem);
+        }
+        else if (result.Problem.Status == 409)
+        {
+            Toasts.Show(result.Problem.Detail ?? Tr("Something went wrong. Try again."), ToastKind.Error);
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+    }
+
+    private async Task RevokeAsync(Guid id)
+    {
+        var result = await Api.DeleteAsync($"api/app-invitations/{id}");
+        if (result.Ok)
+        {
+            Toasts.Show(Tr("Invitation revoked."));
+        }
+        else
+        {
+            Toasts.ShowError();
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await _module!.InvokeVoidAsync("copy", _link);
+            Toasts.Show(Tr("Link copied."), ToastKind.Success);
+        }
+        catch (JSException)
+        {
+            Toasts.Show(Tr("Couldn't copy. Select the link and copy it yourself."), ToastKind.Error);
+        }
+    }
+
+    private async Task ShareAsync()
+    {
+        try
+        {
+            await _module!.InvokeVoidAsync("share", _link);
+        }
+        catch (JSException)
+        {
+            // The share sheet was dismissed.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Page unloaded.
+            }
+        }
+    }
+
+    private sealed class FormModel
+    {
+        public string? Email { get; set; }
+
+        public CreateAppInvitationRequest ToRequest() => new(Email);
+    }
+}

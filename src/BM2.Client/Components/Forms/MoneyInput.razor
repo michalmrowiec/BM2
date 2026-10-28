@@ -8,7 +8,7 @@
         @Label
         @if (Currency is not null)
         {
-            <span class="sr-only">(@Currency)</span>
+            <span class="sr-only">(@CurrencyLabel.Of(Currency))</span>
         }
     </label>
     <div class="money-input">
@@ -19,7 +19,7 @@
                aria-invalid="@AriaInvalid" aria-describedby="@DescribedBy" />
         @if (Currency is not null)
         {
-            <span class="money-input__currency" aria-hidden="true">@Currency</span>
+            <span class="money-input__currency" aria-hidden="true">@CurrencyLabel.Of(Currency)</span>
         }
     </div>
     <FieldMessages Error="@ErrorText" Hint="@Hint" ErrorId="@ErrorId" HintId="@HintId" />
@@ -60,7 +60,7 @@
     {
         if (!AmountParser.TryParse(value, CultureInfo.CurrentCulture, out result, out var decimals))
         {
-            validationErrorMessage = "Enter a number.";
+            validationErrorMessage = Tr("Enter a number.");
             return false;
         }
 
@@ -68,7 +68,7 @@
         if (decimals > Decimals)
         {
             result = null;
-            validationErrorMessage = $"Use at most {Decimals} decimal places.";
+            validationErrorMessage = Tr("Use at most {0} decimal places.", Decimals);
             return false;
         }
 

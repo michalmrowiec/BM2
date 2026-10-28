@@ -54,10 +54,12 @@ else
 }
 app.UseBm2ErrorHandling();
 app.UseHttpsRedirection();
+app.UseBm2Localization();
 
 // Explicit, so auth runs inside error handling (otherwise WebApplication adds it at the very start).
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseDemoReadOnly();
 app.UseRateLimiter();
 app.UseAntiforgery();
 app.UseRegistrationOnlyInDevelopment();
@@ -71,6 +73,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapBm2Api();
+app.MapCultureEndpoint();
+app.MapDemoLogin();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BM2.Client._Imports).Assembly);

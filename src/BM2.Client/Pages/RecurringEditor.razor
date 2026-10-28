@@ -15,12 +15,12 @@
 
 <section class="editor-sheet" aria-labelledby="editor-title">
     <header class="editor-sheet__header">
-        <BackButton Fallback="recurring" Icon="close" Label="Close" />
+        <BackButton Fallback="recurring" Icon="close" Label="@Tr("Close")" />
         <h1 id="editor-title" class="editor-sheet__title" tabindex="-1">@Title</h1>
         <div class="editor-sheet__actions">
             @if (_rule is not null)
             {
-                <button type="button" class="icon-button" aria-label="Delete rule" @onclick="() => _confirmDelete = true">
+                <button type="button" class="icon-button" aria-label="@Tr("Delete rule")" @onclick="() => _confirmDelete = true">
                     <Icon Name="trash" />
                 </button>
             }
@@ -33,11 +33,11 @@
     }
     else if (_loading)
     {
-        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+        <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
     }
     else if (_missing)
     {
-        <EmptyState IconName="repeat" Title="This doesn't exist">It may have been deleted.</EmptyState>
+        <EmptyState IconName="repeat" Title="@Tr("This doesn't exist")">@Tr("It may have been deleted.")</EmptyState>
     }
     else
     {
@@ -46,28 +46,28 @@
     }
 </section>
 
-<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete recurring rule?" ConfirmLabel="Delete"
+<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@Tr("Delete recurring rule?")" ConfirmLabel="@Tr("Delete")"
                Danger="true" OnConfirm="DeleteAsync">
-    <p>No more records will be added.</p>
+    <p>@Tr("No more records will be added.")</p>
     @if (_rule is { RecordCount: > 0 } rule)
     {
         <label class="check">
             <input type="checkbox" checked="@_deleteRecords" @onchange="e => _deleteRecords = e.Value is true" />
-            <span>Also delete the @rule.RecordCount records it added (otherwise they stay as normal records)</span>
+            <span>@Plural(rule.RecordCount, "Also delete the {0} record it added (otherwise it stays as a normal record)", "Also delete the {0} records it added (otherwise they stay as normal records)")</span>
         </label>
     }
 </ConfirmDialog>
 
-<Sheet Open="_pending is not null" OpenChanged="v => { if (!v) _pending = null; }" Title="Apply changes to which records?">
+<Sheet Open="_pending is not null" OpenChanged="v => { if (!v) _pending = null; }" Title="@Tr("Apply changes to which records?")">
     <div class="form-stack">
-        <p>The rule already added @_rule?.RecordCount records. Their dates and statuses never change.</p>
+        <p>@Plural(_rule?.RecordCount ?? 0, "The rule already added {0} record. Its date and status never change.", "The rule already added {0} records. Their dates and statuses never change.")</p>
         <button type="button" class="btn btn-primary btn-block" disabled="@_busy" @onclick="() => SendAsync(applyToPast: false)">
-            Only records added from now on
+            @Tr("Only records added from now on")
         </button>
         <button type="button" class="btn btn-secondary btn-block" disabled="@_busy" @onclick="() => SendAsync(applyToPast: true)">
-            Also update the @_rule?.RecordCount added records
+            @Plural(_rule?.RecordCount ?? 0, "Also update the {0} added record", "Also update the {0} added records")
         </button>
-        <p class="field__hint">Updating rewrites their name (with k/N), amount, category, account and tags.</p>
+        <p class="field__hint">@Tr("Updating rewrites their name (with k/N), amount, category, account and tags.")</p>
     </div>
 </Sheet>
 
@@ -90,7 +90,7 @@
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
-    private string Title => Id is not null ? "Edit recurring" : "New recurring";
+    private string Title => Id is not null ? Tr("Edit recurring") : Tr("New recurring");
 
     protected override async Task OnParametersSetAsync()
     {
@@ -159,13 +159,13 @@
 
         if (result.Ok)
         {
-            Toasts.Show("Saved.", ToastKind.Success);
+            Toasts.Show(Tr("Saved."), ToastKind.Success);
             await WalletState.RefreshAsync();
             Navigation.NavigateTo("recurring");
         }
         else
         {
-            Toasts.Show(result.Problem!.Detail ?? "Couldn't save. Check the fields.", ToastKind.Error);
+            Toasts.Show(result.Problem!.Detail ?? Tr("Couldn't save. Check the fields."), ToastKind.Error);
             if (result.Problem.HasFieldErrors)
             {
                 _form?.ShowServerErrors(result.Problem);
@@ -179,7 +179,7 @@
         _confirmDelete = false;
         if (result.Ok)
         {
-            Toasts.Show(_deleteRecords ? "Rule and its records deleted." : "Recurring rule deleted.");
+            Toasts.Show(_deleteRecords ? Tr("Rule and its records deleted.") : Tr("Recurring rule deleted."));
             await WalletState.RefreshAsync();
             Navigation.NavigateTo("recurring");
         }

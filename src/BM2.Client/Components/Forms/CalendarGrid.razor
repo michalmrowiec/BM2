@@ -3,13 +3,13 @@
 @* Calendar for DateField: days, or tap the title for months, then again for years. *@
 <div class="calendar">
     <div class="calendar__head">
-        <button type="button" class="icon-button" aria-label="@($"Previous {Unit}")" @onclick="() => Move(-1)">
+        <button type="button" class="icon-button" aria-label="@PreviousLabel" @onclick="() => Move(-1)">
             <Icon Name="arrow-left" />
         </button>
         <button type="button" class="calendar__title" aria-live="polite" disabled="@(_view == View.Years)" @onclick="ZoomOut">
             @Title
         </button>
-        <button type="button" class="icon-button" aria-label="@($"Next {Unit}")" @onclick="() => Move(1)">
+        <button type="button" class="icon-button" aria-label="@NextLabel" @onclick="() => Move(1)">
             <Icon Name="arrow-right" />
         </button>
     </div>
@@ -63,7 +63,7 @@
     @if (Value != Today)
     {
         <button type="button" class="btn btn-secondary btn-block" @onclick="() => ValueChanged.InvokeAsync(Today)">
-            Today, @Today.ToString("d MMM", Culture)
+            @Tr("Today, {0}", Today.ToString("d MMM", Culture))
         </button>
     }
 </div>
@@ -90,7 +90,9 @@
     // Years come in pages of 12 that contain the shown year.
     private int FirstYear => _month.Year - (_month.Year % 12);
 
-    private string Unit => _view switch { View.Days => "month", View.Months => "year", _ => "years" };
+    private string PreviousLabel => _view switch { View.Days => Tr("Previous month"), View.Months => Tr("Previous year"), _ => Tr("Previous years") };
+
+    private string NextLabel => _view switch { View.Days => Tr("Next month"), View.Months => Tr("Next year"), _ => Tr("Next years") };
 
     private string Title => _view switch
     {

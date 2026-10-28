@@ -28,12 +28,18 @@ public sealed class Account
 
     public AccountKind Kind { get; private set; } = AccountKind.Cash;
 
+    /// <summary>Left out of the wallet value on Home and of the forecast.</summary>
+    public bool ExcludeFromTotal { get; private set; }
+
+    public bool ShowOnDashboard { get; private set; } = true;
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public IReadOnlyCollection<AccountMember> Members => _members;
 
     public static Account Create(
-        Guid walletId, string name, string currency, decimal openingBalance, DateTimeOffset now, AccountKind kind = AccountKind.Cash) =>
+        Guid walletId, string name, string currency, decimal openingBalance, DateTimeOffset now, AccountKind kind = AccountKind.Cash,
+        bool excludeFromTotal = false, bool showOnDashboard = true) =>
         new()
         {
             WalletId = walletId,
@@ -41,11 +47,14 @@ public sealed class Account
             Currency = currency,
             OpeningBalance = openingBalance,
             Kind = kind,
+            ExcludeFromTotal = excludeFromTotal,
+            ShowOnDashboard = showOnDashboard,
             CreatedAt = now,
         };
 
     public Result Update(
-        string name, string currency, decimal openingBalance, bool isArchived, bool hasRecords, AccountKind kind = AccountKind.Cash)
+        string name, string currency, decimal openingBalance, bool isArchived, bool hasRecords, AccountKind kind = AccountKind.Cash,
+        bool excludeFromTotal = false, bool showOnDashboard = true)
     {
         if (currency != Currency && hasRecords)
         {
@@ -57,6 +66,8 @@ public sealed class Account
         OpeningBalance = openingBalance;
         IsArchived = isArchived;
         Kind = kind;
+        ExcludeFromTotal = excludeFromTotal;
+        ShowOnDashboard = showOnDashboard;
         return Result.Success;
     }
 

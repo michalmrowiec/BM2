@@ -4,26 +4,26 @@
 
 @* The numbers behind a monthly chart, newest first. *@
 <details class="stats-numbers">
-    <summary>Show numbers</summary>
+    <summary>@Tr("Show numbers")</summary>
     <table class="stats-table">
         <thead>
             <tr>
-                <th scope="col">Month</th>
+                <th scope="col">@Tr("Month")</th>
                 @if (Only != RecordType.Expense)
                 {
-                    <th scope="col">Income</th>
+                    <th scope="col">@Tr("Income")</th>
                 }
                 @if (Only != RecordType.Income)
                 {
-                    <th scope="col">Expenses</th>
+                    <th scope="col">@Tr("Expenses")</th>
                 }
                 @if (Only is null)
                 {
-                    <th scope="col">Net</th>
+                    <th scope="col">@Tr("Net")</th>
                 }
                 @if (ShowInvested)
                 {
-                    <th scope="col">Invested</th>
+                    <th scope="col">@Tr("Invested")</th>
                 }
             </tr>
         </thead>

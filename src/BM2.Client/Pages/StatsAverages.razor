@@ -11,7 +11,7 @@
 @inject ApiClient Api
 @inject StatsState State
 
-<StatsHeader Title="Category averages">Total and monthly average per category over the months you tick.</StatsHeader>
+<StatsHeader Title="@Tr("Category averages")">@Tr("Total and monthly average per category over the months you tick.")</StatsHeader>
 
 @if (Wallet is null)
 {
@@ -20,15 +20,15 @@
 else
 {
     <StatsFilters Wallet="Wallet" Mode="StatsFilterMode.Year" OnChanged="ReloadAsync">
-        <SegmentedControl Label="Record type" Options="TypeOptions" Value="State.Type" ValueChanged="(RecordType t) => State.Type = t" />
+        <SegmentedControl Label="@Tr("Record type")" Options="TypeOptions" Value="State.Type" ValueChanged="(RecordType t) => State.Type = t" />
         @if (Available.Count > 0)
         {
             <div class="field">
-                <span class="field__label" id="average-months">Months counted</span>
-                <ChipGroup TValue="int" Label="Months counted" Options="Available" Multiple="true" Selected="Selected" DescribedBy="average-months-hint"
+                <span class="field__label" id="average-months">@Tr("Months counted")</span>
+                <ChipGroup TValue="int" Label="@Tr("Months counted")" Options="Available" Multiple="true" Selected="Selected" DescribedBy="average-months-hint"
                            SelectedChanged="months => State.AverageMonths = months.ToList()" Class="stats-months" />
                 <span class="field__hint" id="average-months-hint">
-                    Average = total of the ticked months ÷ @Selected.Count. Ticked months without records count as zero.
+                    @Tr("Average = total of the ticked months ÷ {0}. Ticked months without records count as zero.", Selected.Count)
                 </span>
             </div>
         }
@@ -36,38 +36,38 @@ else
 
     @if (Available.Count == 0)
     {
-        <EmptyState IconName="coins" Title="This year has not started yet">Pick the current or a past year.</EmptyState>
+        <EmptyState IconName="coins" Title="@Tr("This year has not started yet")">@Tr("Pick the current or a past year.")</EmptyState>
     }
     else if (_data is null)
     {
-        <p class="muted">Loading…</p>
+        <p class="muted">@Tr("Loading…")</p>
     }
     else if (Selected.Count == 0)
     {
-        <p class="muted">Tick at least one month.</p>
+        <p class="muted">@Tr("Tick at least one month.")</p>
     }
     else if (Rows.Count == 0)
     {
-        <EmptyState IconName="coins" Title="@($"No {TypeNoun} in these months")">Try other months, an account or a currency.</EmptyState>
+        <EmptyState IconName="coins" Title="@NoRowsTitle">@Tr("Try other months, an account or a currency.")</EmptyState>
     }
     else
     {
         var total = Rows.Sum(r => r.Total);
         <dl class="stats-figures">
-            <div><dt>Total</dt><dd><Amount Value="StatsCharts.Signed(total, State.Type)" Currency="@Currency" /></dd></div>
-            <div><dt>Average per month</dt><dd><Amount Value="StatsCharts.Signed(total / Selected.Count, State.Type)" Currency="@Currency" /></dd></div>
+            <div><dt>@Tr("Total")</dt><dd><Amount Value="StatsCharts.Signed(total, State.Type)" Currency="@Currency" /></dd></div>
+            <div><dt>@Tr("Average per month")</dt><dd><Amount Value="StatsCharts.Signed(total / Selected.Count, State.Type)" Currency="@Currency" /></dd></div>
         </dl>
         <ul class="stats-list">
             @foreach (var row in Rows)
             {
                 <li @key="row.CategoryId">
                     <ListRow Title="@StatsCharts.NameOf(Wallet, row.CategoryId)"
-                             Subtitle="@($"Total {StatsCharts.Signed(row.Total, State.Type).ToString("N2", CultureInfo.CurrentCulture)} {Currency} · {StatsCharts.Share(row.Total, total)}")">
+                             Subtitle="@Tr("Total {0} {1} · {2}", StatsCharts.Signed(row.Total, State.Type).ToString("N2", CultureInfo.CurrentCulture), CurrencyLabel.Of(Currency), StatsCharts.Share(row.Total, total))">
                         <Leading><RecordAvatar Category="StatsCharts.CategoryOf(Wallet, row.CategoryId)" Type="State.Type" Fallback="?" /></Leading>
                         <Trailing>
                             <span class="stats-average">
                                 <Amount Value="StatsCharts.Signed(row.Total / Selected.Count, State.Type)" Currency="@Currency" />
-                                <span class="muted">per month</span>
+                                <span class="muted">@Tr("per month")</span>
                             </span>
                         </Trailing>
                     </ListRow>
@@ -78,8 +78,8 @@ else
 }
 
 @code {
-    private static readonly IReadOnlyList<(RecordType, string)> TypeOptions =
-        [(RecordType.Expense, "Expenses"), (RecordType.Income, "Income")];
+    private IReadOnlyList<(RecordType, string)> TypeOptions =>
+        [(RecordType.Expense, Tr("Expenses")), (RecordType.Income, Tr("Income"))];
 
     private WalletSnapshot? _loadedFor;
     private CategoryMonthTotals? _data;
@@ -88,7 +88,7 @@ else
 
     private string Currency => State.Currency ?? "";
 
-    private string TypeNoun => State.Type == RecordType.Income ? "income" : "expenses";
+    private string NoRowsTitle => State.Type == RecordType.Income ? Tr("No income in these months") : Tr("No expenses in these months");
 
     private int Year => State.Anchor.Year;
 

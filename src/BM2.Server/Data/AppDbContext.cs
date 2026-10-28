@@ -38,6 +38,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
+    public DbSet<AppInvitation> AppInvitations => Set<AppInvitation>();
+
     public DbSet<Template> Templates => Set<Template>();
 
     public DbSet<RecurringRule> RecurringRules => Set<RecurringRule>();

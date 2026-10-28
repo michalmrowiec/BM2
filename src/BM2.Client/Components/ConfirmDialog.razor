@@ -4,17 +4,17 @@
         @if (RequireText is not null)
         {
             <div class="field">
-                <label class="field__label" for="@_inputId">Type <strong>@RequireText</strong> to confirm</label>
+                <label class="field__label" for="@_inputId">@((MarkupString)Tr("Type {0} to confirm", "<strong>" + System.Net.WebUtility.HtmlEncode(RequireText) + "</strong>"))</label>
                 <input id="@_inputId" class="field__control" value="@_typed" autocomplete="off"
                        @oninput="e => _typed = e.Value?.ToString()" />
             </div>
         }
     </ChildContent>
     <Footer>
-        <button type="button" class="btn btn-secondary" @onclick="() => OpenChanged.InvokeAsync(false)">Cancel</button>
+        <button type="button" class="btn btn-secondary" @onclick="() => OpenChanged.InvokeAsync(false)">@Tr("Cancel")</button>
         <button type="button" class="btn @(Danger ? "btn-danger" : "btn-primary")" disabled="@(!CanConfirm)"
                 @onclick="ConfirmAsync">
-            @ConfirmLabel
+            @(ConfirmLabel ?? Tr("Confirm"))
         </button>
     </Footer>
 </Sheet>
@@ -31,7 +31,7 @@
 
     [Parameter, EditorRequired] public string Title { get; set; } = "";
 
-    [Parameter] public string ConfirmLabel { get; set; } = "Confirm";
+    [Parameter] public string? ConfirmLabel { get; set; }
 
     [Parameter] public bool Danger { get; set; }
 

@@ -5,14 +5,14 @@
 @* Name (+ icon for categories or color for tags, + archived flag when editing): shared by categories and tags. *@
 <EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ToRequest((NameFormModel)m)" />
-    <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
+    <TextField Label="@Tr("Name")" @bind-Value="_model.Name" autocomplete="off" />
     @if (ShowIcon)
     {
         <div class="field">
-            <span class="field__label" id="@($"{_id}-icon")">Icon</span>
+            <span class="field__label" id="@($"{_id}-icon")">@Tr("Icon")</span>
             <div class="icon-picker" role="group" aria-labelledby="@($"{_id}-icon")">
                 <button type="button" class="icon-picker__item" aria-pressed="@Pressed(_model.Icon is null)" @onclick="() => _model.Icon = null">
-                    None
+                    @Tr("None")
                 </button>
                 @foreach (var key in CategoryIcons.All)
                 {
@@ -27,7 +27,7 @@
     @if (ShowColor)
     {
         <div class="field">
-            <span class="field__label">Color</span>
+            <span class="field__label">@Tr("Color")</span>
             <TagColorPicker Value="@_model.Color" ValueChanged="c => _model.Color = c" />
         </div>
     }
@@ -35,10 +35,10 @@
     {
         <label class="check">
             <InputCheckbox @bind-Value="_model.IsArchived" />
-            <span>Archived <span class="muted">· @ArchivedHint</span></span>
+            <span>@Tr("Archived") <span class="muted">· @(ArchivedHint ?? Tr("hidden when adding records"))</span></span>
         </label>
     }
-    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@SubmitLabel</button>
+    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(SubmitLabel ?? Tr("Save"))</button>
 </EditForm>
 
 @code {
@@ -61,9 +61,9 @@
 
     [Parameter] public bool ShowColor { get; set; }
 
-    [Parameter] public string ArchivedHint { get; set; } = "hidden when adding records";
+    [Parameter] public string? ArchivedHint { get; set; }
 
-    [Parameter] public string SubmitLabel { get; set; } = "Save";
+    [Parameter] public string? SubmitLabel { get; set; }
 
     [Parameter, EditorRequired] public IValidator Validator { get; set; } = null!;
 

@@ -23,6 +23,9 @@ rejestracji.
 - E-mail: `demo@bm2.test`
 - Hasło: `bm2-local-demo-2026`
 
+Wspólne konto demo tylko do odczytu („Try the demo” na logowaniu, użytkownik `demo@bm2.invalid`) jest lokalnie
+włączone w `appsettings.Development.json` (`Demo:Enabled`). Opis: [deploy-webio](deploy-webio.md#konto-demo-opcjonalnie).
+
 ## Współdzielenie lokalnie
 
 Members → Invite tworzy jednorazowy link (`/invite/{token}`, ważny 7 dni). Otwórz go w oknie prywatnym: „Create account”

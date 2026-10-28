@@ -9,12 +9,12 @@
 @* "Send money": an expense in the current wallet and an income in Target, as two linked records. *@
 @if (_target is null)
 {
-    <p class="muted">Loading @Target.Name…</p>
+    <p class="muted">@Tr("Loading {0}…", Target.Name)</p>
 }
 else if (FromOptions.Count == 0 || ToOptions.Count == 0 || TheirCategories.Count == 0)
 {
     <p>
-        To send money you need an account you can edit in both wallets and an income category in @Target.Name.
+        @Tr("To send money you need an account you can edit in both wallets and an income category in {0}.", Target.Name)
     </p>
 }
 else
@@ -22,50 +22,50 @@ else
     <p class="field__hint send-money__effect">
         <Icon Name="transfer" />
         <span>
-            Adds an expense in <strong>@Source.Name</strong> and an income in <strong>@Target.Name</strong>.
+            @Tr("Adds an expense in {0} and an income in {1}.", Source.Name, Target.Name)
             @(_model.Repeat is null
-                ? "They stay linked: editing or deleting one can change the other."
-                : $"Repeats {RepeatLabel(_model.Repeat.Value)}: each time you confirm the expense, {Target.Name} gets the income.")
+                ? Tr("They stay linked: editing or deleting one can change the other.")
+                : Tr("Repeats {0}: each time you confirm the expense, {1} gets the income.", RepeatLabel(_model.Repeat.Value), Target.Name))
         </span>
     </p>
 
     <EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
-        <MoneyInput Label="Amount" Large="true" Currency="@FromCurrency" @bind-Value="_model.Amount" Autofocus="true" />
+        <MoneyInput Label="@Tr("Amount")" Large="true" Currency="@FromCurrency" @bind-Value="_model.Amount" Autofocus="true" />
 
         <fieldset class="send-money__side">
-            <legend>From @Source.Name</legend>
-            <SelectField TValue="Guid?" Label="Account" Options="FromOptions" @bind-Value="_model.FromAccountId" />
-            <SelectField TValue="Guid?" Label="Your category" Options="YourCategories" @bind-Value="_model.YourCategoryId"
-                         Hint="An expense category: how this counts in your stats." />
+            <legend>@Tr("From {0}", Source.Name)</legend>
+            <SelectField TValue="Guid?" Label="@Tr("Account")" Options="FromOptions" @bind-Value="_model.FromAccountId" />
+            <SelectField TValue="Guid?" Label="@Tr("Your category")" Options="YourCategories" @bind-Value="_model.YourCategoryId"
+                         Hint="@Tr("An expense category: how this counts in your stats.")" />
         </fieldset>
 
         <fieldset class="send-money__side">
-            <legend>To @Target.Name</legend>
-            <SelectField TValue="Guid?" Label="Account" Options="ToOptions" @bind-Value="_model.ToAccountId" />
-            <SelectField TValue="Guid?" Label="Their category" Options="TheirCategories" @bind-Value="_model.TheirCategoryId"
-                         Hint="@($"An income category in {Target.Name}.")" />
+            <legend>@Tr("To {0}", Target.Name)</legend>
+            <SelectField TValue="Guid?" Label="@Tr("Account")" Options="ToOptions" @bind-Value="_model.ToAccountId" />
+            <SelectField TValue="Guid?" Label="@Tr("Their category")" Options="TheirCategories" @bind-Value="_model.TheirCategoryId"
+                         Hint="@Tr("An income category in {0}.", Target.Name)" />
             @if (ToCurrency != FromCurrency)
             {
-                <MoneyInput Label="Amount received" Currency="@ToCurrency" @bind-Value="_model.Received" />
+                <MoneyInput Label="@Tr("Amount received")" Currency="@ToCurrency" @bind-Value="_model.Received" />
             }
         </fieldset>
 
-        <DateField Label="@(_model.Repeat is null ? "Date" : "First time on")" @bind-Value="_model.Date" />
-        <TextField Label="Name (optional)" @bind-Value="_model.Name" autocomplete="off" />
-        <SelectField TValue="RecurrenceFrequency?" Label="Repeat" Options="RepeatOptions" @bind-Value="_model.Repeat"
-                     Hint="@(_model.Repeat is null ? null : "Each one waits in To confirm on Home until you confirm it was sent.")" />
+        <DateField Label="@(_model.Repeat is null ? Tr("Date") : Tr("First time on"))" @bind-Value="_model.Date" />
+        <TextField Label="@Tr("Name (optional)")" @bind-Value="_model.Name" autocomplete="off" />
+        <SelectField TValue="RecurrenceFrequency?" Label="@Tr("Repeat")" Options="RepeatOptions" @bind-Value="_model.Repeat"
+                     Hint="@(_model.Repeat is null ? null : Tr("Each one waits in To confirm on Home until you confirm it was sent."))" />
 
         <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">
-            @(_model.Repeat is null ? $"Send to {Target.Name}" : $"Repeat {RepeatLabel(_model.Repeat.Value)}")
+            @(_model.Repeat is null ? Tr("Send to {0}", Target.Name) : Tr("Repeat {0}", RepeatLabel(_model.Repeat.Value)))
         </button>
     </EditForm>
 }
 
 @code {
-    private static readonly IReadOnlyList<(RecurrenceFrequency? Value, string Label)> RepeatOptions =
+    private static IReadOnlyList<(RecurrenceFrequency? Value, string Label)> RepeatOptions =>
     [
-        (null, "Doesn't repeat"), (RecurrenceFrequency.Weekly, "Weekly"), (RecurrenceFrequency.Monthly, "Monthly"),
-        (RecurrenceFrequency.Yearly, "Yearly"),
+        (null, Tr("Doesn't repeat")), (RecurrenceFrequency.Weekly, Tr("Weekly")), (RecurrenceFrequency.Monthly, Tr("Monthly")),
+        (RecurrenceFrequency.Yearly, Tr("Yearly")),
     ];
 
     private FormModel _model = new();
@@ -118,14 +118,20 @@ else
         .Select(c => ((Guid?)c.Id, c.Name))
         .ToList();
 
-    private static string RepeatLabel(RecurrenceFrequency frequency) => frequency.ToString().ToLowerInvariant();
+    private static string RepeatLabel(RecurrenceFrequency frequency) => frequency switch
+    {
+        RecurrenceFrequency.Daily => Tr("daily"),
+        RecurrenceFrequency.Weekly => Tr("weekly"),
+        RecurrenceFrequency.Monthly => Tr("monthly"),
+        _ => Tr("yearly"),
+    };
 
     private async Task SubmitAsync()
     {
         if (_model.Amount is not > 0 || _model.FromAccountId is not { } from || _model.ToAccountId is not { } to
             || _model.YourCategoryId is not { } yours || _model.TheirCategoryId is not { } theirs)
         {
-            Toasts.Show("Enter an amount and choose both accounts and categories.", ToastKind.Error);
+            Toasts.Show(Tr("Enter an amount and choose both accounts and categories."), ToastKind.Error);
             return;
         }
 
@@ -133,7 +139,7 @@ else
         var received = ToCurrency == FromCurrency ? amount : _model.Received ?? 0;
         if (received <= 0)
         {
-            Toasts.Show("Enter the amount received.", ToastKind.Error);
+            Toasts.Show(Tr("Enter the amount received."), ToastKind.Error);
             return;
         }
 
@@ -154,11 +160,11 @@ else
 
         if (!result.Ok)
         {
-            Toasts.Show(result.Problem?.Detail ?? "Couldn't send the money.", ToastKind.Error);
+            Toasts.Show(result.Problem?.Detail ?? Tr("Couldn't send the money."), ToastKind.Error);
             return;
         }
 
-        Toasts.Show(_model.Repeat is null ? $"Sent to {Target.Name}." : "Repeat saved: confirm each one on Home.", ToastKind.Success);
+        Toasts.Show(_model.Repeat is null ? Tr("Sent to {0}.", Target.Name) : Tr("Repeat saved: confirm each one on Home."), ToastKind.Success);
         await OnSent.InvokeAsync();
     }
 

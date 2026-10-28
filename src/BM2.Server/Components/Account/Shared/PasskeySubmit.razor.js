@@ -39,6 +39,48 @@ async function requestCredential(email, mediation, headers, signal) {
     return await navigator.credentials.get({ publicKey: options, mediation, signal });
 }
 
+function base64Url(value) {
+    if (value == null) return undefined;
+    if (typeof value === 'string') {
+        return value.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    const bytes = ArrayBuffer.isView(value)
+        ? new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+        : new Uint8Array(value);
+    let binary = '';
+    for (const b of bytes) binary += String.fromCharCode(b);
+    return base64Url(btoa(binary));
+}
+
+// Password managers (e.g. Dashlane) may return a broken toJSON(), so binary fields are encoded here from the raw buffers.
+function toBase64UrlJson(credential) {
+    let json = {};
+    try { json = JSON.parse(JSON.stringify(credential)) ?? {}; } catch { }
+    const r = credential.response;
+    const call = (obj, name) => { try { return obj[name]?.(); } catch { return undefined; } };
+    const binary = (name, getter) => base64Url(r[name] ?? (getter && call(r, getter)) ?? json.response?.[name]);
+
+    return {
+        ...json,
+        id: base64Url(credential.id ?? json.id),
+        rawId: base64Url(credential.rawId ?? json.rawId),
+        type: credential.type ?? json.type,
+        authenticatorAttachment: credential.authenticatorAttachment ?? json.authenticatorAttachment,
+        clientExtensionResults: json.clientExtensionResults ?? call(credential, 'getClientExtensionResults') ?? {},
+        response: {
+            ...json.response,
+            clientDataJSON: binary('clientDataJSON'),
+            attestationObject: binary('attestationObject'),
+            authenticatorData: binary('authenticatorData', 'getAuthenticatorData'),
+            publicKey: binary('publicKey', 'getPublicKey'),
+            publicKeyAlgorithm: json.response?.publicKeyAlgorithm ?? call(r, 'getPublicKeyAlgorithm'),
+            transports: json.response?.transports ?? call(r, 'getTransports'),
+            signature: binary('signature'),
+            userHandle: binary('userHandle'),
+        },
+    };
+}
+
 customElements.define('passkey-submit', class extends HTMLElement {
     static formAssociated = true;
 
@@ -93,7 +135,7 @@ customElements.define('passkey-submit', class extends HTMLElement {
         const formData = new FormData();
         try {
             const credential = await this.obtainCredential(useConditionalMediation, signal);
-            const credentialJson = JSON.stringify(credential);
+            const credentialJson = JSON.stringify(toBase64UrlJson(credential));
             formData.append(`${this.attrs.name}.CredentialJson`, credentialJson);
         } catch (error) {
             if (error.name === 'AbortError') {

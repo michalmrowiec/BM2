@@ -1,32 +1,27 @@
 ﻿@inherits LayoutComponentBase
 @* Created with the layout so it sees every navigation from the start. *@
 @inject AppNavigation AppNavigation
-@inject NavigationManager Navigation
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a class="skip-link" href="#main">@Tr("Skip to content")</a>
 
 <header class="app-header">
     <div class="app-header__lead">
-        @if (BackFallback is { } fallback)
-        {
-            <AuthorizeView>
-                <Authorized>
-                    <BackButton Fallback="@fallback" />
-                </Authorized>
-            </AuthorizeView>
-        }
-        <a class="app-brand" href="">BM2<span class="app-brand__dot" aria-hidden="true"></span></a>
+        <a class="app-brand" href="">BM<span class="app-brand__dot" aria-hidden="true"></span></a>
+        <AuthorizeView Roles="@BM2.Contracts.Common.Demo.Role">
+            <a class="demo-badge" href="Account/Login" title="@Tr("Read-only demo. Log in or create your own account.")">@Tr("Demo")</a>
+        </AuthorizeView>
     </div>
     <div class="app-header__actions">
         <AuthorizeView>
             <Authorized>
                 <WalletSwitcher />
+                <BalancesToggle />
             </Authorized>
         </AuthorizeView>
         <ThemeToggle />
         <AuthorizeView>
             <NotAuthorized>
-                <a class="btn btn-secondary btn-sm" href="Account/Login">Log in</a>
+                <a class="btn btn-secondary btn-sm" href="Account/Login">@Tr("Log in")</a>
             </NotAuthorized>
         </AuthorizeView>
     </div>
@@ -45,23 +40,8 @@
 </AuthorizeView>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    @Tr("An unhandled error has occurred.")
+    <a href="." class="reload">@Tr("Reload")</a>
     <span class="dismiss">🗙</span>
 </div>
 
-@code {
-    private static readonly string[] TopLevel = ["", "records", "stats", "more"];
-
-    // Editors and stats screens have their own way back; the main sections need none.
-    private string? BackFallback
-    {
-        get
-        {
-            var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
-            return TopLevel.Contains(path) || path.Contains('/') || path.StartsWith("Account", StringComparison.Ordinal)
-                ? null
-                : "more";
-        }
-    }
-}

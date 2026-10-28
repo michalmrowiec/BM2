@@ -1,5 +1,6 @@
 @page "/stats/tags"
 @attribute [Authorize]
+@using System.Globalization
 @using BM2.Client.Components.Stats
 @using BM2.Client.Components.Wallets
 @using BM2.Contracts.Categories
@@ -10,7 +11,7 @@
 @inject ApiClient Api
 @inject StatsState State
 
-<StatsHeader Title="Tag report">Records with any of the chosen tags, each counted once.</StatsHeader>
+<StatsHeader Title="@Tr("Tag report")">@Tr("Records with any of the chosen tags, each counted once.")</StatsHeader>
 
 @if (Wallet is null)
 {
@@ -18,17 +19,17 @@
 }
 else if (Tags.Count == 0)
 {
-    <EmptyState IconName="tag" Title="No tags yet">Add tags to records, like a trip or a renovation, to see a report per tag.</EmptyState>
+    <EmptyState IconName="tag" Title="@Tr("No tags yet")">@Tr("Add tags to records, like a trip or a renovation, to see a report per tag.")</EmptyState>
 }
 else
 {
     <StatsFilters Wallet="Wallet" OnChanged="ReloadAsync">
         <div class="field">
-            <span class="field__label">Tags</span>
-            <ChipGroup TValue="Guid" Label="Tags" Options="Tags" Multiple="true" Selected="State.TagIds" SelectedChanged="SetTagsAsync" />
+            <span class="field__label">@Tr("Tags")</span>
+            <ChipGroup TValue="Guid" Label="@Tr("Tags")" Options="Tags" Multiple="true" Selected="State.TagIds" SelectedChanged="SetTagsAsync" />
         </div>
-        <SelectField Label="Category" Options="CategoryOptions" @bind-Value="State.TagCategoryId" @bind-Value:after="ReloadAsync"
-                     Hint="Optional: only this category within the tags." />
+        <SelectField Label="@Tr("Category")" Options="CategoryOptions" @bind-Value="State.TagCategoryId" @bind-Value:after="ReloadAsync"
+                     Hint="@Tr("Optional: only this category within the tags.")" />
     </StatsFilters>
     @if (State.TagIds.Count > 0)
     {
@@ -37,33 +38,33 @@ else
 
     @if (State.TagIds.Count == 0)
     {
-        <p class="muted">Choose one or more tags.</p>
+        <p class="muted">@Tr("Choose one or more tags.")</p>
     }
     else if (_categories is null || _monthly is null)
     {
-        <p class="muted">Loading…</p>
+        <p class="muted">@Tr("Loading…")</p>
     }
     else
     {
         var spent = _categories.Items.Where(i => i.Type == RecordType.Expense).Sum(i => i.Total);
         var earned = _categories.Items.Where(i => i.Type == RecordType.Income).Sum(i => i.Total);
         <dl class="stats-figures">
-            <div><dt>Expenses</dt><dd><Amount Value="-spent" Currency="@Currency" /></dd></div>
-            <div><dt>Income</dt><dd><Amount Value="earned" Currency="@Currency" /></dd></div>
-            <div><dt>Net</dt><dd><Amount Value="earned - spent" Currency="@Currency" /></dd></div>
+            <div><dt>@Tr("Expenses")</dt><dd><Amount Value="-spent" Currency="@Currency" /></dd></div>
+            <div><dt>@Tr("Income")</dt><dd><Amount Value="earned" Currency="@Currency" /></dd></div>
+            <div><dt>@Tr("Net")</dt><dd><Amount Value="earned - spent" Currency="@Currency" /></dd></div>
         </dl>
         @if (_categories.Items.Count == 0)
         {
-            <p class="muted">No records with these tags in the selected period.</p>
+            <p class="muted">@Tr("No records with these tags in the selected period.")</p>
         }
         else
         {
-            <h2 class="section-title">By category</h2>
+            <h2 class="section-title">@Tr("By category")</h2>
             <CategoryTotalsList Items="_categories.Items" Wallet="Wallet" Currency="@Currency" OnSelect="ShowCategoryRecords" />
         }
-        <h2 class="section-title">Last 12 months</h2>
+        <h2 class="section-title">@Tr("Last 12 months")</h2>
         <Chart Options="_chart" OnItemClick="ShowBarRecords"
-               Label="Monthly income and expenses with these tags. Tap a bar for its records. The table lists every month." />
+               Label="@Tr("Monthly income and expenses with these tags. Tap a bar for its records. The table lists every month.")" />
         <MonthTable Items="_monthly.Items" Currency="@Currency" />
     }
 
@@ -74,7 +75,7 @@ else
     private (string, string) PinView()
     {
         var names = string.Join(", ", Wallet!.Tags.Where(t => State.TagIds.Contains(t.Id)).Select(t => t.Name));
-        var title = $"Tags: {names}";
+        var title = Tr("Tags: {0}", names);
         return (title.Length > 100 ? title[..99] + "…" : title, PinnedChartQueries.Monthly(State, State.TagCategoryId, State.TagIds));
     }
 
@@ -88,8 +89,8 @@ else
     {
         if (StatsCharts.TryParseBar(key, out var type, out var month))
         {
-            var noun = type == RecordType.Income ? "Income" : "Expenses";
-            _preview = new RecordsPreviewQuery($"{noun} with these tags · {month:MMMM yyyy}", month, month.AddMonths(1), type, Currency,
+            var noun = type == RecordType.Income ? Tr("Income") : Tr("Expenses");
+            _preview = new RecordsPreviewQuery(Tr("{0} with these tags · {1}", noun, month.ToString("MMMM yyyy", CultureInfo.CurrentCulture)), month, month.AddMonths(1), type, Currency,
                 State.AccountId, State.TagCategoryId, State.TagIds);
         }
     }
@@ -99,7 +100,7 @@ else
         var category = StatsCharts.CategoryOf(Wallet!, categoryId);
         var type = category?.Type == CategoryType.Income ? RecordType.Income : RecordType.Expense;
         var (from, to) = State.Range;
-        _preview = new RecordsPreviewQuery($"{StatsCharts.NameOf(Wallet!, categoryId)} with these tags", from, to, type, Currency,
+        _preview = new RecordsPreviewQuery(Tr("{0} with these tags", StatsCharts.NameOf(Wallet!, categoryId)), from, to, type, Currency,
             State.AccountId, categoryId, State.TagIds);
     }
 
@@ -113,10 +114,10 @@ else
 
     private IReadOnlyList<(Guid?, string)> CategoryOptions => Wallet is null
         ? []
-        : [(null, "All categories"), .. Wallet.Categories
+        : [(null, Tr("All categories")), .. Wallet.Categories
             .Where(c => !c.IsArchived || c.Id == State.TagCategoryId)
             .OrderBy(c => c.Type).ThenBy(c => c.Name)
-            .Select(c => ((Guid?)c.Id, c.Type == CategoryType.Income ? $"{c.Name} (income)" : c.Name))];
+            .Select(c => ((Guid?)c.Id, c.Type == CategoryType.Income ? Tr("{0} (income)", c.Name) : c.Name))];
 
     protected override async Task OnParametersSetAsync()
     {

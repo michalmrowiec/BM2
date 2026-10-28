@@ -76,22 +76,24 @@
     --sheet: #fbf8f2;
     --sheet-raised: #fffdf8;
     --ink: #1b1a17;
-    --ink-muted: #6e675b;
+    --ink-muted: #675f53;
     --rule: #e2d9c8;
+    /* Form control borders: 3:1 against paper/sheet (WCAG 1.4.11) */
+    --control-border: #8f8574;
     --wash: #ece4d4;
     /* Accent: terracotta unless More picks another (data-accent, see the end of this file). */
-    --vivid: var(--accent, #d9481f);
+    --vivid: var(--accent, #c9411a);
     --on-vivid: #ffffff;
-    --link: var(--accent-link, #b9411f);
+    --link: var(--accent-link, #b13f1d);
     --negative: #b8361a;
-    --positive: #4f7a28;
-    --focus: var(--accent-link, #b9411f);
+    --positive: #476f24;
+    --focus: var(--accent-link, #b13f1d);
     --shadow: 0 1px 0 rgb(27 26 23 / 0.04), 0 10px 28px -14px rgb(27 26 23 / 0.22);
 
     /* Tag palette: text color on a ~15% tint of itself */
     --tag-red: #b3261e;
     --tag-orange: #b54708;
-    --tag-amber: #8a6100;
+    --tag-amber: #805c00;
     --tag-green: #2e7d32;
     --tag-teal: #0f766e;
     --tag-blue: #1d5fbf;
@@ -103,8 +105,8 @@
     --tag-brown: #8a5a3c;
     --tag-slate: #475569;
 
-    /* Calm accent for records waiting for a ✓; follows the theme through --tag-blue (amber next to ink blue) */
-    --attention: var(--accent-attention, var(--tag-blue));
+    /* Calm accent for records waiting for a ✓; follows the theme through --tag-amber */
+    --attention: var(--tag-amber);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -116,6 +118,7 @@
         --ink: #efe9dd;
         --ink-muted: #a79f90;
         --rule: #3a342d;
+        --control-border: #756d60;
         --wash: #2c2722;
         --vivid: var(--accent-dark, #ff7a50);
         --on-vivid: var(--on-accent-dark, #1a0d07);
@@ -148,6 +151,7 @@
     --ink: #efe9dd;
     --ink-muted: #a79f90;
     --rule: #3a342d;
+    --control-border: #756d60;
     --wash: #2c2722;
     --vivid: var(--accent-dark, #ff7a50);
     --on-vivid: var(--on-accent-dark, #1a0d07);
@@ -173,8 +177,8 @@
 
 :root[data-amounts="plain"] { --font-num: var(--font-ui); }
 
-/* Other accents (More → Accent color). Light text on --accent keeps 4.5:1; ink blue moves the ✓ accent to amber. */
+/* Other accents (More → Accent color). Light text on --accent and --accent-link on --wash keep 4.5:1. */
 :root[data-accent="ochre"] { --accent: #9c6210; --accent-link: #8a5a0f; --accent-dark: #f2b84b; --on-accent-dark: #2a1a00; --accent-link-dark: #f2b84b; }
-:root[data-accent="ink"] { --accent: #2c4a9e; --accent-link: #2c4a9e; --accent-dark: #8ea8ff; --on-accent-dark: #0b1230; --accent-link-dark: #9db4ff; --accent-attention: var(--tag-amber); }
+:root[data-accent="ink"] { --accent: #2c4a9e; --accent-link: #2c4a9e; --accent-dark: #8ea8ff; --on-accent-dark: #0b1230; --accent-link-dark: #9db4ff; }
 :root[data-accent="green"] { --accent: #1f6b4f; --accent-link: #1f6b4f; --accent-dark: #6fcf9f; --on-accent-dark: #06140d; --accent-link-dark: #7fd8ab; }
 :root[data-accent="plum"] { --accent: #8b2f5c; --accent-link: #8b2f5c; --accent-dark: #f08bb8; --on-accent-dark: #2a0a19; --accent-link-dark: #f5a3c7; }

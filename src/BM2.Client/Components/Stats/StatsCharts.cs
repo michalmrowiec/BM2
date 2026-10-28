@@ -4,6 +4,7 @@ using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Contracts.Stats;
 using BM2.Contracts.Wallets;
+using static BM2.Client.Localization.Strings;
 
 namespace BM2.Client.Components.Stats;
 
@@ -22,25 +23,28 @@ public static class StatsCharts
         id is null ? null : wallet.Categories.FirstOrDefault(c => c.Id == id);
 
     public static string NameOf(WalletSnapshot wallet, Guid? id) =>
-        id is null ? "No category" : CategoryOf(wallet, id)?.Name ?? "Deleted category";
+        id is null ? Tr("No category") : CategoryOf(wallet, id)?.Name ?? Tr("Deleted category");
 
     public static decimal Signed(decimal total, RecordType type) => type == RecordType.Expense ? -total : total;
 
     public static string Share(decimal part, decimal total) =>
         total == 0 ? "0%" : (part / total).ToString("P1", CultureInfo.CurrentCulture);
 
-    public static string Records(int count) => count == 1 ? "1 record" : $"{count} records";
+    public static string Records(int count) => Plural(count, "{0} record", "{0} records");
 
-    public static object Donut(IReadOnlyList<(string Id, string Name, decimal Value)> slices, string currency)
+    /// <param name="hidden">Ids of slices to leave out; the others keep their colors.</param>
+    public static object Donut(
+        IReadOnlyList<(string Id, string Name, decimal Value)> slices, string currency, IReadOnlyCollection<string>? hidden = null)
     {
-        var total = slices.Sum(s => s.Value);
+        var shown = slices.Select((s, i) => (Slice: s, Index: i)).Where(x => hidden?.Contains(x.Slice.Id) != true).ToList();
+        var total = shown.Sum(x => x.Slice.Value);
         return new
         {
-            tooltip = new { trigger = "item", formatter = "{b}<br/>{c} " + currency + " ({d}%)" },
+            tooltip = new { trigger = "item", formatter = "{b}<br/>{c} " + CurrencyLabel.Of(currency) + " ({d}%)" },
             title = new
             {
                 text = total.ToString("N0", CultureInfo.CurrentCulture),
-                subtext = currency,
+                subtext = CurrencyLabel.Of(currency),
                 left = "center",
                 top = "38%",
                 textStyle = new { color = "var(--ink)", fontFamily = NumberFont, fontSize = 22, fontWeight = 600 },
@@ -54,13 +58,13 @@ public static class StatsCharts
                     radius = new[] { "58%", "86%" },
                     label = new { show = false },
                     itemStyle = new { borderColor = "var(--sheet)", borderWidth = 2 },
-                    data = slices.Select((s, i) => new
+                    data = shown.Select(x => new
                     {
-                        id = s.Id,
-                        name = s.Name,
+                        id = x.Slice.Id,
+                        name = x.Slice.Name,
                         // A slice can't be negative (refunds above spending); the list still shows the real total.
-                        value = Math.Max(s.Value, 0),
-                        itemStyle = new { color = $"var({TokenOf(SwatchOf(i))})" },
+                        value = Math.Max(x.Slice.Value, 0),
+                        itemStyle = new { color = $"var({TokenOf(SwatchOf(x.Index))})" },
                     }).ToList(),
                 },
             },
@@ -73,25 +77,25 @@ public static class StatsCharts
         var series = new List<object>();
         if (only != RecordType.Expense)
         {
-            series.Add(Bars("Income", RecordType.Income, items, m => m.Income, only is null ? "var(--positive)" : "var(--vivid)"));
+            series.Add(Bars(Tr("Income"), RecordType.Income, items, m => m.Income, only is null ? "var(--positive)" : "var(--vivid)"));
         }
 
         if (only != RecordType.Income)
         {
-            series.Add(Bars("Expenses", RecordType.Expense, items, m => m.Expense, only is null ? "var(--negative)" : "var(--vivid)"));
+            series.Add(Bars(Tr("Expenses"), RecordType.Expense, items, m => m.Expense, only is null ? "var(--negative)" : "var(--vivid)"));
         }
 
         // Invested (transfers to investment accounts, net) only next to both types, and only when there is any.
         if (only is null && items.Any(m => m.Invested != 0))
         {
-            series.Add(Bars("Invested", RecordType.Transfer, items, m => m.Invested, "var(--link)"));
+            series.Add(Bars(Tr("Invested"), RecordType.Transfer, items, m => m.Invested, "var(--link)"));
         }
 
         if (only is null)
         {
             series.Add(new
             {
-                name = "Net",
+                name = Tr("Net"),
                 type = "line",
                 data = items.Select(m => m.Income - m.Expense).ToList(),
                 symbol = "circle",
@@ -150,7 +154,7 @@ public static class StatsCharts
         {
             new
             {
-                name = "Value",
+                name = Tr("Value"),
                 type = "line",
                 data = items.Select(v => v.Value).ToList(),
                 symbol = "circle",
@@ -160,7 +164,7 @@ public static class StatsCharts
             },
             new
             {
-                name = "Paid in",
+                name = Tr("Paid in"),
                 type = "line",
                 step = "end",
                 data = items.Select(v => v.PaidIn).ToList(),
@@ -171,7 +175,7 @@ public static class StatsCharts
         },
     };
 
-    /// <summary>Forecast balance as a line, with a dashed zero line.</summary>
+    /// <summary>Forecast balance as a line, with a dashed zero line and dashed band lines when there is a spread.</summary>
     public static object Forecast(IReadOnlyList<ForecastPoint> points) => new
     {
         grid = new { left = 4, right = 8, top = 12, bottom = 4, containLabel = true },
@@ -196,7 +200,7 @@ public static class StatsCharts
         {
             new
             {
-                name = "Balance",
+                name = Tr("Balance"),
                 type = "line",
                 data = points.Select(p => p.Balance).ToList(),
                 symbol = "none",
@@ -212,7 +216,17 @@ public static class StatsCharts
                     data = new[] { new { yAxis = 0 } },
                 },
             },
-        },
+        }.Concat(points.Any(p => p.Spread > 0) ? [Band(Tr("High"), points, 1), Band(Tr("Low"), points, -1)] : []).ToList(),
+    };
+
+    private static object Band(string name, IReadOnlyList<ForecastPoint> points, int sign) => new
+    {
+        name,
+        type = "line",
+        data = points.Select(p => p.Balance + sign * p.Spread).ToList(),
+        symbol = "none",
+        lineStyle = new { color = "var(--ink-muted)", width = 1, type = "dashed" },
+        itemStyle = new { color = "var(--ink-muted)" },
     };
 
     // Each bar's id ("Expense:2026-10-01") tells a click which records it stands for.

@@ -16,7 +16,7 @@
             <span>
                 @if (isToday)
                 {
-                    <text><span class="badge record-day__today">Today</span>@(" ")</text>
+                    <text><span class="badge record-day__today">@Tr("Today")</span>@(" ")</text>
                 }
                 @day.Date.ToString("dddd, d MMMM", CultureInfo.CurrentCulture)
             </span>
@@ -39,7 +39,7 @@
                     {
                         @* Tapping the icon selects; the rest of the row shows the record. *@
                         <button type="button" class="record-row__select" aria-pressed="@(selected ? "true" : "false")"
-                                aria-label="@($"Select {view.Title}")" @onclick="() => ToggleSelected(item.Id)">
+                                aria-label="@Tr("Select {0}", view.Title)" @onclick="() => ToggleSelected(item.Id)">
                             @if (selected)
                             {
                                 <span class="avatar avatar--selected" aria-hidden="true"><Icon Name="check" /></span>
@@ -58,20 +58,21 @@
                             <RecordAvatar Category="view.Category" Type="item.Type" Fallback="@view.Title" />
                         }
                         <span class="record-row__text">
-                            <span class="record-row__title">
+                            @* .marquee: text that doesn't fit scrolls sideways (BM2.Client.lib.module.js). *@
+                            <span class="record-row__title marquee"><span class="marquee__inner">
                                 @view.Title
                                 @if (item.RecurringRuleId is not null)
                                 {
-                                    <span class="record-row__auto" title="Added by a recurring rule"><Icon Name="repeat" /><span class="sr-only">Recurring</span></span>
+                                    <span class="record-row__auto" title="@Tr("Added by a recurring rule")"><Icon Name="repeat" /><span class="sr-only">@Tr("Recurring")</span></span>
                                 }
-                            </span>
-                            <span class="record-row__meta">
+                            </span></span>
+                            <span class="record-row__meta marquee"><span class="marquee__inner">
                                 <span class="record-row__where">@view.Meta</span>
                                 @if (item.PairWalletId is { } pairWallet)
                                 {
                                     <span aria-hidden="true"> · </span>
                                     <span class="record-row__pair">
-                                        @(item.PairPending ? $"→ {PairWalletName(pairWallet)} on confirm" : $"↔ {PairWalletName(pairWallet)}")
+                                        @(item.PairPending ? Tr("→ {0} on confirm", PairWalletName(pairWallet)) : $"↔ {PairWalletName(pairWallet)}")
                                     </span>
                                 }
                                 @foreach (var tag in view.Tags)
@@ -81,24 +82,24 @@
                                         <span class="tag-dot" aria-hidden="true"></span>@tag.Name
                                     </span>
                                 }
-                            </span>
+                            </span></span>
                         </span>
                         <span class="record-row__end">
                             <Amount Value="view.Amount" Currency="@view.Currency" Sign="view.Sign" />
                             @if (item.Type == RecordType.Income && view.Category?.Type == CategoryType.Expense)
                             {
-                                <span class="tag record-status" title="Lowers @view.Category.Name spending"><Icon Name="in" />Refund</span>
+                                <span class="tag record-status" title="@Tr("Lowers {0} spending", view.Category.Name)"><Icon Name="in" />@Tr("Refund")</span>
                             }
                             @if (open)
                             {
-                                <span class="tag record-status"><Icon Name="@(item.Status == RecordStatus.Pending ? "clock" : "calendar")" />@item.Status</span>
+                                <span class="tag record-status"><Icon Name="@(item.Status == RecordStatus.Pending ? "clock" : "calendar")" />@TemplateText.StatusLabel(item.Status)</span>
                             }
                         </span>
                     </button>
                     @if (open && CanWrite(item))
                     {
-                        <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {view.Title} as completed")"
-                                title="Mark as completed" disabled="@_busy" @onclick="() => Check(item)">
+                        <button type="button" class="icon-button record-row__confirm" aria-label="@Tr("Mark {0} as completed", view.Title)"
+                                title="@Tr("Mark as completed")" disabled="@_busy" @onclick="() => Check(item)">
                             <Icon Name="check" />
                         </button>
                     }
@@ -108,7 +109,7 @@
     </section>
 }
 
-<Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuShown is null ? "Record" : View(_menuShown).Title)">
+<Sheet Open="_menuFor is not null" OpenChanged="v => { if (!v) _menuFor = null; }" Title="@(_menuShown is null ? Tr("Record") : View(_menuShown).Title)">
     @if (_menuShown is { } record)
     {
         var details = View(record);
@@ -117,40 +118,40 @@
                 <Amount Value="details.Amount" Currency="@details.Currency" Sign="details.Sign" />
                 @if (record.Type != RecordType.Transfer && record.Currency != details.Currency)
                 {
-                    <span class="muted">paid <Amount Value="record.Amount" Currency="@record.Currency" /></span>
+                    <span class="muted">@Tr("paid") <Amount Value="record.Amount" Currency="@record.Currency" /></span>
                 }
             </div>
             <dl class="record-details__list">
-                <div><dt>Date</dt><dd>@record.OccurredOn.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture)</dd></div>
+                <div><dt>@Tr("Date")</dt><dd>@record.OccurredOn.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture)</dd></div>
                 @if (record.Status != RecordStatus.Completed)
                 {
                     <div>
-                        <dt>Status</dt>
-                        <dd>@record.Status <span class="muted">· @(record.Status == RecordStatus.Pending ? "counted, not checked yet" : "not counted yet")</span></dd>
+                        <dt>@Tr("Status")</dt>
+                        <dd>@TemplateText.StatusLabel(record.Status) <span class="muted">· @(record.Status == RecordStatus.Pending ? Tr("counted, not checked yet") : Tr("not counted yet"))</span></dd>
                     </div>
                 }
                 @if (record.Type == RecordType.Transfer)
                 {
-                    <div><dt>Transfer</dt><dd>@record.AccountName → @record.TransferAccountName</dd></div>
+                    <div><dt>@Tr("Transfer")</dt><dd>@record.AccountName → @record.TransferAccountName</dd></div>
                 }
                 else
                 {
                     <div>
-                        <dt>Category</dt>
+                        <dt>@Tr("Category")</dt>
                         <dd>
-                            @(details.Category?.Name ?? "No category")
+                            @(details.Category?.Name ?? Tr("No category"))
                             @if (record.Type == RecordType.Income && details.Category?.Type == CategoryType.Expense)
                             {
-                                <span class="muted"> · refund</span>
+                                <span class="muted"> · @Tr("refund")</span>
                             }
                         </dd>
                     </div>
-                    <div><dt>Account</dt><dd>@record.AccountName</dd></div>
+                    <div><dt>@Tr("Account")</dt><dd>@record.AccountName</dd></div>
                 }
                 @if (details.Tags.Count > 0)
                 {
                     <div>
-                        <dt>Tags</dt>
+                        <dt>@Tr("Tags")</dt>
                         <dd class="record-details__tags">
                             @foreach (var tag in details.Tags)
                             {
@@ -161,44 +162,44 @@
                 }
                 @if (record.PairWalletId is { } pairWallet)
                 {
-                    <div><dt>Linked</dt><dd>@(record.PairPending ? $"Sent to {PairWalletName(pairWallet)} on confirm" : $"Record in {PairWalletName(pairWallet)}")</dd></div>
+                    <div><dt>@Tr("Linked")</dt><dd>@(record.PairPending ? Tr("Sent to {0} on confirm", PairWalletName(pairWallet)) : Tr("Record in {0}", PairWalletName(pairWallet)))</dd></div>
                 }
                 @if (record.RecurringRuleId is not null)
                 {
-                    <div><dt>Repeats</dt><dd>Added by a recurring rule</dd></div>
+                    <div><dt>@Tr("Repeats")</dt><dd>@Tr("Added by a recurring rule")</dd></div>
                 }
             </dl>
         </div>
         @if (CanWrite(record))
         {
             <div class="record-details__actions">
-                <a class="btn btn-primary" href="@($"records/{record.Id}")"><Icon Name="edit" /> Edit</a>
+                <a class="btn btn-primary" href="@($"records/{record.Id}")"><Icon Name="edit" /> @Tr("Edit")</a>
                 @if (record.Status != RecordStatus.Completed)
                 {
                     <button type="button" class="btn btn-secondary" disabled="@_busy" @onclick="() => Check(record)">
-                        <Icon Name="check" /> @(record.Status == RecordStatus.Planned ? "Confirm…" : "Confirm")
+                        <Icon Name="check" /> @(record.Status == RecordStatus.Planned ? Tr("Confirm…") : Tr("Confirm"))
                     </button>
                 }
             </div>
             <ul class="menu-list">
                 <li>
-                    <a href="@($"records/new?copy={record.Id}")"><Icon Name="copy" /><span>Copy</span></a>
+                    <a href="@($"records/new?copy={record.Id}")"><Icon Name="copy" /><span>@Tr("Copy")</span></a>
                 </li>
                 <li>
-                    <button type="button" @onclick="() => SaveTemplateAsync(record)"><Icon Name="bolt" /><span>Save as template</span></button>
+                    <button type="button" @onclick="() => SaveTemplateAsync(record)"><Icon Name="bolt" /><span>@Tr("Save as template")</span></button>
                 </li>
                 <li>
                     @if (record.RecurringRuleId is { } ruleId)
                     {
-                        <a href="@($"recurring/{ruleId}")"><Icon Name="repeat" /><span>Edit recurring rule (future records)</span></a>
+                        <a href="@($"recurring/{ruleId}")"><Icon Name="repeat" /><span>@Tr("Edit recurring rule (future records)")</span></a>
                     }
                     else
                     {
-                        <a href="@($"recurring/new?from={record.Id}")"><Icon Name="repeat" /><span>Make recurring</span></a>
+                        <a href="@($"recurring/new?from={record.Id}")"><Icon Name="repeat" /><span>@Tr("Make recurring")</span></a>
                     }
                 </li>
                 <li>
-                    <button type="button" class="danger-text" @onclick="AskDelete"><Icon Name="trash" /><span>Delete</span></button>
+                    <button type="button" class="danger-text" @onclick="AskDelete"><Icon Name="trash" /><span>@Tr("Delete")</span></button>
                 </li>
             </ul>
         }
@@ -207,9 +208,9 @@
 
 @if (SelectedItems.Count > 0)
 {
-    <div class="selection-bar" role="region" aria-label="Selected records">
+    <div class="selection-bar" role="region" aria-label="@Tr("Selected records")">
         <div class="selection-bar__info">
-            <strong>@SelectedItems.Count selected</strong>
+            <strong>@Tr("{0} selected", SelectedItems.Count)</strong>
             <span class="selection-bar__sums">
                 @foreach (var (currency, sum) in SelectedSums)
                 {
@@ -217,7 +218,7 @@
                 }
                 @if (SelectedItems.Any(i => i.Type == RecordType.Transfer))
                 {
-                    <span class="selection-bar__note">transfers not counted</span>
+                    <span class="selection-bar__note">@Tr("transfers not counted")</span>
                 }
             </span>
         </div>
@@ -225,47 +226,47 @@
             @if (SelectedItems.Count < Items.Count)
             {
                 @* Selects the records loaded so far; scrolling loads more. *@
-                <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.UnionWith(Items.Select(i => i.Id))">Select all</button>
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _selected.UnionWith(Items.Select(i => i.Id))">@Tr("Select all")</button>
             }
             @if (SelectedOpen.Count > 0)
             {
                 <button type="button" class="btn btn-primary btn-sm" disabled="@_busy" @onclick="() => _confirmBulkComplete = true">
-                    <Icon Name="check" /> Complete
+                    <Icon Name="check" /> @Tr("Complete")
                 </button>
             }
             <button type="button" class="btn btn-danger btn-sm" @onclick="() => _confirmBulk = true">
-                <Icon Name="trash" /> Delete
+                <Icon Name="trash" /> @Tr("Delete")
             </button>
         </div>
-        <button type="button" class="icon-button selection-bar__clear" aria-label="Clear selection" @onclick="() => _selected.Clear()">
+        <button type="button" class="icon-button selection-bar__clear" aria-label="@Tr("Clear selection")" @onclick="() => _selected.Clear()">
             <Icon Name="close" />
         </button>
     </div>
 }
 
-<ConfirmDialog Open="_confirmBulk" OpenChanged="v => _confirmBulk = v" Title="@($"Delete {SelectedItems.Count} records?")"
-               ConfirmLabel="Delete" Danger="true" OnConfirm="DeleteSelectedAsync">
-    <p>This can't be undone. Records you can only view are skipped.</p>
+<ConfirmDialog Open="_confirmBulk" OpenChanged="v => _confirmBulk = v" Title="@Plural(SelectedItems.Count, "Delete {0} record?", "Delete {0} records?")"
+               ConfirmLabel="@Tr("Delete")" Danger="true" OnConfirm="DeleteSelectedAsync">
+    <p>@Tr("This can't be undone. Records you can only view are skipped.")</p>
 </ConfirmDialog>
 
 <ConfirmDialog Open="_confirmBulkComplete" OpenChanged="v => _confirmBulkComplete = v"
-               Title="@($"Mark {SelectedOpen.Count} records as completed?")" ConfirmLabel="Mark as completed"
+               Title="@Plural(SelectedOpen.Count, "Mark {0} record as completed?", "Mark {0} records as completed?")" ConfirmLabel="@Tr("Mark as completed")"
                OnConfirm="() => ConfirmAsync(SelectedOpen)">
-    <p>Selected pending and planned records become Completed. Planned ones start counting in balances, budgets and stats.</p>
+    <p>@Tr("Selected pending and planned records become Completed. Planned ones start counting in balances, budgets and stats.")</p>
 </ConfirmDialog>
 
 <ConfirmDialog Open="_confirmOne is not null" OpenChanged="v => { if (!v) _confirmOne = null; }"
-               Title="@($"Mark {(_confirmOne is null ? "record" : View(_confirmOne).Title)} as completed?")"
-               ConfirmLabel="Mark as completed" OnConfirm="() => ConfirmAsync([_confirmOne!])">
-    <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
+               Title="@Tr("Mark {0} as completed?", _confirmOne is null ? Tr("record") : View(_confirmOne).Title)"
+               ConfirmLabel="@Tr("Mark as completed")" OnConfirm="() => ConfirmAsync([_confirmOne!])">
+    <p>@Tr("It's marked as checked. It already counts in balances, so totals stay the same.")</p>
 </ConfirmDialog>
 
 <PlannedChoice Open="_choiceFor is not null" Title="@(_choiceFor is null ? null : View(_choiceFor).Title)" Closed="() => _choiceFor = null"
                Chosen="s => ConfirmAsync([_choiceFor!], s)" />
 
-<ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="Delete record?" ConfirmLabel="Delete"
+<ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="@Tr("Delete record?")" ConfirmLabel="@Tr("Delete")"
                Danger="true" OnConfirm="DeleteAsync">
-    <p>This can't be undone.</p>
+    <p>@Tr("This can't be undone.")</p>
 </ConfirmDialog>
 
 @code {
@@ -310,8 +311,12 @@
         var failed = await RecordConfirm.ConfirmAsync(Api, Wallet.Id, records, status);
         _busy = false;
         _selected.ExceptWith(records.Select(r => r.Id));
-        var done = status == RecordStatus.Pending ? "pending" : "completed";
-        Toasts.Show(failed == 0 ? (records.Count == 1 ? $"Marked as {done}." : $"{records.Count} records marked as {done}.") : $"{failed} couldn't be changed.",
+        var pending = status == RecordStatus.Pending;
+        Toasts.Show(failed == 0
+                ? (records.Count == 1
+                    ? (pending ? Tr("Marked as pending.") : Tr("Marked as completed."))
+                    : (pending ? Plural(records.Count, "{0} record marked as pending.", "{0} records marked as pending.") : Plural(records.Count, "{0} record marked as completed.", "{0} records marked as completed.")))
+                : Tr("{0} couldn't be changed.", failed),
             failed == 0 ? ToastKind.Success : ToastKind.Error);
         await WalletState.RefreshAsync();
     }
@@ -348,7 +353,7 @@
         }
 
         _selected.Clear();
-        Toasts.Show(failed == 0 ? $"{items.Count} records deleted." : $"{items.Count - failed} deleted, {failed} failed.",
+        Toasts.Show(failed == 0 ? Plural(items.Count, "{0} record deleted.", "{0} records deleted.") : Tr("{0} deleted, {1} failed.", items.Count - failed, failed),
             failed == 0 ? ToastKind.Success : ToastKind.Error);
         WalletState.ForgetSuggestions();
         await WalletState.RefreshAsync();
@@ -361,7 +366,7 @@
     /// <summary>The account the list is filtered by; transfers into it read as incoming.</summary>
     [Parameter] public Guid? AccountId { get; set; }
 
-    private string PairWalletName(Guid walletId) => WalletState.Wallets.FirstOrDefault(w => w.Id == walletId)?.Name ?? "another wallet";
+    private string PairWalletName(Guid walletId) => WalletState.Wallets.FirstOrDefault(w => w.Id == walletId)?.Name ?? Tr("another wallet");
 
     private string? CurrencyOf(Guid accountId) => Wallet.Accounts.FirstOrDefault(a => a.Id == accountId)?.Currency;
 
@@ -379,16 +384,16 @@
             var incoming = AccountId == item.TransferAccountId || CurrencyOf(item.AccountId) is null;
             var route = $"{item.AccountName} → {item.TransferAccountName}";
             return incoming
-                ? new RowView(item.Name ?? "Transfer", route, tags, null, item.TransferAmount ?? item.Amount,
+                ? new RowView(item.Name ?? Tr("Transfer"), route, tags, null, item.TransferAmount ?? item.Amount,
                     CurrencyOf(item.TransferAccountId!.Value) ?? item.Currency, AmountSign.Plus)
-                : new RowView(item.Name ?? "Transfer", route, tags, null, item.AccountAmount,
+                : new RowView(item.Name ?? Tr("Transfer"), route, tags, null, item.AccountAmount,
                     CurrencyOf(item.AccountId) ?? item.Currency, AmountSign.Minus);
         }
 
         var category = Wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId);
         var income = item.Type == RecordType.Income;
         return new RowView(
-            item.Name ?? category?.Name ?? (income ? "Income" : "Expense"),
+            item.Name ?? category?.Name ?? (income ? Tr("Income") : Tr("Expense")),
             item.Name is not null && category is not null ? $"{category.Name} · {item.AccountName}" : item.AccountName,
             tags,
             category,
@@ -403,11 +408,11 @@
         var result = await Api.PostAsync<TemplateItem>($"api/wallets/{Wallet.Id}/templates", TemplateText.FromRecord(record));
         if (result.Ok)
         {
-            Toasts.Show("Saved as template. It's pinned on Home.", ToastKind.Success);
+            Toasts.Show(Tr("Saved as template. It's pinned on Home."), ToastKind.Success);
         }
         else
         {
-            Toasts.Show(result.Problem!.Detail ?? "Couldn't save the template.", ToastKind.Error);
+            Toasts.Show(result.Problem!.Detail ?? Tr("Couldn't save the template."), ToastKind.Error);
         }
     }
 
@@ -423,7 +428,7 @@
         _deleting = null;
         if (result.Ok)
         {
-            Toasts.Show("Record deleted.");
+            Toasts.Show(Tr("Record deleted."));
             WalletState.ForgetSuggestions();
 
             // A new snapshot makes the pages reload their records and balances.

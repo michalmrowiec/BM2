@@ -2,6 +2,7 @@ using BM2.Contracts.Categories;
 using BM2.Contracts.Records;
 using BM2.Contracts.Templates;
 using BM2.Contracts.Wallets;
+using static BM2.Client.Localization.Strings;
 
 namespace BM2.Client.Components.Records;
 
@@ -12,7 +13,21 @@ public static class TemplateText
 
     /// <summary>Templates have no label of their own: the record name, else the category name.</summary>
     public static string Label(TemplateItem template, WalletSnapshot wallet) =>
-        template.Name ?? CategoryOf(template, wallet)?.Name ?? template.Type.ToString();
+        template.Name ?? CategoryOf(template, wallet)?.Name ?? TypeLabel(template.Type);
+
+    public static string TypeLabel(RecordType type) => type switch
+    {
+        RecordType.Income => Tr("Income"),
+        RecordType.Transfer => Tr("Transfer"),
+        _ => Tr("Expense"),
+    };
+
+    public static string StatusLabel(RecordStatus status) => status switch
+    {
+        RecordStatus.Pending => Tr("Pending"),
+        RecordStatus.Planned => Tr("Planned"),
+        _ => Tr("Completed"),
+    };
 
     public static string Currency(TemplateItem template, WalletSnapshot wallet) =>
         template.Currency

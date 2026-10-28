@@ -7,33 +7,33 @@
     <div class="budget__head">
         <span class="budget__name">
             <Icon Name="@(Category?.Icon ?? "category")" />
-            @(Category?.Name ?? "Deleted category")
+            @(Category?.Name ?? Tr("Deleted category"))
         </span>
         <span class="budget__state">
             @if (Over)
             {
-                <Icon Name="alert" /> @($"Over by {Format(Item.Spent - Item.Limit)}")
+                <Icon Name="alert" /> <span class="secret"><span>@Tr("Over by {0}", Format(Item.Spent - Item.Limit))</span></span>
             }
             else
             {
-                @($"{Format(Item.Limit - Item.Spent)} left")
+                <span class="secret"><span>@Tr("{0} left", Format(Item.Limit - Item.Spent))</span></span>
             }
         </span>
     </div>
     <progress class="budget__bar" max="100" value="@Percent.ToString(CultureInfo.InvariantCulture)" aria-hidden="true"></progress>
-    <span class="budget__numbers num">@Format(Item.Spent) of @Format(Item.Limit) @Currency</span>
+    <span class="budget__numbers num secret"><span>@Tr("{0} of {1} {2}", Format(Item.Spent), Format(Item.Limit), CurrencyLabel.Of(Currency))</span></span>
     @if (Item.Planned > 0)
     {
-        <span class="budget__note">
-            Planned: @Format(Item.Planned) more.
-            @(Item.Spent + Item.Planned > Item.Limit ? $"With it you'd be over by {Format(Item.Spent + Item.Planned - Item.Limit)}." : "Still within the limit.")
-        </span>
+        <span class="budget__note secret"><span>
+            @Tr("Planned: {0} more.", Format(Item.Planned))
+            @(Item.Spent + Item.Planned > Item.Limit ? Tr("With it you'd be over by {0}.", Format(Item.Spent + Item.Planned - Item.Limit)) : Tr("Still within the limit."))
+        </span></span>
     }
     @if (Item.OtherSpent.Count > 0)
     {
-        <span class="budget__note">
-            Not counted: @string.Join(", ", Item.OtherSpent.Select(o => $"{Format(o.Amount)} {o.Currency}")) on accounts in other currencies.
-        </span>
+        <span class="budget__note secret"><span>
+            @Tr("Not counted: {0} on accounts in other currencies.", string.Join(", ", Item.OtherSpent.Select(o => $"{Format(o.Amount)} {CurrencyLabel.Of(o.Currency)}")))
+        </span></span>
     }
 </div>
 

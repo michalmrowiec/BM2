@@ -6,17 +6,17 @@
 
 @* The records behind a chart bar or a list row: same filters as the stats (no planned, one currency). *@
 @* Renders the last query (_loaded), so the content stays while the sheet animates out. *@
-<Sheet Open="Query is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(_loaded?.Title ?? "Records")">
+<Sheet Open="Query is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(_loaded?.Title ?? Tr("Records"))">
     @if (_loaded is null)
     {
     }
     else if (_items is null)
     {
-        <p class="muted" aria-busy="true">Loading…</p>
+        <p class="muted" aria-busy="true">@Tr("Loading…")</p>
     }
     else if (_items.Count == 0)
     {
-        <p class="muted">No records.</p>
+        <p class="muted">@Tr("No records.")</p>
     }
     else
     {
@@ -28,7 +28,7 @@
             @foreach (var item in _items)
             {
                 var category = Wallet.Categories.FirstOrDefault(c => c.Id == item.CategoryId);
-                var title = item.Name ?? category?.Name ?? item.Type.ToString();
+                var title = item.Name ?? category?.Name ?? TypeLabel(item.Type);
                 <li @key="item.Id">
                     <ListRow Title="@title" Subtitle="@Subtitle(item, category?.Name)" Href="@($"records/{item.Id}")">
                         <Leading><RecordAvatar Category="category" Type="item.Type" Fallback="@title" /></Leading>
@@ -39,8 +39,13 @@
         </ul>
         @if (_more)
         {
-            <p class="muted">Showing the latest @_items.Count. Use Records with filters to see all.</p>
+            <p class="muted">@Tr("Showing the latest {0}. Use Show in Records to see all.", _items.Count)</p>
         }
+    }
+    @if (_loaded?.TagIds is not { Count: > 1 })
+    {
+        @* Records filters by one tag, so the link is offered for zero or one. *@
+        <a class="btn btn-secondary btn-block records-preview__open" href="@RecordsHref(_loaded)"><Icon Name="list" /> @Tr("Show in Records")</a>
     }
 </Sheet>
 
@@ -101,6 +106,51 @@
                 .ToList();
         }
     }
+
+    /// <summary>The Records page with the same period and filters (a whole month opens in month mode).</summary>
+    private static string RecordsHref(RecordsPreviewQuery? query)
+    {
+        if (query is null)
+        {
+            return "records";
+        }
+
+        var parts = new List<string>();
+        if (query.From.Day == 1 && query.To == query.From.AddMonths(1))
+        {
+            parts.Add("month=" + query.From.ToString("yyyy-MM", CultureInfo.InvariantCulture));
+        }
+        else
+        {
+            parts.Add("from=" + query.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            parts.Add("to=" + query.To.AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        }
+
+        parts.Add("type=" + query.Type);
+        if (query.AccountId is { } account)
+        {
+            parts.Add("accountId=" + account);
+        }
+
+        if (query.CategoryId is { } category)
+        {
+            parts.Add("categoryId=" + category);
+        }
+
+        if (query.TagIds?.FirstOrDefault() is { } tag && tag != Guid.Empty)
+        {
+            parts.Add("tagId=" + tag);
+        }
+
+        return "records?" + string.Join("&", parts);
+    }
+
+    private static string TypeLabel(RecordType type) => type switch
+    {
+        RecordType.Expense => Tr("Expense"),
+        RecordType.Income => Tr("Income"),
+        _ => Tr("Transfer"),
+    };
 
     private string? CurrencyOf(Guid accountId) => Wallet.Accounts.FirstOrDefault(a => a.Id == accountId)?.Currency;
 

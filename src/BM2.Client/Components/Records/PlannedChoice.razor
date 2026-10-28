@@ -1,20 +1,20 @@
 @using BM2.Contracts.Records
 
 @* Planned records can become pending (it happened, check it later) or completed (checked). *@
-<Sheet Open="Open" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(Title ?? (Count == 1 ? "Planned record" : $"{Count} planned records"))">
+<Sheet Open="Open" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@(Title ?? Plural(Count, "Planned record", "{0} planned records"))">
     <ul class="menu-list">
         <li>
             <button type="button" @onclick="() => Chosen.InvokeAsync(RecordStatus.Completed)">
-                <Icon Name="check" /><span>Completed – it's done and checked</span>
+                <Icon Name="check" /><span>@Tr("Completed – it's done and checked")</span>
             </button>
         </li>
         <li>
             <button type="button" @onclick="() => Chosen.InvokeAsync(RecordStatus.Pending)">
-                <Icon Name="clock" /><span>Pending – it happened, I'll check it later</span>
+                <Icon Name="clock" /><span>@Tr("Pending – it happened, I'll check it later")</span>
             </button>
         </li>
     </ul>
-    <p class="budget__note">Both count in balances, budgets and stats from now on.</p>
+    <p class="budget__note">@Tr("Both count in balances, budgets and stats from now on.")</p>
 </Sheet>
 
 @code {

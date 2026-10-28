@@ -14,7 +14,7 @@
                 }
                 @toast.Message
             </span>
-            <button type="button" class="icon-button" aria-label="Dismiss" @onclick="() => Toasts.Dismiss(toast.Id)">
+            <button type="button" class="icon-button" aria-label="@Tr("Dismiss")" @onclick="() => Toasts.Dismiss(toast.Id)">
                 <Icon Name="close" />
             </button>
         </div>

@@ -1,6 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BM2.Client.Localization;
+using BM2.Contracts.Common;
 using Microsoft.AspNetCore.Components;
 
 namespace BM2.Client.Services;
@@ -70,7 +72,11 @@ public sealed class ApiClient(HttpClient http, NavigationManager navigation, Toa
             var problem = await ReadProblemAsync(response);
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
-                toasts.Show(problem.Detail ?? "Too many requests. Wait a minute and try again.", ToastKind.Error);
+                toasts.Show(problem.Detail ?? Strings.Tr("Too many requests. Wait a minute and try again."), ToastKind.Error);
+            }
+            else if (response.StatusCode == HttpStatusCode.Forbidden && problem.Detail == Strings.TrMessage(Demo.ReadOnlyMessage))
+            {
+                toasts.Show(problem.Detail, ToastKind.Error);
             }
 
             return (null, problem);
@@ -89,7 +95,9 @@ public sealed class ApiClient(HttpClient http, NavigationManager navigation, Toa
         try
         {
             var payload = await response.Content.ReadFromJsonAsync<ProblemPayload>();
-            return new ApiProblem(status, payload?.Detail, payload?.Errors ?? new Dictionary<string, string[]>());
+            var errors = payload?.Errors?.ToDictionary(e => e.Key, e => e.Value.Select(Strings.TrMessage).ToArray());
+            return new ApiProblem(status, payload?.Detail is { } detail ? Strings.TrMessage(detail) : null,
+                errors ?? new Dictionary<string, string[]>());
         }
         catch (JsonException)
         {

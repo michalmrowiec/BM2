@@ -5,10 +5,10 @@
 @* Creates a wallet, or edits one when WalletId is set. *@
 <EditForm Model="_model" OnValidSubmit="SubmitAsync" class="form-stack">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="m => ((FormModel)m).ToCreateRequest()" />
-    <TextField Label="Name" @bind-Value="_model.Name" autocomplete="off" />
-    <SelectField Label="Currency" @bind-Value="_model.BaseCurrency" Options="Options.Currencies"
-                 Hint="Totals and reports for this wallet use this currency." />
-    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(WalletId is null ? "Create wallet" : "Save")</button>
+    <TextField Label="@Tr("Name")" @bind-Value="_model.Name" autocomplete="off" />
+    <SelectField Label="@Tr("Currency")" @bind-Value="_model.BaseCurrency" Options="Options.Currencies"
+                 Hint="@Tr("Totals and reports for this wallet use this currency.")" />
+    <button type="submit" class="btn btn-primary btn-block" disabled="@_busy">@(WalletId is null ? Tr("Create wallet") : Tr("Save"))</button>
 </EditForm>
 
 @code {
@@ -28,7 +28,7 @@
 
     // Once: re-rendering the parent must not wipe what the user typed (callers use @key to reset).
     protected override void OnInitialized() =>
-        _model = new FormModel { Name = Name ?? (WalletId is null ? "Personal" : ""), BaseCurrency = BaseCurrency ?? "PLN" };
+        _model = new FormModel { Name = Name ?? (WalletId is null ? Tr("Personal") : ""), BaseCurrency = BaseCurrency ?? "PLN" };
 
     private async Task SubmitAsync()
     {

@@ -22,14 +22,14 @@
     <Authorized>
         @if (!WalletState.IsLoaded)
         {
-            <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+            <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
         }
         else if (WalletState.Wallets.Count == 0)
         {
             <section class="onboarding">
-                <p class="eyebrow">Welcome to BM2</p>
-                <h1 class="page-title">Start with a wallet</h1>
-                <p class="lead">A wallet holds your accounts and records. You can share it with family later.</p>
+                <p class="eyebrow">@Tr("Welcome to BM2")</p>
+                <h1 class="page-title">@Tr("Start with a wallet")</h1>
+                <p class="lead">@Tr("A wallet holds your accounts and records. You can share it with family later.")</p>
                 <div class="card">
                     <WalletForm OnSaved="WalletState.SelectAsync" />
                 </div>
@@ -40,13 +40,14 @@
             <h1 class="page-title">@wallet.Name</h1>
 
             var active = wallet.Accounts.Where(a => !a.IsArchived).ToList();
-            var accounts = active.Where(a => a.Kind == AccountKind.Cash).ToList();
-            var investments = active.Where(a => a.Kind == AccountKind.Investment).ToList();
+            var counted = active.Where(a => !a.ExcludeFromTotal).ToList();
+            var accounts = active.Where(a => a.Kind == AccountKind.Cash && a.ShowOnDashboard).ToList();
+            var investments = active.Where(a => a.Kind == AccountKind.Investment && a.ShowOnDashboard).ToList();
             if (active.Count > 0)
             {
-                <section class="balance" aria-label="Total balance">
+                <section class="balance" aria-label="@Tr("Total balance")">
                     @* Whole wallet: cash balances plus investment values; the forecast stays cash only. *@
-                    @foreach (var total in active.GroupBy(a => a.Currency).Select(g => (
+                    @foreach (var total in counted.GroupBy(a => a.Currency).Select(g => (
                                   Currency: g.Key,
                                   Cash: g.Where(a => a.Kind == AccountKind.Cash).Sum(a => a.Balance),
                                   Invested: g.Where(a => a.Kind == AccountKind.Investment).Sum(a => a.Valuation ?? a.Balance),
@@ -59,14 +60,14 @@
                         @if (total.HasInvestments)
                         {
                             <span class="balance__planned balance__split">
-                                <span>Cash <Amount Value="total.Cash" Currency="@total.Currency" Sign="@(total.Cash < 0 ? AmountSign.Minus : AmountSign.None)" /></span>
-                                <span>Investments <Amount Value="total.Invested" Currency="@total.Currency" Sign="@(total.Invested < 0 ? AmountSign.Minus : AmountSign.None)" /></span>
+                                <span>@Tr("Cash") <Amount Value="total.Cash" Currency="@total.Currency" Sign="@(total.Cash < 0 ? AmountSign.Minus : AmountSign.None)" /></span>
+                                <span>@Tr("Investments") <Amount Value="total.Invested" Currency="@total.Currency" Sign="@(total.Invested < 0 ? AmountSign.Minus : AmountSign.None)" /></span>
                             </span>
                         }
                         @if (total.WithPlanned != total.Sum)
                         {
                             <span class="balance__planned">
-                                With planned:
+                                @Tr("With planned:")
                                 <Amount Value="total.WithPlanned" Currency="@total.Currency"
                                         Sign="@(total.WithPlanned < 0 ? AmountSign.Minus : AmountSign.None)" />
                             </span>
@@ -88,7 +89,7 @@
 
                 @if (investments.Count > 0)
                 {
-                    <h2 class="section-title">Investments</h2>
+                    <h2 class="section-title">@Tr("Investments")</h2>
                     <ul class="account-cards">
                         @foreach (var account in investments)
                         {
@@ -98,7 +99,7 @@
                                     <span class="account-card__name">@account.Name</span>
                                     <Amount Value="value" Currency="@account.Currency" Sign="@(value < 0 ? AmountSign.Minus : AmountSign.None)" />
                                     <span class="account-card__meta">
-                                        Gain <Amount Value="Math.Abs(value - account.Balance)" Currency="@account.Currency"
+                                        @Tr("Gain") <Amount Value="Math.Abs(value - account.Balance)" Currency="@account.Currency"
                                                      Sign="@(value < account.Balance ? AmountSign.Minus : AmountSign.Plus)" />
                                     </span>
                                 </button>
@@ -116,15 +117,15 @@
                         @foreach (var total in _month.Totals)
                         {
                             <a class="stat" href="records?type=Income">
-                                <span class="stat__label">Income</span>
+                                <span class="stat__label">@Tr("Income")</span>
                                 <Amount Value="total.Income" Currency="@total.Currency" Sign="AmountSign.Plus" />
                             </a>
                             <a class="stat" href="records?type=Expense">
-                                <span class="stat__label">Expenses</span>
+                                <span class="stat__label">@Tr("Expenses")</span>
                                 <Amount Value="total.Expense" Currency="@total.Currency" Sign="AmountSign.Minus" />
                             </a>
                             <a class="stat" href="records">
-                                <span class="stat__label">Balance</span>
+                                <span class="stat__label">@Tr("Balance")</span>
                                 <Amount Value="total.Income - total.Expense" Currency="@total.Currency" />
                             </a>
                         }
@@ -134,15 +135,15 @@
                 @if (_pending.Count > 0)
                 {
                     <div class="section-header">
-                        <h2 class="section-title">To confirm</h2>
+                        <h2 class="section-title">@Tr("To confirm")</h2>
                         <span class="section-header__actions">
                             @if (_pending.Count > 1)
                             {
                                 <button type="button" class="btn btn-secondary btn-sm" disabled="@_busy" @onclick="() => _confirmAll = true">
-                                    <Icon Name="check" /> Confirm all
+                                    <Icon Name="check" /> @Tr("Confirm all")
                                 </button>
                             }
-                            <a class="link" href="records?status=Pending&all=true">All</a>
+                            <a class="link" href="records?status=Pending&all=true">@Tr("All")</a>
                         </span>
                     </div>
                     @OpenRecords(_pending, wallet)
@@ -151,15 +152,15 @@
                 @if (_planned.Count > 0)
                 {
                     <div class="section-header">
-                        <h2 class="section-title">Planned</h2>
+                        <h2 class="section-title">@Tr("Planned")</h2>
                         <span class="section-header__actions">
                             @if (_planned.Count > 1)
                             {
                                 <button type="button" class="btn btn-secondary btn-sm" disabled="@_busy" @onclick="() => _choiceAll = true">
-                                    <Icon Name="check" /> Confirm all
+                                    <Icon Name="check" /> @Tr("Confirm all")
                                 </button>
                             }
-                            <a class="link" href="records?status=Planned&all=true">All</a>
+                            <a class="link" href="records?status=Planned&all=true">@Tr("All")</a>
                         </span>
                     </div>
                     @OpenRecords(_planned, wallet)
@@ -168,8 +169,8 @@
                 @if (_templates.Count > 0)
                 {
                     <div class="section-header">
-                        <h2 class="section-title">Quick add</h2>
-                        <a class="link" href="templates">Templates</a>
+                        <h2 class="section-title">@Tr("Quick add")</h2>
+                        <a class="link" href="templates">@Tr("Templates")</a>
                     </div>
                     <ul class="template-bar">
                         @foreach (var template in _templates)
@@ -192,8 +193,8 @@
                 @if (_budgets is { Items.Count: > 0 } budgets)
                 {
                     <div class="section-header">
-                        <h2 class="section-title">Budgets</h2>
-                        <a class="link" href="budgets">All budgets</a>
+                        <h2 class="section-title">@Tr("Budgets")</h2>
+                        <a class="link" href="budgets">@Tr("All budgets")</a>
                     </div>
                     <ul class="budget-list">
                         @foreach (var item in BudgetBar.ByUsage(budgets.Items).Take(4))
@@ -211,8 +212,8 @@
                 @if (_pins.Count > 0)
                 {
                     <div class="section-header">
-                        <h2 class="section-title">Pinned charts</h2>
-                        <a class="link" href="stats">Stats</a>
+                        <h2 class="section-title">@Tr("Pinned charts")</h2>
+                        <a class="link" href="stats">@Tr("Stats")</a>
                     </div>
                     <div class="pinned-charts">
                         @foreach (var pin in _pins)
@@ -225,14 +226,14 @@
                 @if (_upcoming.Count > 0)
                 {
                     <div class="section-header">
-                        <h2 class="section-title">Upcoming</h2>
-                        <a class="link" href="recurring">Recurring</a>
+                        <h2 class="section-title">@Tr("Upcoming")</h2>
+                        <a class="link" href="recurring">@Tr("Recurring")</a>
                     </div>
                     <ul class="list">
                         @foreach (var (rule, index, date) in _upcoming)
                         {
                             var name = rule.Record.Name is { } n ? n + rule.Schedule.Suffix(index) : null;
-                            var label = name ?? wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? rule.Record.Type.ToString();
+                            var label = name ?? wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? Tr(rule.Record.Type.ToString());
                             <li @key="(rule.Id, index)">
                                 <ListRow Title="@label" Subtitle="@date.ToString("dddd, d MMM")" Href="@($"recurring/{rule.Id}")">
                                     <Leading>
@@ -251,20 +252,20 @@
                 @if (_recent.Count > 0)
                 {
                     <div class="section-header">
-                        <h2 class="section-title">Recent</h2>
-                        <a class="link" href="records">All records</a>
+                        <h2 class="section-title">@Tr("Recent")</h2>
+                        <a class="link" href="records">@Tr("All records")</a>
                     </div>
                     <RecordList Items="_recent" Wallet="wallet" />
                 }
             }
             else
             {
-                <EmptyState IconName="wallet" Title="Add your first account">
-                    <ChildContent>Accounts are where your money lives: cash, a bank account, savings.</ChildContent>
+                <EmptyState IconName="wallet" Title="@Tr("Add your first account")">
+                    <ChildContent>@Tr("Accounts are where your money lives: cash, a bank account, savings.")</ChildContent>
                     <Actions>
                         @if (wallet.Permissions.ManageAccounts)
                         {
-                            <a class="btn btn-primary" href="accounts">Add account</a>
+                            <a class="btn btn-primary" href="accounts">@Tr("Add account")</a>
                         }
                     </Actions>
                 </EmptyState>
@@ -272,33 +273,33 @@
         }
         else
         {
-            <EmptyState IconName="wallet" Title="Couldn't load your wallet">
-                <ChildContent>Check your connection and try again.</ChildContent>
+            <EmptyState IconName="wallet" Title="@Tr("Couldn't load your wallet")">
+                <ChildContent>@Tr("Check your connection and try again.")</ChildContent>
                 <Actions>
-                    <button type="button" class="btn btn-secondary" @onclick="WalletState.RefreshAsync">Try again</button>
+                    <button type="button" class="btn btn-secondary" @onclick="WalletState.RefreshAsync">@Tr("Try again")</button>
                 </Actions>
             </EmptyState>
         }
     </Authorized>
     <NotAuthorized>
         <section class="hero">
-            <p class="eyebrow">Personal finance</p>
-            <h1 class="display">Your money, <span class="accent">in ink.</span></h1>
-            <p class="lead">A calm, fast ledger for everyday spending, shared wallets and what's coming next.</p>
-            <a class="btn btn-primary" href="Account/Login">Log in</a>
+            <p class="eyebrow">@Tr("Personal finance")</p>
+            <h1 class="display">@Tr("Your money,") <span class="accent">@Tr("in ink.")</span></h1>
+            <p class="lead">@Tr("A calm, fast ledger for everyday spending, shared wallets and what's coming next.")</p>
+            <a class="btn btn-primary" href="Account/Login">@Tr("Log in")</a>
         </section>
     </NotAuthorized>
 </AuthorizeView>
 
-<ConfirmDialog Open="_confirmAll" OpenChanged="v => _confirmAll = v" Title="@($"Confirm {_pending.Count} records?")"
-               ConfirmLabel="Confirm all" OnConfirm="ConfirmAllAsync">
-    <p>The records shown in To confirm are marked as checked (Completed). They already count in balances, so totals stay the same.</p>
+<ConfirmDialog Open="_confirmAll" OpenChanged="v => _confirmAll = v" Title="@Plural(_pending.Count, "Confirm {0} record?", "Confirm {0} records?")"
+               ConfirmLabel="@Tr("Confirm all")" OnConfirm="ConfirmAllAsync">
+    <p>@Tr("The records shown in To confirm are marked as checked (Completed). They already count in balances, so totals stay the same.")</p>
 </ConfirmDialog>
 
 <ConfirmDialog Open="_confirmOne is not null" OpenChanged="v => { if (!v) _confirmOne = null; }"
-               Title="@($"Mark {_confirmOne?.Name ?? "record"} as completed?")"
-               ConfirmLabel="Mark as completed" OnConfirm="() => ConfirmManyAsync([_confirmOne!])">
-    <p>It's marked as checked. It already counts in balances, so totals stay the same.</p>
+               Title="@Tr("Mark {0} as completed?", _confirmOne?.Name ?? Tr("record"))"
+               ConfirmLabel="@Tr("Mark as completed")" OnConfirm="() => ConfirmManyAsync([_confirmOne!])">
+    <p>@Tr("It's marked as checked. It already counts in balances, so totals stay the same.")</p>
 </ConfirmDialog>
 
 <PlannedChoice Open="_choiceFor is not null" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
@@ -321,7 +322,7 @@
         @<ul class="list">
             @foreach (var record in records)
             {
-                var label = record.Name ?? wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)?.Name ?? record.Type.ToString();
+                var label = record.Name ?? wallet.Categories.FirstOrDefault(c => c.Id == record.CategoryId)?.Name ?? Tr(record.Type.ToString());
                 <li class="template-row record-row--@record.Status.ToString().ToLowerInvariant()" @key="record.Id">
                     <ListRow Title="@label" Subtitle="@record.OccurredOn.ToString("d MMM")" Href="@($"records/{record.Id}")">
                         <Leading>
@@ -332,8 +333,8 @@
                             <Amount Value="record.Amount" Currency="@record.Currency" Sign="TemplateText.Sign(record.Type)" />
                         </Trailing>
                     </ListRow>
-                    <button type="button" class="icon-button record-row__confirm" aria-label="@($"Mark {label} as completed")"
-                            title="Mark as completed" disabled="@_busy" @onclick="() => Check(record)">
+                    <button type="button" class="icon-button record-row__confirm" aria-label="@Tr("Mark {0} as completed", label)"
+                            title="@Tr("Mark as completed")" disabled="@_busy" @onclick="() => Check(record)">
                         <Icon Name="check" />
                     </button>
                 </li>
@@ -419,7 +420,7 @@
         if (result.Ok)
         {
             _pins = _pins.Where(p => p.Id != pin.Id).ToList();
-            Toasts.Show($"Unpinned: {pin.Title}");
+            Toasts.Show(Tr("Unpinned: {0}", pin.Title));
         }
         else
         {
@@ -435,8 +436,13 @@
         _busy = true;
         var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records, status);
         _busy = false;
-        var done = status == RecordStatus.Pending ? "pending" : "completed";
-        Toasts.Show(failed == 0 ? (records.Count == 1 ? $"Marked as {done}." : $"{records.Count} records marked as {done}.") : $"{failed} couldn't be changed.",
+        var pending = status == RecordStatus.Pending;
+        Toasts.Show(failed == 0
+                ? (records.Count == 1
+                    ? Tr(pending ? "Marked as pending." : "Marked as completed.")
+                    : Plural(records.Count, pending ? "{0} record marked as pending." : "{0} record marked as completed.",
+                        pending ? "{0} records marked as pending." : "{0} records marked as completed."))
+                : Tr("{0} couldn't be changed.", failed),
             failed == 0 ? ToastKind.Success : ToastKind.Error);
         await WalletState.RefreshAsync();
     }

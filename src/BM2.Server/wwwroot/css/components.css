@@ -34,10 +34,29 @@
     background: var(--vivid);
 }
 
+.demo-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    margin-left: var(--space-2);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--vivid);
+    border-radius: var(--radius-pill);
+    color: var(--link);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.demo-badge:active {
+    background: var(--wash);
+}
+
 .app-header__actions {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    min-width: 0;
 }
 
 .app-main {
@@ -73,9 +92,19 @@
 
 .theme-toggle .icon { display: none; }
 
-:root[data-theme-mode="light"] .theme-toggle .theme-icon-light,
-:root[data-theme-mode="dark"] .theme-toggle .theme-icon-dark,
-:root:not([data-theme-mode="light"]):not([data-theme-mode="dark"]) .theme-toggle .theme-icon-system {
+:root:not([data-theme="dark"]) .theme-toggle .theme-icon-light,
+:root[data-theme="dark"] .theme-toggle .theme-icon-dark {
+    display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .theme-toggle .theme-icon-light { display: none; }
+    :root:not([data-theme]) .theme-toggle .theme-icon-dark { display: block; }
+}
+
+.balances-toggle .icon { display: none; }
+:root:not([data-balances="hidden"]) .balances-toggle .balances-icon-shown,
+:root[data-balances="hidden"] .balances-toggle .balances-icon-hidden {
     display: block;
 }
 
@@ -502,7 +531,7 @@ button.list-row:hover { background: var(--wash); }
     width: 100%;
     min-height: var(--tap);
     padding: 0 var(--space-4);
-    border: 1px solid var(--rule);
+    border: 1px solid var(--control-border);
     border-radius: var(--radius);
     background: var(--sheet);
     color: var(--ink);
@@ -827,6 +856,7 @@ button.list-row:hover { background: var(--wash); }
     align-items: center;
     gap: var(--space-1);
     max-width: 11rem;
+    min-width: 0;
     min-height: var(--tap);
     padding: 0 var(--space-3) 0 var(--space-4);
     border: 1px solid var(--rule);
@@ -1124,7 +1154,7 @@ button.account-card {
 .segmented__option[data-value="Expense"] { --type-color: var(--tag-red); }
 .segmented__option[data-value="Income"] { --type-color: var(--tag-green); }
 .segmented__option[data-value="Refund"] { --type-color: var(--tag-amber); }
-.segmented__option[data-value="Transfer"] { --type-color: var(--tag-blue); }
+.segmented__option[data-value="Transfer"] { --type-color: var(--ink); }
 
 .record-form__refund {
     display: flex;
@@ -1284,6 +1314,28 @@ button.account-card {
     }
 }
 
+/* Phones: an open form hides the bottom navigation and Save takes its place at the bottom edge. */
+.bottom-nav {
+    transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease), visibility var(--dur);
+}
+
+@media (max-width: 47.99rem) {
+    body:has(.record-form__submit) .bottom-nav {
+        visibility: hidden;
+        opacity: 0;
+        transform: translate(-50%, calc(100% + var(--space-3) + env(safe-area-inset-bottom)));
+    }
+
+    body:has(.record-form__submit) .app-main {
+        padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+    }
+
+    .record-form__submit {
+        bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+        min-height: 3.25rem;
+    }
+}
+
 /* Records */
 .records-loading { animation: fade-in var(--dur) ease-out 120ms both; }
 
@@ -1327,6 +1379,17 @@ button.account-card {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    min-width: 0;
+}
+
+.month-switcher .chip { flex-shrink: 0; }
+
+/* Very narrow phones show the abbreviated month (the button's aria-label keeps the full one). */
+.month-switcher__short { display: none; }
+
+@media (max-width: 25rem) {
+    .month-switcher__full { display: none; }
+    .month-switcher__short { display: inline; }
 }
 
 .month-switcher__label {
@@ -1337,11 +1400,20 @@ button.account-card {
     font-weight: 600;
     text-align: center;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-inline: var(--space-2);
 }
 
 /* Phones: header buttons show only their icons (the label stays for screen readers), the month fits one line. */
 @media (max-width: 30rem) {
     .month-switcher__label { font-size: var(--text-m); }
+
+    /* Longer Polish labels (e.g. four record types) must fit without clipping. */
+    .segmented--block .segmented__option {
+        padding: 0 var(--space-1);
+        font-size: var(--text-s);
+    }
 
     .page-header__actions .btn__label {
         position: absolute;
@@ -1439,6 +1511,14 @@ button.account-card {
 .record-day__total {
     display: flex;
     gap: var(--space-3);
+    font-size: var(--text-xs);
+    font-weight: 500;
+}
+
+/* The day total is context, not a balance: muted, in the UI font (like the gain on account cards), no plus/minus colors. */
+.record-day__total .amount {
+    font: inherit;
+    color: var(--ink-muted);
 }
 
 /* Today stands out, so planned rows above it don't hide where today starts. */
@@ -1499,24 +1579,35 @@ button.account-card {
     min-width: 0;
 }
 
-/* Up to two lines, so names stay readable on phones; the details sheet shows everything. */
-.record-row__title {
-    display: -webkit-box;
-    overflow: hidden;
-    font-weight: 500;
-    overflow-wrap: anywhere;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-}
+/* One line each; text that doesn't fit scrolls (.marquee), the details sheet shows everything. */
+.record-row__title { font-weight: 500; }
 
 /* Line 2 is one run of text, so a narrow row cuts the tags at the end, not the category and account. */
 .record-row__meta {
-    overflow: hidden;
     font-size: var(--text-s);
     color: var(--ink-muted);
+}
+
+/* Overflowing text: an ellipsis, or with motion a calm scroll there and back. JS sets [data-marquee] and the vars. */
+.marquee {
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .marquee[data-marquee] { text-overflow: clip; }
+
+    .marquee[data-marquee] > .marquee__inner {
+        display: inline-block;
+        animation: marquee var(--marquee-time, 8s) ease-in-out infinite;
+    }
+}
+
+@keyframes marquee {
+    0%, 20% { transform: translateX(0); }
+    50%, 65% { transform: translateX(var(--marquee-shift, 0)); }
+    90%, 100% { transform: translateX(0); }
 }
 
 /* Tags read as part of line 2: a dot in the tag color (outline when none), then the name */
@@ -1626,7 +1717,8 @@ button.account-card {
 .record-status .icon { width: 0.9em; height: 0.9em; }
 .record-row--pending .record-status { color: var(--attention); }
 
-.record-row__confirm { flex: none; margin-right: var(--space-1); color: var(--attention); }
+.record-row__confirm { flex: none; margin-right: var(--space-1); color: var(--ink-muted); }
+.record-row__confirm:is(:hover, :active) { color: var(--ink); }
 
 /* Record details sheet: amount, a label/value list, then the actions */
 .record-details {
@@ -2006,6 +2098,7 @@ button.account-card {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    flex: none;
 }
 
 /* Records: select by tapping the icon */
@@ -2295,7 +2388,7 @@ button.account-card {
     box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
 }
 
-.accent-swatch--terracotta { background: linear-gradient(135deg, #d9481f 50%, #ff7a50 50%); }
+.accent-swatch--terracotta { background: linear-gradient(135deg, #c9411a 50%, #ff7a50 50%); }
 .accent-swatch--ochre { background: linear-gradient(135deg, #9c6210 50%, #f2b84b 50%); }
 .accent-swatch--ink { background: linear-gradient(135deg, #2c4a9e 50%, #8ea8ff 50%); }
 .accent-swatch--green { background: linear-gradient(135deg, #1f6b4f 50%, #6fcf9f 50%); }
@@ -2311,6 +2404,36 @@ button.account-card {
 .stats-swatch--red { background: var(--tag-red); }
 
 .stats-total { margin: var(--space-3) 0; }
+
+/* Category toggles: the swatch is a checkbox; a left-out category stays listed, faded. */
+.stats-hidden {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: 2.25rem;
+    margin: 0 0 var(--space-2);
+    font-size: 0.875rem;
+}
+
+.stats-list__item { display: flex; align-items: stretch; }
+.stats-list__item > .list-row { flex: 1; min-width: 0; }
+.stats-list__item.is-hidden > .list-row { opacity: 0.5; }
+
+.stats-toggle {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    cursor: pointer;
+}
+
+.stats-toggle input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.stats-toggle .stats-swatch { width: 1rem; height: 1rem; }
+.stats-toggle input:not(:checked) + .stats-swatch { background: transparent; box-shadow: inset 0 0 0 2px var(--ink-muted); }
+.stats-toggle input:focus-visible + .stats-swatch { outline: 2px solid var(--focus); outline-offset: 3px; }
 
 /* Stats overview tiles */
 .stats-hub {
@@ -2357,6 +2480,7 @@ button.account-card {
 .stats-hub__text { font-size: var(--text-s); color: var(--ink-muted); }
 
 .page-header--back { justify-content: flex-start; }
+.page-header--back .page-title { margin-right: auto; }
 
 .stats-figures {
     display: grid;
@@ -2545,11 +2669,11 @@ button.account-card {
 }
 
 .avatar--send {
-    background: color-mix(in srgb, var(--tag-blue) 16%, var(--sheet-raised));
-    color: var(--tag-blue);
+    background: color-mix(in srgb, var(--link) 16%, var(--sheet-raised));
+    color: var(--link);
 }
 
-.send-rules .list-row { border-left: 3px solid var(--tag-blue); }
+.send-rules .list-row { border-left: 3px solid var(--link); }
 
 .send-rules__amount {
     display: grid;
@@ -2558,6 +2682,39 @@ button.account-card {
 }
 
 .record-row__pair {
-    color: var(--tag-blue);
+    color: var(--link);
     font-weight: 500;
+}
+
+/* Touch feedback: no browser tap highlight (base.css); controls get a quiet wash while pressed. */
+:is(.bottom-nav__item, .icon-button, .menu-list a, .menu-list button, a.list-row, button.list-row):active {
+    background: var(--wash);
+}
+
+/* Private mode (eye button in the header, bm2Prefs "balances"): totals and balances become "***", single records stay.
+   Amounts inside these blocks keep their currency ("*** zł"); any .secret element swaps all its content. */
+:root[data-balances="hidden"] :is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount > :not(.amount__currency),
+:root[data-balances="hidden"] .secret > * {
+    display: none;
+}
+
+/* A hidden amount has no sign to show, so it drops the red/green and its currency takes the text colour. */
+:root[data-balances="hidden"] :is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount {
+    color: var(--ink);
+}
+
+/* An asterisk sits high on the line; nudge it down to the middle of the digits. */
+:root[data-balances="hidden"] :is(:is(.balance, .account-card, .month-stats, .summary-bar, .record-day__total, .wallet-totals, .valuation-summary) .amount, .secret)::before {
+    content: "***";
+    content: "***" / "hidden";
+    display: inline-block;
+    transform: translateY(0.28em);
+    color: var(--ink);
+    letter-spacing: 0.06em;
+}
+
+/* The day total stays muted when hidden, as it is when shown. */
+:root[data-balances="hidden"] .record-day__total .amount,
+:root[data-balances="hidden"] .record-day__total .amount::before {
+    color: var(--ink-muted);
 }

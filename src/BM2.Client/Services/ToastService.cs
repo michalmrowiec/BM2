@@ -26,7 +26,14 @@ public sealed class ToastService
         _ = DismissLaterAsync(toast.Id);
     }
 
-    public void ShowError() => Show("Something went wrong. Try again.", ToastKind.Error);
+    /// <summary>Generic failure; skipped while a specific error (read-only demo, rate limit) is already showing.</summary>
+    public void ShowError()
+    {
+        if (!_items.Any(t => t.Kind == ToastKind.Error))
+        {
+            Show(Localization.Strings.Tr("Something went wrong. Try again."), ToastKind.Error);
+        }
+    }
 
     public void Dismiss(Guid id)
     {

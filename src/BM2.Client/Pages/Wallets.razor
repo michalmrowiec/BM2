@@ -6,16 +6,17 @@
 @inject ApiClient Api
 @inject ToastService Toasts
 
-<PageTitle>Wallets · BM2</PageTitle>
+<PageTitle>@Tr("Wallets") · BM2</PageTitle>
 
-<header class="page-header">
-    <h1 class="page-title">Wallets</h1>
-    <button type="button" class="btn btn-primary btn-sm" @onclick="OpenCreate"><Icon Name="plus" /> New</button>
+<header class="page-header page-header--back">
+    <BackButton Fallback="more" />
+    <h1 class="page-title">@Tr("Wallets")</h1>
+    <button type="button" class="btn btn-primary btn-sm" @onclick="OpenCreate"><Icon Name="plus" /> @Tr("New")</button>
 </header>
 
 @if (!WalletState.IsLoaded)
 {
-    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
 }
 else
 {
@@ -24,14 +25,14 @@ else
         {
             <li>
                 <ListRow Title="@wallet.Name"
-                         Subtitle="@($"{Options.RoleLabel(wallet.Role)} · {wallet.BaseCurrency}{(wallet.Id == WalletState.Current?.Id ? " · Current" : "")}")"
+                         Subtitle="@Subtitle(wallet)"
                          OnClick="() => OpenEdit(wallet)">
                     <Leading><Icon Name="wallet" /></Leading>
                     <Trailing>
                         <span class="wallet-totals">
                             @if (wallet.Totals is not { Count: > 0 } totals)
                             {
-                                <span class="muted">No accounts</span>
+                                <span class="muted">@Tr("No accounts")</span>
                             }
                             else
                             {
@@ -50,7 +51,7 @@ else
     </ul>
 }
 
-<Sheet Open="_sheetOpen" OpenChanged="v => _sheetOpen = v" Title="@(_editing?.Name ?? "New wallet")">
+<Sheet Open="_sheetOpen" OpenChanged="v => _sheetOpen = v" Title="@(_editing?.Name ?? Tr("New wallet"))">
     @if (_editing is null)
     {
         <WalletForm OnSaved="OnCreatedAsync" />
@@ -59,7 +60,7 @@ else
     {
         @if (_editing.Id != WalletState.Current?.Id)
         {
-            <button type="button" class="btn btn-secondary btn-block" @onclick="() => UseAsync(_editing.Id)">Use this wallet</button>
+            <button type="button" class="btn btn-secondary btn-block" @onclick="() => UseAsync(_editing.Id)">@Tr("Use this wallet")</button>
         }
 
         @if (_editing.Role == MemberRole.Owner)
@@ -67,21 +68,21 @@ else
             <WalletForm @key="_editing.Id" WalletId="_editing.Id" Name="@_editing.Name" BaseCurrency="@_editing.BaseCurrency"
                         OnSaved="OnUpdatedAsync" />
             <button type="button" class="btn btn-ghost btn-block danger-text" @onclick="AskDelete">
-                <Icon Name="trash" /> Delete wallet
+                <Icon Name="trash" /> @Tr("Delete wallet")
             </button>
         }
         else
         {
-            <p class="muted">Only owners can rename or delete this wallet.</p>
+            <p class="muted">@Tr("Only owners can rename or delete this wallet.")</p>
         }
     }
 </Sheet>
 
-<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="Delete wallet?" ConfirmLabel="Delete wallet"
+<ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@Tr("Delete wallet?")" ConfirmLabel="@Tr("Delete wallet")"
                Danger="true" RequireText="@_editing?.Name" OnConfirm="DeleteAsync">
     <p>
-        All accounts, categories, tags and records in <strong>@_editing?.Name</strong> will be deleted for every member.
-        This can't be undone.
+        @((MarkupString)Tr("All accounts, categories, tags and records in {0} will be deleted for every member. This can't be undone.",
+            "<strong>" + System.Net.WebUtility.HtmlEncode(_editing?.Name) + "</strong>"))
     </p>
 </ConfirmDialog>
 
@@ -89,6 +90,10 @@ else
     private bool _sheetOpen;
     private bool _confirmDelete;
     private WalletListItem? _editing;
+
+    private string Subtitle(WalletListItem wallet) =>
+        $"{Options.RoleLabel(wallet.Role)} · {wallet.BaseCurrency}"
+        + (wallet.Id == WalletState.Current?.Id ? $" · {Tr("Current")}" : "");
 
     private void OpenCreate()
     {
@@ -112,14 +117,14 @@ else
     {
         _sheetOpen = false;
         await WalletState.SelectAsync(walletId);
-        Toasts.Show("Wallet created.", ToastKind.Success);
+        Toasts.Show(Tr("Wallet created."), ToastKind.Success);
     }
 
     private async Task OnUpdatedAsync(Guid walletId)
     {
         _sheetOpen = false;
         await WalletState.RefreshAsync();
-        Toasts.Show("Wallet saved.", ToastKind.Success);
+        Toasts.Show(Tr("Wallet saved."), ToastKind.Success);
     }
 
     private void AskDelete()
@@ -135,7 +140,7 @@ else
         if (result.Ok)
         {
             await WalletState.RefreshAsync();
-            Toasts.Show("Wallet deleted.");
+            Toasts.Show(Tr("Wallet deleted."));
         }
         else
         {

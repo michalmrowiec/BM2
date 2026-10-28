@@ -1,6 +1,7 @@
 @using System.Globalization
 
-<span class="amount num @SignClass @(Large ? "amount--large" : null)" @key="Key">@Text</span>
+@* The currency is its own element so private mode can keep it ("*** zł"). *@
+<span class="amount num @SignClass @(Large ? "amount--large" : null)" @key="Key"><span>@Number</span>@(" ")<span class="amount__currency">@CurrencyText</span></span>
 
 @code {
     [Parameter] public decimal Value { get; set; }
@@ -27,13 +28,15 @@
     };
 
     // Minus is U+2212 so it lines up with the plus sign.
-    private string Text => Effective switch
+    private string Number => Effective switch
     {
         AmountSign.Plus => "+",
         AmountSign.Minus => "−",
         _ => "",
-    } + Math.Abs(Value).ToString("N2", CultureInfo.CurrentCulture) + " " + Currency;
+    } + Math.Abs(Value).ToString("N2", CultureInfo.CurrentCulture);
+
+    private string CurrencyText => CurrencyLabel.Of(Currency);
 
     // A new key replays the entrance animation when the amount changes.
-    private string Key => Text;
+    private string Key => Number + " " + CurrencyText;
 }

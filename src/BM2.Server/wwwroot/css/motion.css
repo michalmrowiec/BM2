@@ -144,6 +144,26 @@ html.theme-switching::view-transition-new(root) {
     to { clip-path: circle(150vmax at var(--reveal-x, 50%) var(--reveal-y, 0)); }
 }
 
+/* Tab switch (BM2.Client.lib.module.js sets data-slide): only the page content slides; header and nav stay put. */
+:root[data-slide] .app-main { view-transition-name: page; }
+:root[data-slide] .app-header { view-transition-name: app-header; }
+:root[data-slide] .bottom-nav { view-transition-name: bottom-nav; }
+
+:root[data-slide]::view-transition-old(root),
+:root[data-slide]::view-transition-new(root) {
+    animation: none;
+}
+
+:root[data-slide]::view-transition-old(page) { animation: 160ms ease-in both page-out-left; }
+:root[data-slide]::view-transition-new(page) { animation: 280ms var(--ease-out) both page-in-right; }
+:root[data-slide="back"]::view-transition-old(page) { animation-name: page-out-right; }
+:root[data-slide="back"]::view-transition-new(page) { animation-name: page-in-left; }
+
+@keyframes page-out-left { to { opacity: 0; transform: translateX(-1.5rem); } }
+@keyframes page-out-right { to { opacity: 0; transform: translateX(1.5rem); } }
+@keyframes page-in-right { from { opacity: 0; transform: translateX(1.5rem); } }
+@keyframes page-in-left { from { opacity: 0; transform: translateX(-1.5rem); } }
+
 @media (prefers-reduced-motion: reduce) {
     @view-transition {
         navigation: none;

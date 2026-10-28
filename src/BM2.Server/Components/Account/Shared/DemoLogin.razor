@@ -1,0 +1,11 @@
+@using BM2.Server.Infrastructure
+@inject IConfiguration Configuration
+
+@if (DemoAccount.IsEnabled(Configuration))
+{
+    <form method="post" action="Account/Demo" class="demo-login">
+        <AntiforgeryToken />
+        <button type="submit" class="w-100 btn btn-lg btn-secondary">@Tr("Try the demo")</button>
+        <p class="text-secondary">@Tr("Browse sample data without an account. The demo is read-only.")</p>
+    </form>
+}

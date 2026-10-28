@@ -1,6 +1,6 @@
 # AGENTS.md – wytyczne dla agentów (BM2)
 
-Kontekst, decyzje i kolejność prac: [docs/roadmap.md](docs/roadmap.md). Specy podprojektów: `docs/specs/`.
+Plany i lista do zrobienia: [docs/roadmap.md](docs/roadmap.md) (jedyne miejsce na plany).
 Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 
 ## Kontekst
@@ -17,11 +17,16 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Decyzje:** proste decyzje i wątpliwości rozstrzygaj sam, wybierając najbardziej optymalny darmowy wariant
   (i krótko je odnotuj). Dopytuj tylko przy istotnych decyzjach produktowych/architektonicznych.
 - Gdy powstaje działające demo – uruchom je lokalnie i podaj link do przetestowania.
+- **Produkcja działa (od 2026-10-27):** BM2 na `<host-produkcji>` jest używany na co dzień, z prawdziwymi danymi.
+  Każda zmiana musi zachować istniejące dane: migracje EF tylko addytywne i zgodne wstecz (nowe kolumny
+  `NOT NULL` z wartością domyślną, bez usuwania i zmiany nazw bez kroku przenoszącego dane), przed wdrożeniem backup
+  bazy, nigdy ręcznych zmian w bazie produkcyjnej.
 - **Tryb obecny (od 2026-10-24): najpierw funkcje, najniższym kosztem.** Funkcje robimy tak, jak opisuje je
-  użytkownik: krótkie potwierdzenie w czacie zamiast speca i planu, bez nowych testów, bez pełnego WCAG i bez i18n
-  (UI tylko po angielsku, teksty wprost w komponentach). Zostaje to, co nic nie kosztuje: autoryzacja przez
-  `WalletAccessFilter`, zgodność z MSSQL 2012, istniejące komponenty i tokeny, kod się buduje. Zasady o testach,
-  WCAG i i18n poniżej obowiązują ponownie przy uzupełnianiu braków przed wdrożeniem (razem z utwardzeniem 1C).
+  użytkownik: krótkie potwierdzenie w czacie zamiast speca i planu, bez nowych testów i bez pełnego audytu WCAG.
+  Zostaje to, co nic nie kosztuje: autoryzacja przez `WalletAccessFilter`, zgodność z MSSQL 2012, istniejące
+  komponenty i tokeny, kod się buduje, **każdy nowy tekst UI przez `Tr(...)` z wpisem PL** (od 2026-10-27, patrz
+  sekcja i18n). Zasady o testach i WCAG poniżej obowiązują ponownie przy uzupełnianiu braków przed wdrożeniem
+  (razem z utwardzeniem 1C).
 - Commity na `dev` są dozwolone bez pytania (gałąź robocza `dev`, główna `master`). Push, merge do `master`
   i operacje nieodwracalne – tylko na wyraźną prośbę.
 - **Język:** rozmowa i dokumentacja (`docs/`) po polsku; kod, identyfikatory, komentarze i commity po angielsku
@@ -45,8 +50,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   FluentAssertions (nowe wersje są komercyjne).
 - **Projekty** (`BM2.slnx`): `BM2.Domain` (czysty C#, z BM2 zna tylko Contracts), `BM2.Contracts` (DTO/requesty,
   bez referencji do BM2), `BM2.Server` (host: Minimal API, EF Core, Identity, strony konta SSR), `BM2.Client`
-  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`. Narzędzia jednorazowe w `tools/`
-  (`BM2.Import` – import z MoneyManager, referencja do `BM2.Server`, `AppDbContext` budowany przez DI jak w serwerze).
+  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`.
 - **Serwer:** foldery per funkcja `Features/<Obszar>/<Akcja>.cs` z `Map<Obszar>Endpoints(this RouteGroupBuilder)`;
   bez MediatR i repozytoriów (endpoint używa `AppDbContext`); `TypedResults`; błędy API jako ProblemDetails;
   bieżący użytkownik przez `ICurrentUser`; wszystko pod `/api` wymaga logowania (wyjątki jawnie `AllowAnonymous()`).
@@ -65,6 +69,11 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   lub usunięte `ListTemplates` zwraca jako puste; etykieta = nazwa albo kategoria). Ikona kategorii to klucz z
   `CategoryIcons` (SVG w `Icon`), kolor tagu to klucz z `TagColors` (tokeny `--tag-*`, klasa `tag-color--*`); ikonę
   kategorii pokazuje `RecordAvatar`. Podpowiedzi formularza z `GET records/suggestions`, cache w `WalletState`.
+- **Lista rekordów (`/records`):** okres i filtry są w query stringu (`month=yyyy-MM` domyślnie bieżący, `all=true`,
+  `from`/`to` jako `yyyy-MM-dd` – w URL `to` włącznie, do API wysyłane +1 dzień; `accountId`, `categoryId`, `tagId`,
+  `type`, `status`, `q`, `ruleId`, `recurring`), więc inne ekrany linkują wprost (np. „Show in Records” w
+  `RecordsPreview`). Wybór okresu: `RecordPeriodSheet` (presety, miesiące z rekordami z `GET records/months` –
+  lista `yyyy-MM` od najnowszych, zakres od–do). Eksport bierze zawsze dokładnie bieżący widok.
 - **Cykliczne:** `RecurringRule` pamięta `NextIndex`/`NextDate`; `RecurringCatchUp` (wołany w `GetWallet`) dodaje
   wystąpienia do dzisiaj, przyszłych rekordów nie tworzymy. Idempotencja przez unikalny indeks
   (`RecurringRuleId`, `OccurrenceDate`) – konflikt oznacza „już zrobione”.
@@ -78,6 +87,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   Duża liczba na Home = cały portfel (gotówka + wartości inwestycji, rozbicie „Cash · Investments”); prognoza tylko
   gotówka. `ValuationSheet` (Home i Accounts): szybka wycena na dziś, wykres wartość vs wpłacone (`PaidIn` w historii). `stats/monthly` ma `Invested` =
   transfery gotówka → inwestycje minus z powrotem. Wyceny: odczyt z dostępem do konta, zapis `CanWriteAccount`.
+- **Flagi konta:** `ExcludeFromTotal` (konto nie wlicza się do wartości portfela na Home ani do rozbicia
+  „Cash · Investments”; prognoza też je pomija) i `ShowOnDashboard` (karta konta na Home, domyślnie tak).
+  Przychodzą w `AccountItem` ze snapshotu portfela (`GetWallet`), `GET dashboard` ich nie powtarza.
 - **Send money (między portfelami):** nie transfer, tylko para rekordów: wydatek tu + przychód w innym portfelu, wspólny
   `PairId` (każdy ma `PairWalletId` = drugi portfel). `SaveRecordRequest.Pair` (`RecordPair`: portfel, konto, kategoria
   przychodu, kwota w walucie konta docelowego) tylko przy tworzeniu wydatku; druga strona powstaje, gdy wydatek jest
@@ -86,6 +98,12 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   przy potwierdzeniu. `UpdatePair` (edycja) przenosi datę, nazwę i kwotę (przy tej samej walucie); `DELETE ?pair=true`
   usuwa obie strony. UI: menu ⋯ przy portfelu w `WalletSwitcher` → `SendMoneyForm`; sekcja „Sent to other wallets”
   w Recurring; znaczek „↔ / → portfel” na liście rekordów.
+- **Zaproszenia do aplikacji:** `AppInvitation` (twórca, opcjonalny e-mail, 7 dni, jednorazowe, cofane; token jak
+  w zaproszeniach do portfeli – `InvitationToken`, w bazie tylko hash), endpointy `/api/app-invitations` (lista,
+  tworzenie z limitem `MaxActivePerUser` = 10 aktywnych → 409, cofanie; tylko własne, cudze → 404). Link
+  `/Account/Register?invite={token}` – ten sam parametr co zaproszenie do portfela, `RegistrationGate` i `Register`
+  sprawdzają oba rodzaje; rejestracja potwierdza e-mail, zużywa link i nie daje dostępu do portfeli. Token widać tylko
+  przy tworzeniu. UI: Settings → „Invite to BM2” (`/more/settings/invites`).
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne
   waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Home ładuje wszystko jednym `GET dashboard`.
@@ -94,9 +112,17 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   przez `Chart.razor.js`. Przy wykresie zawsze te same liczby tekstem (lista/tabela). Statystyki: `stats/categories`,
   `stats/monthly`, `stats/category-months` (rekordy `Completed` i `Pending`, bez transferów, jedna waluta kont, `tagIds` = dowolny
   z tagów); filtry ekranów Stats współdzieli scoped `StatsState` + komponent `StatsFilters`; kliknięcie słupka (id `Typ:yyyy-MM-dd`) lub kategorii otwiera `RecordsPreview` z rekordami.
-- **Prognoza, eksport, przypięte wykresy:** `stats/forecast` liczy na serwerze saldo dziś (Completed/Pending do dziś)
-  + wystąpienia reguł od `NextIndex` (`RecurrenceSchedule`) + rekordy po dzisiejszej dacie (i zaległe `Planned` na dziś)
-  + opcjonalnie średnia dzienna wydatków z 3 pełnych miesięcy z kategorii bez cyklicznych wydatków. `records/export`
+  Na „By category” kropka koloru w `CategoryTotalsList` (`Hidden` + `OnToggle`) to checkbox: odznaczona kategoria
+  zostaje na liście wyszarzona, a donut (`StatsCharts.Donut(..., hidden)`, kolory bez zmian), suma i udziały liczą
+  resztę; „Reset” przywraca. Stan tylko w komponencie strony.
+- **Prognoza, eksport, przypięte wykresy:** `stats/forecast` (3/6/12/24 mies.) liczy na serwerze saldo dziś
+  (Completed/Pending do dziś) + wystąpienia reguł od `NextIndex` (`RecurrenceSchedule`) + rekordy po dzisiejszej dacie
+  (i zaległe `Planned` na dziś) + opcjonalnie (`trend`) trend przychodów i wydatków (`MonthlyTrend` w Domain: regresja
+  liniowa, od 12 mies. sezonowość miesięczna ściągana c/(c+1), 6–11 mies. sama linia, mniej – średnia; nigdy < 0)
+  z maks. 24 pełnych miesięcy, bez rekordów z reguł i bez kategorii aktywnych reguł (wydatkowe/przychodowe osobno),
+  rozłożony równo na dni miesiąca. Pasmo ~80% (`Spread` = 1,28·σ·√miesięcy). Wynik: punkty, tabela miesięcy
+  (`ForecastMonth`), opis trendu; kalkulator „ile będę mieć” liczy klient (start = saldo dziś, przychód/wydatki =
+  średnia z prognozy, odsetki miesięcznie od dodatniego salda). `records/export`
   bierze filtry listy (`format=csv|xlsx`, limit 50 tys.); CSV ręcznie (UTF-8 BOM, `;`, kropka dziesiętna, ochrona
   przed formułami), XLSX przez ClosedXML (SixLabors.Fonts przypięte do 1.0.x – nowsze nie są Apache-2.0); klient
   pobiera zwykłym linkiem `download`. `PinnedChart` (portfel + użytkownik, `Kind`, `Title`, `Query` jako zwykły tekst)
@@ -107,6 +133,12 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   na wywołanie). Rate limiting w `Infrastructure/RateLimiting` (na minutę: POST-y `/Account` 20 na IP, zapisy `/api`
   120 na użytkownika, eksport 5 – polityka `RateLimiting.ExportPolicy`); 429 jako ProblemDetails, `ApiClient` pokazuje
   toast. W testach integracyjnych wyłączone (`RateLimiting:Enabled=false`). CSV eksportu jest strumieniowany.
+- **Konto demo:** `Demo:Enabled` (domyślnie false). `POST /Account/Demo` (antiforgery, limit `/Account`) loguje jako
+  `DemoAccount.Email` – użytkownik bez hasła z claimem roli `Demo.Role` (`BM2.Contracts.Common.Demo`), tworzony
+  razem z danymi `DemoData` przy pierwszym wejściu. O demo decyduje tylko claim roli, nie e-mail.
+  `UseDemoReadOnly` odrzuca każde żądanie modyfikujące demo (403, w `/api` ProblemDetails z `Demo.ReadOnlyMessage` →
+  toast w `ApiClient`) poza logowaniem/wylogowaniem/rejestracją. Nowy POST, który demo musi móc wysłać → dopisz go do
+  `AllowedPosts`. Znacznik „Demo” w nagłówku przez `AuthorizeView Roles`.
 - **PWA:** `wwwroot/manifest.webmanifest`, ikony w `wwwroot/icons` (PNG generowane z marki), `wwwroot/service-worker.js`
   rejestrowany w `BM2.Client.lib.module.js` (`afterWebStarted`). SW: nawigacje i `/api` zawsze z sieci, pliki
   z fingerprintem cache-first, pozostałe statyczne network-first z fallbackiem; zmiana strategii = podbij `version`.
@@ -124,7 +156,6 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   w `BM2.ClientTests` (HTTP przez `StubApi`, `UseBm2Client()`, bez bibliotek do mocków). Dane testów integracyjnych
   przez `TestData` (encje tworzone przez domenę), czas przez `TestTimeProvider` (`Factory.Time`, reset przed testem).
 - Narzędzia lokalne: `dotnet tool restore`. Uruchomienie lokalne: [docs/dev-setup.md](docs/dev-setup.md).
-- Stary kod (`legacy/`) usunięty w podprojekcie 1B; w razie potrzeby: `git show d4e818c:legacy/...`.
 
 ## Bezpieczeństwo (punkt odniesienia: OWASP ASVS poziom 2)
 
@@ -151,21 +182,61 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   skutku albo pytanie z nazwanymi wariantami zamiast domyślnego „OK”.
 - Wygląd ma być unikalny i dopracowany – nie generyczny „kolejny panel”. Spójność z design systemem (tokeny CSS,
   komponenty bazowe); bez doklejania gotowych bibliotek UI.
-- **Design system „Paper and ink”** ([spec](docs/specs/2026-10-24-podprojekt-1a-design-system.md)): style globalne
+- **Design system „Paper and ink”:** style globalne
   w `BM2.Server/wwwroot/css` (`tokens.css` → `base.css` → `components.css`, `account.css` tylko dla stron Identity),
   kolory i odstępy wyłącznie przez tokeny (`--paper`, `--sheet`, `--ink`, `--ink-muted`, `--rule`, `--wash`,
   `--vivid`, `--link`, `--positive`, `--negative`, `--space-*`, `--radius*`). Fonty: Inter (UI), Fraunces (nagłówki,
   kwoty – klasa `.num`). Ikony przez komponent `Icon`: Lucide (ISC, `lucide-static` 1.61.0) wstawione lokalnie jako
   markup SVG, licencja w `BM2.Client/wwwroot/icons/LICENSE-lucide.txt`; nowe ikony dopisuj z tej samej wersji.
   Kwoty zawsze ze znakiem `+`/`−`.
-- Motyw jasny/ciemny/systemowy obsługuje `wwwroot/js/theme.js` (przycisk z atrybutem `data-theme-toggle`). Bez skryptów
+- Motyw obsługuje `wwwroot/js/theme.js` (przycisk `data-theme-toggle`: light ↔ dark; bez zapisanego wyboru motyw systemu). Bez skryptów
   inline (przyszły CSP). Tam też preferencje z More (`window.bm2Prefs`, `localStorage`, atrybuty na `<html>`): font kwot
   (token `--font-num`, domyślnie Fraunces; `data-amounts="plain"` = Inter, duże sumy `.amount--large` zostają we
   Fraunces) i kolor akcentu (`data-accent`: ochre/ink/green/plum, brak = terakota; wartości `--accent*` na końcu
   `tokens.css`, z nich `--vivid`, `--link`, `--focus`).
+- **Private mode (tryb prywatny):** przycisk z okiem w nagłówku (`BalancesToggle`, `data-balances-toggle`, obsługa
+  w `theme.js`, `bm2Prefs` „balances” → `data-balances="hidden"` na `<html>`, więc działa od prerenderu; klucze
+  zostały po „Hide balances”, żeby zachować wybór użytkowników). Ukrywa sumy i salda (nie pojedyncze rekordy):
+  `.amount` w blokach wymienionych w regule na końcu `components.css` pokazuje „*** waluta” (`Amount` ma walutę
+  w osobnym `.amount__currency`), każdy element `.secret` – samo „***”. Nowa suma/saldo poza tymi blokami → owiń
+  w `<span class="secret">`.
+- **More i Settings:** More = treść (portfele, konta, członkowie, kategorie, budżety, szablony, cykliczne, tagi)
+  + wiersz „Settings”. Preferencje i konto są na `/more/settings` (`Settings.razor`, sekcje Account and security,
+  Appearance, Language and region, `BackButton` do More). Nowa preferencja → tam, nie w More.
+- **Symbole walut:** kod waluty przy kwotach zawsze przez `CurrencyLabel.Of(code)` (PLN → „zł”, EUR → „€”, USD → „$”,
+  GBP → „£”, JPY → „¥”, inne zostają kodem; zawsze po kwocie) – przełącznik „Currency symbols (zł, €, $)” w Settings;
+  `bm2Prefs` „pln” = „code” wyłącza, klient czyta to w `Program.cs`, prerender zawsze symbole). W trybie prywatnym
+  ukryte kwoty tracą kolor znaku (gwiazdki i waluta w `--ink`).
+  Kod w selektorach i etykietach typu „Amount in {0}” zostaje jako kod. Logo w pasku: „BM.” (tytuły stron „BM2”).
+- **Formularz na telefonie (< 48rem):** strona z `.record-form__submit` chowa dolne menu (`body:has(...)`), Save jest
+  przyklejony do dołu na pełną szerokość. **Marquee:** element `.marquee` z dzieckiem `.marquee__inner` – gdy tekst
+  się nie mieści, `BM2.Client.lib.module.js` ustawia `data-marquee` i przewija go tam i z powrotem; przy
+  `prefers-reduced-motion` wielokropek. Suma dnia na liście rekordów jest przygaszona (`--ink-muted`, `--text-xs`, font UI jak zysk na kartach kont).
+- **Dotyk i kolory:** bez `-webkit-tap-highlight-color`, focus tylko `:focus-visible` (`--focus`), wciśnięcie = tło
+  `--wash`. Przyciski i ikony akcji neutralne (`--ink-muted` → `--ink`) albo w akcencie (`--vivid`/`--link`) – bez
+  stałego niebieskiego; `--tag-blue` tylko jako kolor tagu wybrany przez użytkownika. `--attention` (Pending) = amber.
+- **Przejścia stron:** każda nawigacja w aplikacji przesuwa treść `main` przez View Transitions
+  (`BM2.Client.lib.module.js` → `data-slide`, CSS w `motion.css`): między zakładkami dolnego menu w stronę zakładki,
+  z podstrony do zakładki wstecz, inny link w głąb, `BackButton` i powrót po zapisie przez `window.bm2Back` wstecz.
+  Bez przesuwania: linki w `<dialog>`, `download`, `target`, zmiana samego query, strony `/Account/`. Gdy przejście
+  nie ruszy w 600 ms, jest pomijane. Bez wsparcia lub przy `prefers-reduced-motion` zwykła nawigacja z `.page-enter`.
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
-- Wszystkie teksty UI w zasobach (EN domyślnie, PL). Daty i kwoty formatowane wg kultury użytkownika.
+- WCAG: tekst ≥ 4,5:1 na `--paper`/`--sheet`/`--wash` w obu motywach i każdym akcencie (nowy akcent → sprawdź),
+  obramowanie pól `--control-border` (≥ 3:1). Braki WCAG: roadmapa.
+- **i18n (EN domyślnie, PL):** słownik w `BM2.Client/Localization` – angielski tekst jest kluczem i wartością
+  domyślną, polski w `Strings.Pl.<Obszar>.cs` (indeksator `["EN"] = "PL",`). W komponentach `@Tr("…")`,
+  `@Tr("{0} of {1}", a, b)` (import statyczny w `_Imports.razor` klienta i serwera), liczba mnoga
+  `Plural(n, "{0} record", "{0} records")` z wpisem PL `"one|few|many"`. Nie wołaj `Tr` w polach `static readonly`
+  (prerender dzieli statyki między żądania) – używaj `=>`. Komponenty bazowe nie tłumaczą `Label`/`Title`
+  (to mogą być nazwy użytkownika) – tłumaczy wołający. Komunikaty z API, walidatorów i DataAnnotations tłumaczy
+  `Strings.TrMessage` na granicy (`ApiClient`, `FluentValidator`, `TrValidationMessage`/`TrValidationSummary`
+  na stronach konta) – kod domeny i Contracts zostaje po angielsku, wystarczy wpis w `Strings.Pl.Messages.cs`
+  (liczby jako `{0}`). Język = cookie `.AspNetCore.Culture` (`GET /culture/{en|pl}?returnUrl=`, pełne
+  przeładowanie; More → Language, linki na logowaniu/rejestracji); serwer `UseBm2Localization` (tylko cookie),
+  `<html lang>` z kultury, klient czyta `lang` w `Program.cs` przed startem (`Strings.Apply`), pełne dane ICU
+  (`BlazorWebAssemblyLoadAllGlobalizationData`). Kultury `en-GB` i `pl-PL` – daty i kwoty zawsze z
+  `CultureInfo.CurrentCulture`, `InvariantCulture` tylko dla URL/API.
 
 ## Wydajność
 
@@ -175,4 +246,4 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 ## Testy
 
 - TDD dla logiki domenowej i aplikacyjnej.
-- Testy integracyjne API, w tym autoryzacji. Narzędzia: do ustalenia w specu podprojektu 0.
+- Testy integracyjne API, w tym autoryzacji.

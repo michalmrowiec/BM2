@@ -1,4 +1,6 @@
+using BM2.Client.Localization;
 using BM2.Client.Services;
+using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -11,4 +13,12 @@ builder.Services.AddAuthenticationStateDeserialization();
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddBm2Client();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+// The server renders <html lang> from the culture cookie; use it before the first render so nothing flashes in English.
+var js = host.Services.GetRequiredService<IJSRuntime>();
+var language = await js.InvokeAsync<string?>("document.documentElement.getAttribute", "lang");
+Strings.Apply(Strings.CultureFor(language));
+BM2.Client.Components.CurrencyLabel.PlnAsZloty = await js.InvokeAsync<string?>("bm2Prefs.get", "pln") != "code";
+
+await host.RunAsync();

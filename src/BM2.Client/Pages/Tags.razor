@@ -7,17 +7,18 @@
 @inject ApiClient Api
 @inject ToastService Toasts
 
-<PageTitle>Tags · BM2</PageTitle>
+<PageTitle>@Tr("Tags") · BM2</PageTitle>
 
-<header class="page-header">
-    <h1 class="page-title">Tags</h1>
+<header class="page-header page-header--back">
+    <BackButton Fallback="more" />
+    <h1 class="page-title">@Tr("Tags")</h1>
     @if (CanManage)
     {
-        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> New</button>
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> @Tr("New")</button>
     }
 </header>
 
-<p class="muted">Use tags for projects that cut across categories, like a house build or one of your cars.</p>
+<p class="muted">@Tr("Use tags for projects that cut across categories, like a house build or one of your cars.")</p>
 
 @if (Wallet is null)
 {
@@ -30,7 +31,7 @@ else
 
     @if (active.Count == 0)
     {
-        <EmptyState IconName="tag" Title="No tags yet">Add one for a project you want to see as a whole.</EmptyState>
+        <EmptyState IconName="tag" Title="@Tr("No tags yet")">@Tr("Add one for a project you want to see as a whole.")</EmptyState>
     }
     else
     {
@@ -45,7 +46,7 @@ else
     @if (archived.Count > 0)
     {
         <details class="disclosure">
-            <summary class="section-title">Archived</summary>
+            <summary class="section-title">@Tr("Archived")</summary>
             <ul class="list">
                 @foreach (var tag in archived)
                 {
@@ -55,10 +56,10 @@ else
         </details>
     }
 
-    <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v" Title="@(_editing?.Name ?? "New tag")">
+    <Sheet Open="_editorOpen" OpenChanged="v => _editorOpen = v" Title="@(_editing?.Name ?? Tr("New tag"))">
         @if (_editing is null)
         {
-            <NameForm SubmitLabel="Add tag" Validator="CreateValidator" ShowColor="true"
+            <NameForm SubmitLabel="@Tr("Add tag")" Validator="CreateValidator" ShowColor="true"
                       ToRequest="m => new CreateTagRequest(m.Name ?? string.Empty, m.Color)"
                       Save="m => CreateAsync(m)" OnSaved="OnSavedAsync" />
         }
@@ -66,18 +67,18 @@ else
         {
             <NameForm @key="_editing.Id" Name="@_editing.Name" IsArchived="_editing.IsArchived" ShowArchived="true"
                       TagColor="@_editing.Color" ShowColor="true"
-                      ArchivedHint="the project is finished, keep its history" Validator="UpdateValidator"
+                      ArchivedHint="@Tr("the project is finished, keep its history")" Validator="UpdateValidator"
                       ToRequest="m => new UpdateTagRequest(m.Name ?? string.Empty, m.IsArchived, m.Color)"
                       Save="m => UpdateAsync(m)" OnSaved="OnSavedAsync" />
             <button type="button" class="btn btn-ghost btn-block danger-text" @onclick="() => _confirmDelete = true">
-                <Icon Name="trash" /> Delete tag
+                <Icon Name="trash" /> @Tr("Delete tag")
             </button>
         }
     </Sheet>
 
-    <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@($"Delete {_editing?.Name}?")"
-                   ConfirmLabel="Delete tag" Danger="true" OnConfirm="DeleteAsync">
-        <p>The tag is removed from all its records. The records stay.</p>
+    <ConfirmDialog Open="_confirmDelete" OpenChanged="v => _confirmDelete = v" Title="@Tr("Delete {0}?", _editing?.Name)"
+                   ConfirmLabel="@Tr("Delete tag")" Danger="true" OnConfirm="DeleteAsync">
+        <p>@Tr("The tag is removed from all its records. The records stay.")</p>
     </ConfirmDialog>
 }
 
@@ -120,7 +121,7 @@ else
     {
         _editorOpen = false;
         await WalletState.RefreshAsync();
-        Toasts.Show("Tag saved.", ToastKind.Success);
+        Toasts.Show(Tr("Tag saved."), ToastKind.Success);
     }
 
     private async Task DeleteAsync()
@@ -131,7 +132,7 @@ else
         if (result.Ok)
         {
             await WalletState.RefreshAsync();
-            Toasts.Show("Tag deleted.");
+            Toasts.Show(Tr("Tag deleted."));
         }
         else
         {

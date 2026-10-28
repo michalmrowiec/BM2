@@ -3,21 +3,21 @@
 @* What a wallet page shows while it has no wallet: loading, none yet, or a failed load. *@
 @if (!WalletState.IsLoaded)
 {
-    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+    <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
 }
 else if (WalletState.Problem is null && WalletState.Wallets.Count == 0)
 {
-    <EmptyState IconName="wallet" Title="No wallet yet">
-        <ChildContent>Accounts, categories and records live in a wallet.</ChildContent>
-        <Actions><a class="btn btn-primary" href="">Create a wallet</a></Actions>
+    <EmptyState IconName="wallet" Title="@Tr("No wallet yet")">
+        <ChildContent>@Tr("Accounts, categories and records live in a wallet.")</ChildContent>
+        <Actions><a class="btn btn-primary" href="">@Tr("Create a wallet")</a></Actions>
     </EmptyState>
 }
 else
 {
-    <EmptyState IconName="wallet" Title="Couldn't load your wallet">
-        <ChildContent>Check your connection and try again.</ChildContent>
+    <EmptyState IconName="wallet" Title="@Tr("Couldn't load your wallet")">
+        <ChildContent>@Tr("Check your connection and try again.")</ChildContent>
         <Actions>
-            <button type="button" class="btn btn-secondary" @onclick="WalletState.RefreshAsync">Try again</button>
+            <button type="button" class="btn btn-secondary" @onclick="WalletState.RefreshAsync">@Tr("Try again")</button>
         </Actions>
     </EmptyState>
 }

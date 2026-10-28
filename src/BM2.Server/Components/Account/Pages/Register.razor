@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using BM2.Server.Data
+@using BM2.Domain.Invitations
 @using BM2.Server.Features.Invitations
 
 @inject UserManager<ApplicationUser> UserManager
@@ -19,12 +20,16 @@
 @inject AppDbContext Db
 @inject TimeProvider Time
 
-<PageTitle>Register</PageTitle>
+<PageTitle>@Tr("Register")</PageTitle>
 
-<h1>Register</h1>
-@if (Invite is not null)
+<h1>@Tr("Register")</h1>
+@if (appInvitation is not null)
 {
-    <p class="lead">Create your account to join the shared wallet you were invited to.</p>
+    <p class="lead">@Tr("You were invited to BM2. Create your account to start.")</p>
+}
+else if (Invite is not null)
+{
+    <p class="lead">@Tr("Create your account to join the shared wallet you were invited to.")</p>
 }
 
 <div class="row">
@@ -32,31 +37,33 @@
         <StatusMessage Message="@Message" />
         <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
+            <h2>@Tr("Create a new account.")</h2>
             <hr />
-            <ValidationSummary class="text-danger" role="alert" />
+            <TrValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label for="Input.Email">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
+                <label for="Input.Email">@Tr("Email")</label>
+                <TrValidationMessage For="() => Input.Email" class="text-danger" />
             </div>
             <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.Password">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
+                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="@Tr("Password")" />
+                <label for="Input.Password">@Tr("Password")</label>
+                <TrValidationMessage For="() => Input.Password" class="text-danger" />
             </div>
             <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.ConfirmPassword">Confirm Password</label>
-                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
+                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="@Tr("Password")" />
+                <label for="Input.ConfirmPassword">@Tr("Confirm password")</label>
+                <TrValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+            <button type="submit" class="w-100 btn btn-lg btn-primary">@Tr("Register")</button>
         </EditForm>
+        <LanguageSwitch />
     </div>
 </div>
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
+    private AppInvitation? appInvitation;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
@@ -67,11 +74,16 @@
     [SupplyParameterFromQuery]
     private string? Invite { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    private string? Message => identityErrors is null ? null : Tr("Error: {0}", string.Join(", ", identityErrors.Select(error => TrMessage(error.Description))));
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Input ??= new();
+        appInvitation = Invite is null ? null : await AppInvitationLookup.FindUsableAsync(Db, Invite, Time.GetUtcNow(), CancellationToken.None);
+        if (appInvitation?.Email is { } email && Input.Email.Length == 0)
+        {
+            Input.Email = email;
+        }
     }
 
     public async Task RegisterUser(EditContext editContext)
@@ -80,8 +92,19 @@
         var invitation = Invite is null ? null : await InvitationLookup.FindAsync(Db, Invite, CancellationToken.None);
         var invited = invitation is not null
             && (await InvitationAcceptance.CheckAsync(Db, invitation, Time.GetUtcNow(), CancellationToken.None)).IsSuccess;
-        if (!Environment.IsDevelopment() && !invited)
+        if (invited)
         {
+            appInvitation = null;
+        }
+
+        if (!Environment.IsDevelopment() && !invited && appInvitation is null)
+        {
+            return;
+        }
+
+        if (appInvitation is not null && !appInvitation.AllowsEmail(Input.Email))
+        {
+            identityErrors = [new IdentityError { Description = "This invitation is for a different email address." }];
             return;
         }
 
@@ -99,6 +122,21 @@
         }
 
         Logger.LogInformation("User created a new account with password.");
+
+        if (appInvitation is not null)
+        {
+            // Same as a wallet invitation below, but it only opens registration.
+            var confirmation = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+            await UserManager.ConfirmEmailAsync(user, confirmation);
+            if (appInvitation.Use(user.Id, Input.Email, Time.GetUtcNow()).IsSuccess)
+            {
+                await Db.SaveChangesAsync();
+            }
+
+            await SignInManager.SignInAsync(user, isPersistent: true);
+            RedirectManager.RedirectTo("");
+            return;
+        }
 
         if (invited)
         {

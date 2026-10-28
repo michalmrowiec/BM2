@@ -4,50 +4,49 @@
 @inject WalletState WalletState
 @inject NavigationManager Navigation
 
-<PageTitle>Invitation · BM2</PageTitle>
+<PageTitle>@Tr("Invitation") · BM2</PageTitle>
 
 <section class="invite">
     <span class="invite__icon" aria-hidden="true"><Icon Name="users" /></span>
     <AuthorizeView>
         <NotAuthorized>
-            <h1 class="page-title">You're invited</h1>
-            <p class="lead">Someone shared a wallet with you on BM2. Create an account or log in to see it.</p>
+            <h1 class="page-title">@Tr("You're invited")</h1>
+            <p class="lead">@Tr("Someone shared a wallet with you on BM2. Create an account or log in to see it.")</p>
             <div class="invite__actions">
-                <a class="btn btn-primary" href="@($"Account/Register?invite={Token}")">Create account</a>
-                <a class="btn btn-secondary" href="@LoginUrl">Log in</a>
+                <a class="btn btn-primary" href="@($"Account/Register?invite={Token}")">@Tr("Create account")</a>
+                <a class="btn btn-secondary" href="@LoginUrl">@Tr("Log in")</a>
             </div>
         </NotAuthorized>
         <Authorized>
             @if (_preview is { } preview)
             {
-                <h1 class="page-title">Join @preview.WalletName</h1>
+                <h1 class="page-title">@Tr("Join {0}", preview.WalletName)</h1>
                 <p class="lead">
-                    <strong>@preview.InvitedBy</strong> invited you as <strong>@preview.Role.ToString().ToLowerInvariant()</strong>
-                    @(preview.AccountName is null ? "of the whole wallet." : $"of the account {preview.AccountName}.")
+                    @InviteText(preview)
                 </p>
                 <div class="invite__actions">
-                    <button type="button" class="btn btn-primary" disabled="@_busy" @onclick="JoinAsync">Join</button>
-                    <a class="btn btn-secondary" href="">Not now</a>
+                    <button type="button" class="btn btn-primary" disabled="@_busy" @onclick="JoinAsync">@Tr("Join")</button>
+                    <a class="btn btn-secondary" href="">@Tr("Not now")</a>
                 </div>
             }
             else if (_problem is { Status: 410 })
             {
-                <h1 class="page-title">Invitation unavailable</h1>
-                <p class="lead">This invitation has expired or was already used. Ask for a new link.</p>
+                <h1 class="page-title">@Tr("Invitation unavailable")</h1>
+                <p class="lead">@Tr("This invitation has expired or was already used. Ask for a new link.")</p>
             }
             else if (_problem is { Status: 0 })
             {
-                <h1 class="page-title">Couldn't load the invitation</h1>
-                <p class="lead">Check your connection and try again.</p>
+                <h1 class="page-title">@Tr("Couldn't load the invitation")</h1>
+                <p class="lead">@Tr("Check your connection and try again.")</p>
             }
             else if (_problem is not null)
             {
-                <h1 class="page-title">Invitation not found</h1>
-                <p class="lead">This invitation doesn't exist. Check that you opened the whole link.</p>
+                <h1 class="page-title">@Tr("Invitation not found")</h1>
+                <p class="lead">@Tr("This invitation doesn't exist. Check that you opened the whole link.")</p>
             }
             else
             {
-                <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">Loading…</span></p>
+                <p aria-busy="true"><span class="skeleton skeleton--line"></span><span class="sr-only">@Tr("Loading…")</span></p>
             }
         </Authorized>
     </AuthorizeView>
@@ -61,6 +60,16 @@
     [Parameter] public string Token { get; set; } = "";
 
     [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private static MarkupString InviteText(InvitationPreview preview)
+    {
+        static string Bold(string? text) => "<strong>" + System.Net.WebUtility.HtmlEncode(text) + "</strong>";
+        var role = Bold(Options.RoleLabel(preview.Role).ToLower(System.Globalization.CultureInfo.CurrentCulture));
+        return new MarkupString(preview.AccountName is null
+            ? Tr("{0} invited you as {1} of the whole wallet.", Bold(preview.InvitedBy), role)
+            : Tr("{0} invited you as {1} of the account {2}.", Bold(preview.InvitedBy), role,
+                System.Net.WebUtility.HtmlEncode(preview.AccountName)));
+    }
 
     private string LoginUrl => $"Account/Login?ReturnUrl={Uri.EscapeDataString("/invite/" + Token)}";
 

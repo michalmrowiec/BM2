@@ -1,18 +1,18 @@
 @implements IDisposable
 @inject NavigationManager Navigation
 
-<nav class="bottom-nav" aria-label="Main">
+<nav class="bottom-nav" aria-label="@Tr("Main")">
     <a href="" class="bottom-nav__item" aria-current="@Current("")">
-        <Icon Name="home" /><span>Home</span>
+        <Icon Name="home" /><span>@Tr("Home")</span>
     </a>
     <a href="records" class="bottom-nav__item" aria-current="@Current("records")">
-        <Icon Name="list" /><span>Records</span>
+        <Icon Name="list" /><span>@Tr("Records")</span>
     </a>
-    <a href="@AddHref" class="bottom-nav__fab" aria-label="Add record">
-        <Icon Name="plus" /><span class="bottom-nav__fab-label">Add record</span>
+    <a href="@AddHref" class="bottom-nav__fab" aria-label="@Tr("Add record")">
+        <Icon Name="plus" /><span class="bottom-nav__fab-label">@Tr("Add record")</span>
     </a>
     <a href="stats" class="bottom-nav__item" aria-current="@Current("stats")">
-        <Icon Name="chart" /><span>Stats</span>
+        <Icon Name="chart" /><span>@Tr("Stats")</span>
     </a>
     @* Large screens only: the side rail has room for what phones reach through More. *@
     @foreach (var (href, icon, label) in RailOnly)
@@ -29,7 +29,7 @@
         }
     }
     <a href="more" class="bottom-nav__item" aria-current="@Current("more")">
-        <Icon Name="dots" /><span>More</span>
+        <Icon Name="dots" /><span>@Tr("More")</span>
     </a>
 </nav>
 
@@ -37,17 +37,17 @@
     private const string QuickAddPath = "records/new";
 
     // A null href is a group heading.
-    private static readonly (string? Href, string Icon, string Label)[] RailOnly =
+    private static (string? Href, string Icon, string Label)[] RailOnly =>
     [
-        ("budgets", "piggy", "Budgets"),
-        ("recurring", "repeat", "Recurring"),
-        ("templates", "bolt", "Templates"),
-        (null, "", "Manage"),
-        ("wallets", "wallet", "Wallets"),
-        ("accounts", "bank", "Accounts"),
-        ("members", "users", "Members"),
-        ("categories", "category", "Categories"),
-        ("tags", "tag", "Tags"),
+        ("budgets", "piggy", Tr("Budgets")),
+        ("recurring", "repeat", Tr("Recurring")),
+        ("templates", "bolt", Tr("Templates")),
+        (null, "", Tr("Manage")),
+        ("wallets", "wallet", Tr("Wallets")),
+        ("accounts", "bank", Tr("Accounts")),
+        ("members", "users", Tr("Members")),
+        ("categories", "category", Tr("Categories")),
+        ("tags", "tag", Tr("Tags")),
     ];
 
     protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
