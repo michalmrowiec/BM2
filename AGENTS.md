@@ -1,6 +1,6 @@
 # AGENTS.md – wytyczne dla agentów (BM2)
 
-Kontekst, decyzje i kolejność prac: [docs/roadmap.md](docs/roadmap.md). Specy podprojektów: `docs/specs/`.
+Plany i lista do zrobienia: [docs/roadmap.md](docs/roadmap.md) (jedyne miejsce na plany).
 Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 
 ## Kontekst
@@ -17,8 +17,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **Decyzje:** proste decyzje i wątpliwości rozstrzygaj sam, wybierając najbardziej optymalny darmowy wariant
   (i krótko je odnotuj). Dopytuj tylko przy istotnych decyzjach produktowych/architektonicznych.
 - Gdy powstaje działające demo – uruchom je lokalnie i podaj link do przetestowania.
-- **Produkcja działa (od 2026-10-27):** BM2 na `<host-produkcji>` jest używany na co dzień, z danymi zaimportowanymi
-  z MM. Każda zmiana musi zachować istniejące dane: migracje EF tylko addytywne i zgodne wstecz (nowe kolumny
+- **Produkcja działa (od 2026-10-27):** BM2 na `<host-produkcji>` jest używany na co dzień, z prawdziwymi danymi.
+  Każda zmiana musi zachować istniejące dane: migracje EF tylko addytywne i zgodne wstecz (nowe kolumny
   `NOT NULL` z wartością domyślną, bez usuwania i zmiany nazw bez kroku przenoszącego dane), przed wdrożeniem backup
   bazy, nigdy ręcznych zmian w bazie produkcyjnej.
 - **Tryb obecny (od 2026-10-24): najpierw funkcje, najniższym kosztem.** Funkcje robimy tak, jak opisuje je
@@ -50,8 +50,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   FluentAssertions (nowe wersje są komercyjne).
 - **Projekty** (`BM2.slnx`): `BM2.Domain` (czysty C#, z BM2 zna tylko Contracts), `BM2.Contracts` (DTO/requesty,
   bez referencji do BM2), `BM2.Server` (host: Minimal API, EF Core, Identity, strony konta SSR), `BM2.Client`
-  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`. Narzędzia jednorazowe w `tools/`
-  (`BM2.Import` – import z MoneyManager, referencja do `BM2.Server`, `AppDbContext` budowany przez DI jak w serwerze).
+  (WASM, zna tylko Contracts). Reguły pilnują testy architektury w `BM2.UnitTests`.
 - **Serwer:** foldery per funkcja `Features/<Obszar>/<Akcja>.cs` z `Map<Obszar>Endpoints(this RouteGroupBuilder)`;
   bez MediatR i repozytoriów (endpoint używa `AppDbContext`); `TypedResults`; błędy API jako ProblemDetails;
   bieżący użytkownik przez `ICurrentUser`; wszystko pod `/api` wymaga logowania (wyjątki jawnie `AllowAnonymous()`).
@@ -157,7 +156,6 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   w `BM2.ClientTests` (HTTP przez `StubApi`, `UseBm2Client()`, bez bibliotek do mocków). Dane testów integracyjnych
   przez `TestData` (encje tworzone przez domenę), czas przez `TestTimeProvider` (`Factory.Time`, reset przed testem).
 - Narzędzia lokalne: `dotnet tool restore`. Uruchomienie lokalne: [docs/dev-setup.md](docs/dev-setup.md).
-- Stary kod (`legacy/`) usunięty w podprojekcie 1B; w razie potrzeby: `git show d4e818c:legacy/...`.
 
 ## Bezpieczeństwo (punkt odniesienia: OWASP ASVS poziom 2)
 
@@ -184,7 +182,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   skutku albo pytanie z nazwanymi wariantami zamiast domyślnego „OK”.
 - Wygląd ma być unikalny i dopracowany – nie generyczny „kolejny panel”. Spójność z design systemem (tokeny CSS,
   komponenty bazowe); bez doklejania gotowych bibliotek UI.
-- **Design system „Paper and ink”** ([spec](docs/specs/2026-10-24-podprojekt-1a-design-system.md)): style globalne
+- **Design system „Paper and ink”:** style globalne
   w `BM2.Server/wwwroot/css` (`tokens.css` → `base.css` → `components.css`, `account.css` tylko dla stron Identity),
   kolory i odstępy wyłącznie przez tokeny (`--paper`, `--sheet`, `--ink`, `--ink-muted`, `--rule`, `--wash`,
   `--vivid`, `--link`, `--positive`, `--negative`, `--space-*`, `--radius*`). Fonty: Inter (UI), Fraunces (nagłówki,
@@ -225,7 +223,7 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - WCAG 2.2 AA: etykiety pól, widoczny focus, kontrast, cele dotyku ≥ 24×24 px (zalecane 44×44), informacja nie tylko
   kolorem, pełna obsługa klawiatury, respektowanie `prefers-reduced-motion`.
 - WCAG: tekst ≥ 4,5:1 na `--paper`/`--sheet`/`--wash` w obu motywach i każdym akcencie (nowy akcent → sprawdź),
-  obramowanie pól `--control-border` (≥ 3:1). Przegląd i to, co zostało: [docs/wcag-2.2-przeglad.md](docs/wcag-2.2-przeglad.md).
+  obramowanie pól `--control-border` (≥ 3:1). Braki WCAG: roadmapa.
 - **i18n (EN domyślnie, PL):** słownik w `BM2.Client/Localization` – angielski tekst jest kluczem i wartością
   domyślną, polski w `Strings.Pl.<Obszar>.cs` (indeksator `["EN"] = "PL",`). W komponentach `@Tr("…")`,
   `@Tr("{0} of {1}", a, b)` (import statyczny w `_Imports.razor` klienta i serwera), liczba mnoga
@@ -248,4 +246,4 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 ## Testy
 
 - TDD dla logiki domenowej i aplikacyjnej.
-- Testy integracyjne API, w tym autoryzacji. Narzędzia: do ustalenia w specu podprojektu 0.
+- Testy integracyjne API, w tym autoryzacji.
