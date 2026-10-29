@@ -55,7 +55,7 @@ internal static class GetForecast
             .SumAsync(r => r.TransferAmount ?? 0, ct);
         var start = accounts.Sum(a => a.OpeningBalance) + own + incoming;
 
-        var categories = await db.Categories.Where(c => c.WalletId == walletId).ToDictionaryAsync(c => c.Id, c => c.Name, ct);
+        var categories = await db.Categories.Where(c => c.WalletId == walletId).Select(c => new { c.Id, c.Name }).ToDictionaryAsync(c => c.Id, c => c.Name, ct);
         string Label(string? name, Guid? categoryId, RecordType type) =>
             name ?? (categoryId is { } id && categories.TryGetValue(id, out var category) ? category : type.ToString());
         decimal Delta(RecordType type, Guid accountId, decimal accountAmount, Guid? transferAccountId, decimal? transferAmount) =>
