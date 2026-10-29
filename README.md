@@ -74,7 +74,7 @@ dotnet test --project tests/BM2.UnitTests
 **Next**
 
 - [ ] Email (SMTP): confirmation, password reset, invitations
-- [ ] Faster cold start and record saving on phones
+- [ ] Faster cold start and record saving on phones, query follow-ups from the code audit
 - [ ] Budget hint from the last months of spending
 - [ ] Account deletion with ownership transfer
 - [ ] Hardening: CSP, health check, database backups

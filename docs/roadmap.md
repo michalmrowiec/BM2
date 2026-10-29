@@ -27,10 +27,23 @@ Konwencje i opis funkcji: [AGENTS.md](../AGENTS.md). Wdrożenie: [deploy-webio.m
 5. **Utwardzenie (1C):** CSP i przegląd nagłówków, przegląd antiforgery dla `/api`, health check, backupy bazy.
 6. **Testy (dług z trybu „najpierw funkcje”):** integracyjne dla nowych endpointów + przypadki
    w `WalletEndpointAccessTests`; `GET /culture/pl` (cookie, odrzuca nielokalny `returnUrl`);
-   axe (Playwright) dla głównych ekranów w obu motywach.
-7. **WCAG – ręcznie:** czytnik ekranu (TalkBack/VoiceOver), powiększenie 200/400 %, klawiatura na wszystkich
+   axe (Playwright) dla głównych ekranów w obu motywach. **Najpierw:** 35 z 95 testów `BM2.ClientTests` nie
+   przechodzi (stan z 2026-10-29, jeszcze przed audytem) – brak rejestracji `WalletState` w `UseBm2Client()`,
+   symbole walut („€” zamiast „EUR”), zmieniony markup formularza rekordu i `WalletSwitcher`.
+7. **Wydajność – punkty z audytu (2026-10-29):**
+   - indeks pod `Status` rekordu (dashboard filtruje Pending/Planned; obecny `(AccountId, OccurredOn)` go nie
+     pokrywa) – addytywna migracja `(AccountId, Status)` albo indeks filtrowany `Status <> Completed`;
+   - `WalletLimits.RecordCountAsync` liczy wszystkie rekordy portfela przy każdym zapisie – sprawdzać rzadziej albo
+     trzymać licznik;
+   - `GetWallet`: `AccountBalances.GetAsync` drugi raz czyta konta po saldo otwarcia;
+   - `BaseCurrency` czytane kilka razy na żądanie (budżety, `stats/*`) – dołożyć do `WalletAccess`;
+   - dashboard: `RecurringEndpoints.LoadAsync` liczy wystąpienia wszystkich reguł, Home potrzebuje tylko najbliższych
+     (sprawdzić licznik rat w `RecurringText.Upcoming`);
+   - `records/months` to pełny skan rekordów (klient cache'uje per portfel – na razie wystarczy).
+   Po audycie zapis rekordu odświeża tylko bieżący portfel; sumy na liście portfeli odświeżają się na `/wallets`.
+8. **WCAG – ręcznie:** czytnik ekranu (TalkBack/VoiceOver), powiększenie 200/400 %, klawiatura na wszystkich
    ekranach, powrót focusu po zamknięciu `Sheet`/`ConfirmDialog` na iOS Safari.
-8. **Wyłączenie MM** po okresie równoległym.
+9. **Wyłączenie MM** po okresie równoległym.
 
 ## Backlog (później)
 
