@@ -3,7 +3,10 @@
 @using BM2.Client.Components.Budgets
 @using BM2.Client.Components.Wallets
 @using BM2.Contracts.Budgets
+@using System.Globalization
 @using BM2.Contracts.Categories
+@using BM2.Contracts.Records
+@using BM2.Contracts.Stats
 @using BM2.Contracts.Wallets
 @inherits WalletComponentBase
 @inject ApiClient Api
@@ -16,7 +19,7 @@
     <h1 class="page-title">@Tr("Budgets")</h1>
     @if (CanManage && Available.Count > 0)
     {
-        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditor(null)"><Icon Name="plus" /> @Tr("New")</button>
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => OpenEditorAsync(null)"><Icon Name="plus" /> @Tr("New")</button>
     }
 </header>
 <p class="muted">@Tr("A monthly limit per expense category. It repeats every month; unused money does not carry over.")</p>
@@ -38,7 +41,7 @@ else if (_overview.Items.Count == 0)
         <Actions>
             @if (CanManage && Available.Count > 0)
             {
-                <button type="button" class="btn btn-primary" @onclick="() => OpenEditor(null)">@Tr("Add budget")</button>
+                <button type="button" class="btn btn-primary" @onclick="() => OpenEditorAsync(null)">@Tr("Add budget")</button>
             }
         </Actions>
     </EmptyState>
@@ -58,7 +61,7 @@ else
                 @if (CanManage)
                 {
                     <button type="button" class="budget-list__button" aria-label="@Tr("Edit budget for {0}", CategoryOf(item)?.Name)"
-                            @onclick="() => OpenEditor(item)">
+                            @onclick="() => OpenEditorAsync(item)">
                         <BudgetBar Item="item" Currency="@_overview.Currency" Category="CategoryOf(item)" />
                     </button>
                 }
@@ -78,6 +81,36 @@ else
         @if (_editing is null)
         {
             <SelectField Label="@Tr("Category")" Options="Available" @bind-Value="_model.CategoryId" />
+        }
+        @if (Hint is { } hint)
+        {
+            <section class="budget-hint" aria-label="@Tr("Spending in recent months")">
+                @if (hint.Average <= 0)
+                {
+                    <p class="muted">@Tr("No spending in this category in the last 12 months.")</p>
+                }
+                else
+                {
+                    var max = Math.Max(hint.Months.Max(m => m.Total), 1);
+                    <ul class="budget-hint__months">
+                        @foreach (var (month, total) in hint.Months)
+                        {
+                            <li>
+                                <span class="muted">@month.ToString("MMM yyyy")</span>
+                                <progress class="budget__bar" max="@max.ToString(CultureInfo.InvariantCulture)"
+                                          value="@Math.Max(total, 0).ToString(CultureInfo.InvariantCulture)" aria-hidden="true"></progress>
+                                <span class="num secret"><span>@total.ToString("N2")</span></span>
+                            </li>
+                        }
+                    </ul>
+                    <div class="budget-hint__summary">
+                        <span class="secret"><span>@Tr("Average {0} a month", $"{hint.Average:N2} {CurrencyLabel.Of(Wallet?.BaseCurrency ?? "")}")</span></span>
+                        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _model.Limit = hint.Suggested">
+                            @Tr("Set limit to {0}", $"{hint.Suggested:N0} {CurrencyLabel.Of(Wallet?.BaseCurrency ?? "")}")
+                        </button>
+                    </div>
+                }
+            </section>
         }
         <MoneyInput Label="@Tr("Monthly limit")" Currency="@Wallet?.BaseCurrency" @bind-Value="_model.Limit"
                     Hint="@Tr("Applies to every month until you change it. Only accounts in this currency count.")" />
@@ -101,6 +134,11 @@ else
     private BudgetItem? _editing;
     private FormModel _model = new();
     private FluentValidator? _validator;
+    private CategoryMonthTotals? _history;
+    private WalletSnapshot? _historyFor;
+
+    // Full months before the current one; the hint never counts the month in progress.
+    private static DateOnly ThisMonth => new(DateTime.Now.Year, DateTime.Now.Month, 1);
 
     private WalletSnapshot? Wallet => WalletState.Current;
 
@@ -145,14 +183,46 @@ else
 
     private CategoryItem? CategoryOf(BudgetItem item) => Wallet?.Categories.FirstOrDefault(c => c.Id == item.CategoryId);
 
-    private void OpenEditor(BudgetItem? item)
+    private async Task OpenEditorAsync(BudgetItem? item)
     {
         _editing = item;
         _model = item is null
             ? new FormModel { CategoryId = Available.FirstOrDefault().Value }
             : new FormModel { CategoryId = item.CategoryId, Limit = item.Limit };
         _editorOpen = true;
+        if (!ReferenceEquals(_historyFor, Wallet))
+        {
+            _historyFor = Wallet;
+            var filter = new StatsFilter { From = ThisMonth.AddMonths(-12), To = ThisMonth };
+            _history = (await Api.GetAsync<CategoryMonthTotals>($"api/wallets/{Wallet!.Id}/stats/category-months{filter.ToQueryString()}")).Value;
+        }
     }
+
+    // Months from the category's first spending in the last 12 full months, its average and a limit rounded up from it.
+    private BudgetHint? Hint
+    {
+        get
+        {
+            if (_history is null || _model.CategoryId is not { } id)
+            {
+                return null;
+            }
+
+            // Refunds already come as negative expenses.
+            var totals = _history.Items.Where(i => i.CategoryId == id && i.Type == RecordType.Expense).ToDictionary(i => i.Month, i => i.Total);
+            var months = new List<(DateOnly Month, decimal Total)>();
+            for (var m = totals.Count == 0 ? ThisMonth : totals.Keys.Min(); m < ThisMonth; m = m.AddMonths(1))
+            {
+                months.Add((m, totals.GetValueOrDefault(m)));
+            }
+
+            var average = months.Count == 0 ? 0 : months.Sum(m => m.Total) / months.Count;
+            var step = average <= 100 ? 10m : average <= 1000 ? 50m : 100m;
+            return new BudgetHint(months, average, Math.Ceiling(average / step) * step);
+        }
+    }
+
+    private sealed record BudgetHint(IReadOnlyList<(DateOnly Month, decimal Total)> Months, decimal Average, decimal Suggested);
 
     private async Task SaveAsync()
     {

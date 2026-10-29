@@ -42,7 +42,7 @@ internal static class ExportRecords
         }
 
         var walletId = current.Id;
-        var tagNames = await db.Tags.Where(t => t.WalletId == walletId).ToDictionaryAsync(t => t.Id, t => t.Name, ct);
+        var tagNames = await db.Tags.Where(t => t.WalletId == walletId).Select(t => new { t.Id, t.Name }).ToDictionaryAsync(t => t.Id, t => t.Name, ct);
         var wallet = await db.Wallets.Where(w => w.Id == walletId).Select(w => w.Name).SingleAsync(ct);
         var name = $"bm2-{Slug(wallet)}-records-{DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime):yyyy-MM-dd}";
         var rows = RowsAsync(query, tagNames, ct);

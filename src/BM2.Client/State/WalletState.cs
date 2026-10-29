@@ -30,7 +30,11 @@ public sealed class WalletState(ApiClient api, BrowserStorage storage)
         await ReloadAsync(walletId);
     }
 
-    public Task RefreshAsync() => ReloadAsync(Current?.Id);
+    /// <summary>Reloads the current wallet's snapshot; the wallet list (with its totals) stays as it is.</summary>
+    public Task RefreshAsync() => Current is { } wallet ? ReloadSnapshotAsync(wallet.Id) : ReloadAsync(null);
+
+    /// <summary>Reloads the wallet list too: after wallets were renamed, deleted or left, or to show fresh totals.</summary>
+    public Task RefreshAllAsync() => ReloadAsync(Current?.Id);
 
     public async ValueTask<Guid?> GetLastAccountAsync() =>
         Current is not null && Guid.TryParse(await storage.GetAsync(LastAccountKey(Current.Id)), out var id) ? id : null;
@@ -92,8 +96,7 @@ public sealed class WalletState(ApiClient api, BrowserStorage storage)
             Wallets = list.Value!;
             var selected = Wallets.Any(w => w.Id == preferred) ? preferred : Wallets.Count > 0 ? Wallets[0].Id : null;
             var snapshot = selected is { } walletId
-                ? await api.GetAsync<WalletSnapshot>(
-                    $"api/wallets/{walletId}?today={DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}")
+                ? await LoadSnapshotAsync(walletId)
                 : new ApiResult<WalletSnapshot>(null, null);
             Current = snapshot.Value;
             Problem = snapshot.Problem;
@@ -106,6 +109,17 @@ public sealed class WalletState(ApiClient api, BrowserStorage storage)
         IsLoaded = true;
         Changed?.Invoke();
     }
+
+    private async Task ReloadSnapshotAsync(Guid walletId)
+    {
+        var snapshot = await LoadSnapshotAsync(walletId);
+        Current = snapshot.Value;
+        Problem = snapshot.Problem;
+        Changed?.Invoke();
+    }
+
+    private Task<ApiResult<WalletSnapshot>> LoadSnapshotAsync(Guid walletId) => api.GetAsync<WalletSnapshot>(
+        $"api/wallets/{walletId}?today={DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}");
 
     private static string LastAccountKey(Guid walletId) => $"bm2-last-account:{walletId}";
 }

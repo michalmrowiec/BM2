@@ -88,10 +88,10 @@
     <ul class="menu-list">
         @* Full reload through the server, so the cookie is set and WebAssembly starts in the new culture. *@
         <li>
-            <button type="button" @onclick="() => SetLanguage(!_polish)">
+            <button type="button" @onclick="NextLanguage">
                 <Icon Name="languages" />
                 <span>@Tr("Language")</span>
-                <span class="menu-list__trail">@(_polish ? "Polski" : "English")</span>
+                <span class="menu-list__trail">@Current.Name</span>
             </button>
         </li>
         <li>
@@ -134,7 +134,6 @@
     private bool _private;
     private string _accent = DefaultAccent;
     private bool _accentOpen;
-    private bool _polish = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "pl";
 
     private static string AccentName(string key) => Tr(Accents.FirstOrDefault(a => a.Key == key).Name ?? "Terracotta");
 
@@ -162,8 +161,13 @@
         await JS.InvokeVoidAsync("bm2Prefs.set", "pln", CurrencyLabel.PlnAsZloty ? null : "code");
     }
 
-    private void SetLanguage(bool polish) =>
-        Navigation.NavigateTo($"culture/{(polish ? "pl" : "en")}?returnUrl={Uri.EscapeDataString("/more/settings")}", forceLoad: true);
+    // shortcut: cycles through the languages, switch to a picker once there are more than two.
+    private void NextLanguage()
+    {
+        var languages = Languages;
+        var next = languages[(languages.ToList().IndexOf(Current) + 1) % languages.Count];
+        Navigation.NavigateTo($"culture/{next.Code}?returnUrl={Uri.EscapeDataString("/more/settings")}", forceLoad: true);
+    }
 
     private async Task SetAccentAsync(string key)
     {

@@ -200,7 +200,7 @@
 }
 
 /* Page headings */
-.page-title { font-size: var(--text-2xl); }
+.page-title { font-size: clamp(var(--text-xl), 8vw, var(--text-2xl)); }
 
 .display {
     margin-bottom: var(--space-4);
@@ -421,6 +421,7 @@
 .page-header {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: var(--space-3);
     margin-bottom: var(--space-5);
@@ -1082,7 +1083,8 @@ button.account-card {
     position: relative;
     isolation: isolate;
     display: inline-grid;
-    grid-auto-columns: 1fr;
+    max-width: 100%;
+    grid-auto-columns: minmax(0, 1fr);
     grid-auto-flow: column;
     gap: var(--space-1);
     padding: var(--space-1);
@@ -1127,6 +1129,7 @@ button.account-card {
 }
 
 .segmented__option {
+    min-width: 0;
     min-height: var(--tap);
     padding: 0 var(--space-4);
     border: 0;
@@ -2312,6 +2315,45 @@ button.account-card {
 .month-stats + .section-title,
 .budget-list + .section-header { margin-top: var(--space-5); }
 
+/* Budget editor: spending in recent months */
+.budget-hint {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    font-size: var(--text-s);
+}
+
+.budget-hint p { margin: 0; }
+
+.budget-hint__months {
+    display: grid;
+    grid-template-columns: auto minmax(2rem, 1fr) auto;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.budget-hint__months li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+}
+
+.budget-hint__months .num { text-align: end; }
+
+.budget-hint__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
 /* Stats */
 .chart {
     width: 100%;
@@ -2419,6 +2461,7 @@ button.account-card {
 .stats-list__item { display: flex; align-items: stretch; }
 .stats-list__item > .list-row { flex: 1; min-width: 0; }
 .stats-list__item.is-hidden > .list-row { opacity: 0.5; }
+.stats-list__item > .check { flex: none; padding-inline-start: var(--space-3); }
 
 .stats-toggle {
     position: relative;

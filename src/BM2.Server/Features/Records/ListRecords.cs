@@ -61,6 +61,11 @@ internal static class ListRecords
 
     private static async Task<List<RecordItem>> ItemsAsync(AppDbContext db, List<RecordCursor> keys, CancellationToken ct)
     {
+        if (keys.Count == 0)
+        {
+            return [];
+        }
+
         var ids = keys.Select(k => k.Id).ToList();
         var items = await db.Records
             .AsNoTracking()

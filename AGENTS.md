@@ -106,7 +106,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   przy tworzeniu. UI: Settings → „Invite to BM2” (`/more/settings/invites`).
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne
-  waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Home ładuje wszystko jednym `GET dashboard`.
+  waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Edytor budżetu podpowiada limit z `stats/category-months` (pełne miesiące
+  z ostatnich 12 od pierwszego wydatku, średnia w górę do 10/50/100 przy ≤100/≤1000/więcej). Home ładuje wszystko jednym `GET dashboard`.
 - **Wykresy:** komponent `Chart` (opcje ECharts, kolory jako `"var(--token)"`, przerysowanie po zmianie motywu, bez
   animacji przy `prefers-reduced-motion`); ECharts 5.6.0 lokalnie w `BM2.Server/wwwroot/lib/echarts`, ładowany leniwie
   przez `Chart.razor.js`. Przy wykresie zawsze te same liczby tekstem (lista/tabela). Statystyki: `stats/categories`,
@@ -120,7 +121,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   (i zaległe `Planned` na dziś) + opcjonalnie (`trend`) trend przychodów i wydatków (`MonthlyTrend` w Domain: regresja
   liniowa, od 12 mies. sezonowość miesięczna ściągana c/(c+1), 6–11 mies. sama linia, mniej – średnia; nigdy < 0)
   z maks. 24 pełnych miesięcy, bez rekordów z reguł i bez kategorii aktywnych reguł (wydatkowe/przychodowe osobno),
-  rozłożony równo na dni miesiąca. Pasmo ~80% (`Spread` = 1,28·σ·√miesięcy). Wynik: punkty, tabela miesięcy
+  rozłożony równo na dni miesiąca. `excludeCategoryIds` pomija kategorie wszędzie (trend, reguły, rekordy),
+  `excludeItems` (klucz `ForecastItem.Key`: id rekordu albo `rule:{id}`) pomija pozycję w saldzie, ale zostaje na liście
+  z `Excluded`; wybór tylko w stanie strony (bez zapisu, bez przypinania). Pasmo ~80% (`Spread` = 1,28·σ·√miesięcy). Wynik: punkty, tabela miesięcy
   (`ForecastMonth`), opis trendu; kalkulator „ile będę mieć” liczy klient (start = saldo dziś, przychód/wydatki =
   średnia z prognozy, odsetki miesięcznie od dodatniego salda). `records/export`
   bierze filtry listy (`format=csv|xlsx`, limit 50 tys.); CSV ręcznie (UTF-8 BOM, `;`, kropka dziesiętna, ochrona
@@ -227,7 +230,10 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **i18n (EN domyślnie, PL):** słownik w `BM2.Client/Localization` – angielski tekst jest kluczem i wartością
   domyślną, polski w `Strings.Pl.<Obszar>.cs` (indeksator `["EN"] = "PL",`). W komponentach `@Tr("…")`,
   `@Tr("{0} of {1}", a, b)` (import statyczny w `_Imports.razor` klienta i serwera), liczba mnoga
-  `Plural(n, "{0} record", "{0} records")` z wpisem PL `"one|few|many"`. Nie wołaj `Tr` w polach `static readonly`
+  `Plural(n, "{0} record", "{0} records")` z wpisem PL `"one|few|many"`. Języki w `Strings.Languages` (kod, kultura,
+  nazwa własna, słowniki, reguła liczby mnogiej) – nowy język = słowniki `Strings.<Lang>.*.cs` + wiersz tam; przełączniki
+  języka (Settings, strony konta) biorą listę stamtąd. Słownik zamiast .resx świadomie (bez satelitarnych DLL w WASM).
+  `StringsTests` pilnuje, że każdy literał `Tr`/`Plural` w UI ma wpis PL. Nie wołaj `Tr` w polach `static readonly`
   (prerender dzieli statyki między żądania) – używaj `=>`. Komponenty bazowe nie tłumaczą `Label`/`Title`
   (to mogą być nazwy użytkownika) – tłumaczy wołający. Komunikaty z API, walidatorów i DataAnnotations tłumaczy
   `Strings.TrMessage` na granicy (`ApiClient`, `FluentValidator`, `TrValidationMessage`/`TrValidationSummary`

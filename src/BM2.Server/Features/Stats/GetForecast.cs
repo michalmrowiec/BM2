@@ -44,6 +44,8 @@ internal static class GetForecast
             .ToList();
         var ids = accounts.Select(a => a.Id).ToList();
         var inSet = ids.ToHashSet();
+        var excludedCategories = (query.ExcludeCategoryIds ?? []).Distinct().ToList();
+        var excludedItems = (query.ExcludeItems ?? []).ToHashSet();
 
         var touching = db.Records.AsNoTracking()
             .Where(r => ids.Contains(r.AccountId) || (r.TransferAccountId != null && ids.Contains(r.TransferAccountId.Value)));
@@ -55,7 +57,7 @@ internal static class GetForecast
             .SumAsync(r => r.TransferAmount ?? 0, ct);
         var start = accounts.Sum(a => a.OpeningBalance) + own + incoming;
 
-        var categories = await db.Categories.Where(c => c.WalletId == walletId).ToDictionaryAsync(c => c.Id, c => c.Name, ct);
+        var categories = await db.Categories.Where(c => c.WalletId == walletId).Select(c => new { c.Id, c.Name }).ToDictionaryAsync(c => c.Id, c => c.Name, ct);
         string Label(string? name, Guid? categoryId, RecordType type) =>
             name ?? (categoryId is { } id && categories.TryGetValue(id, out var category) ? category : type.ToString());
         decimal Delta(RecordType type, Guid accountId, decimal accountAmount, Guid? transferAccountId, decimal? transferAmount) =>
@@ -73,8 +75,13 @@ internal static class GetForecast
             }
 
             date = date < today ? today : date;
-            var (inflow, outflow) = byDay.GetValueOrDefault(date);
-            byDay[date] = (inflow + Math.Max(amount, 0), outflow + Math.Max(-amount, 0));
+            // Excluded items stay listed so they can be included again, but don't move the balance.
+            if (!excludedItems.Contains(key))
+            {
+                var (inflow, outflow) = byDay.GetValueOrDefault(date);
+                byDay[date] = (inflow + Math.Max(amount, 0), outflow + Math.Max(-amount, 0));
+            }
+
             items[key] = items.TryGetValue(key, out var item)
                 ? item with { Amount = item.Amount + amount, Count = item.Count + 1, First = date < item.First ? date : item.First }
                 : (label, source, amount, 1, date);
@@ -82,6 +89,7 @@ internal static class GetForecast
 
         var records = await touching
             .Where(r => (r.OccurredOn > today && r.OccurredOn <= end) || (r.Status == RecordStatus.Planned && r.OccurredOn <= today))
+            .Where(r => r.CategoryId == null || !excludedCategories.Contains(r.CategoryId.Value))
             .OrderBy(r => r.OccurredOn)
             .Select(r => new { r.Id, r.Type, r.Status, r.OccurredOn, r.AccountId, r.AccountAmount, r.TransferAccountId, r.TransferAmount, r.Name, r.CategoryId })
             .Take(MaxRecords)
@@ -102,6 +110,7 @@ internal static class GetForecast
                 .Where(r => r.WalletId == walletId && !r.IsPaused && r.NextDate != null)
                 .ToListAsync(ct))
             .Where(r => access.CanReadRecord(r.AccountId, r.TransferAccountId)
+                && (r.CategoryId is not { } c || !excludedCategories.Contains(c))
                 && (inSet.Contains(r.AccountId) || (r.TransferAccountId is { } t && inSet.Contains(t))))
             .ToList();
         foreach (var rule in rules)
@@ -145,6 +154,7 @@ internal static class GetForecast
                     r.CategoryId,
                     Amount = r.Type == RecordType.Income ? r.AccountAmount : -r.AccountAmount,
                 })
+                .Where(x => x.CategoryId == null || !excludedCategories.Contains(x.CategoryId.Value))
                 .Where(x => x.CategoryId == null
                     || (x.Spending && !coveredExpense.Contains(x.CategoryId.Value))
                     || (!x.Spending && !coveredIncome.Contains(x.CategoryId.Value)))
@@ -216,10 +226,13 @@ internal static class GetForecast
             }
         }
 
-        var top = items.Values
-            .OrderByDescending(i => Math.Abs(i.Amount))
+        var top = items.Where(i => !excludedItems.Contains(i.Key))
+            .OrderByDescending(i => Math.Abs(i.Value.Amount))
             .Take(TopItems)
-            .Select(i => new ForecastItem(i.Label, i.Source, i.Amount, i.Count, i.First))
+            .Concat(items.Where(i => excludedItems.Contains(i.Key)))
+            .OrderByDescending(i => Math.Abs(i.Value.Amount))
+            .Select(i => new ForecastItem(i.Value.Label, i.Value.Source, i.Value.Amount, i.Value.Count, i.Value.First,
+                i.Key, excludedItems.Contains(i.Key)))
             .ToList();
 
         return TypedResults.Ok(new ForecastData(

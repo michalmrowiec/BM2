@@ -64,6 +64,11 @@ public static partial class Strings
         ["Change"] = "Zmiana",
         ["Forecast balance until {0}, with dashed lines for the likely range. The figures above and the table below give the numbers."] = "Prognozowane saldo do {0}, przerywane linie pokazują prawdopodobny zakres. Liczby podają wartości powyżej i tabela poniżej.",
         ["Biggest items"] = "Największe pozycje",
+        ["Uncheck an item to leave it out of the forecast."] = "Odznacz pozycję, żeby pominąć ją w prognozie.",
+        ["Categories: all counted"] = "Kategorie: wszystkie liczone",
+        ["Categories: {0} left out"] = "Kategorie: pominięte {0}",
+        ["Unchecked categories are left out of the whole forecast: trend, recurring rules and dated records."] =
+            "Odznaczone kategorie są pomijane w całej prognozie: w trendzie, regułach cyklicznych i rekordach z datą.",
         ["{0} months"] = "{0} mies.",
         ["Daily"] = "Codziennie",
         ["Weekly"] = "Co tydzień",
