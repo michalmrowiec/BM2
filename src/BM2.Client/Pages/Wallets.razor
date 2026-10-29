@@ -95,6 +95,17 @@ else
         $"{Options.RoleLabel(wallet.Role)} · {wallet.BaseCurrency}"
         + (wallet.Id == WalletState.Current?.Id ? $" · {Tr("Current")}" : "");
 
+    // Totals may be stale: record changes elsewhere only refresh the current wallet's snapshot.
+    protected override async Task OnInitializedAsync()
+    {
+        var loaded = WalletState.IsLoaded;
+        await base.OnInitializedAsync();
+        if (loaded && RendererInfo.IsInteractive)
+        {
+            await WalletState.RefreshAllAsync();
+        }
+    }
+
     private void OpenCreate()
     {
         _editing = null;
@@ -123,7 +134,7 @@ else
     private async Task OnUpdatedAsync(Guid walletId)
     {
         _sheetOpen = false;
-        await WalletState.RefreshAsync();
+        await WalletState.RefreshAllAsync();
         Toasts.Show(Tr("Wallet saved."), ToastKind.Success);
     }
 
@@ -139,7 +150,7 @@ else
         _confirmDelete = false;
         if (result.Ok)
         {
-            await WalletState.RefreshAsync();
+            await WalletState.RefreshAllAsync();
             Toasts.Show(Tr("Wallet deleted."));
         }
         else
