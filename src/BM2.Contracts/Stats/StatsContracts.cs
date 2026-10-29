@@ -87,6 +87,12 @@ public sealed class ForecastQuery
 
     public DateOnly? Today { get; init; }
 
+    /// <summary>Categories left out everywhere: trend, rules and dated records.</summary>
+    public Guid[]? ExcludeCategoryIds { get; init; }
+
+    /// <summary><see cref="ForecastItem.Key"/>s left out of the balance (still listed).</summary>
+    public string[]? ExcludeItems { get; init; }
+
     public string ToQueryString() => "?" + string.Join("&", new[]
     {
         Currency is null ? null : $"currency={Uri.EscapeDataString(Currency)}",
@@ -94,7 +100,9 @@ public sealed class ForecastQuery
         Step is null ? null : $"step={Step}",
         Trend is null ? null : $"trend={(Trend.Value ? "true" : "false")}",
         Today is null ? null : $"today={Today.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}",
-    }.Where(p => p is not null));
+    }.Concat((ExcludeCategoryIds ?? []).Select(id => $"excludeCategoryIds={id}"))
+        .Concat((ExcludeItems ?? []).Select(key => $"excludeItems={Uri.EscapeDataString(key)}"))
+        .Where(p => p is not null));
 }
 
 /// <param name="Spread">Half-width of the ~80% uncertainty band around <paramref name="Balance"/>.</param>
@@ -138,7 +146,8 @@ public enum ForecastSource
 }
 
 /// <summary>One recurring rule (all its occurrences) or one dated record; <paramref name="Amount"/> is signed.</summary>
-public sealed record ForecastItem(string Label, ForecastSource Source, decimal Amount, int Count, DateOnly FirstDate);
+/// <param name="Key">Pass in <see cref="ForecastQuery.ExcludeItems"/> to leave it out.</param>
+public sealed record ForecastItem(string Label, ForecastSource Source, decimal Amount, int Count, DateOnly FirstDate, string Key = "", bool Excluded = false);
 
 /// <param name="Start">Balance today (completed and pending records up to today).</param>
 /// <param name="Points">Balance at the end of each day or week, starting today.</param>

@@ -29,6 +29,17 @@ else
             <input type="checkbox" checked="@State.ForecastTrend" @onchange="e => SetAsync(() => State.ForecastTrend = e.Value is true)" />
             <span>@Tr("Include the trend – income and everyday spending from up to 24 months of history, without recurring rules and their categories")</span>
         </label>
+        <details class="disclosure">
+            <summary>@(_excludedCategories.Count == 0 ? Tr("Categories: all counted") : Tr("Categories: {0} left out", _excludedCategories.Count))</summary>
+            <p class="muted">@Tr("Unchecked categories are left out of the whole forecast: trend, recurring rules and dated records.")</p>
+            @foreach (var category in Wallet.Categories.Where(c => !c.IsArchived).OrderBy(c => c.Type).ThenBy(c => c.Name))
+            {
+                <label class="check">
+                    <input type="checkbox" checked="@(!_excludedCategories.Contains(category.Id))" @onchange="() => ToggleAsync(_excludedCategories, category.Id)" />
+                    <span>@category.Name</span>
+                </label>
+            }
+        </details>
     </EditForm>
 
     @if (_data is null)
@@ -89,11 +100,16 @@ else
         @if (_data.Items.Count > 0)
         {
             <h2 class="section-title">@Tr("Biggest items")</h2>
+            <p class="muted">@Tr("Uncheck an item to leave it out of the forecast.")</p>
             <ul class="stats-list">
                 @foreach (var item in _data.Items)
                 {
-                    <li>
-                        <ListRow Title="@item.Label" Subtitle="@Describe(item)">
+                    <li @key="item.Key" class="@(item.Excluded ? "stats-list__item is-hidden" : "stats-list__item")">
+                        <label class="check">
+                            <input type="checkbox" checked="@(!item.Excluded)" @onchange="() => ToggleAsync(_excludedItems, item.Key)"
+                                   aria-label="@Tr("Include {0}", item.Label)" />
+                        </label>
+                        <ListRow Title="@item.Label" Subtitle="@(item.Excluded ? Tr("Left out · {0}", Describe(item)) : Describe(item))">
                             <Trailing><Amount Value="item.Amount" Currency="@_data.Currency" /></Trailing>
                         </ListRow>
                     </li>
@@ -129,6 +145,8 @@ else
     private ForecastData? _data;
     private object _chart = new();
     private readonly CalculatorModel _calc = new();
+    private readonly HashSet<Guid> _excludedCategories = [];
+    private readonly HashSet<string> _excludedItems = [];
 
     private sealed class CalculatorModel
     {
@@ -243,6 +261,8 @@ else
 
         _loadedFor = Wallet;
         State.Use(Wallet);
+        _excludedCategories.Clear();
+        _excludedItems.Clear();
         await ReloadAsync();
     }
 
@@ -251,6 +271,9 @@ else
         change();
         return ReloadAsync();
     }
+
+    private Task ToggleAsync<T>(HashSet<T> excluded, T value) =>
+        SetAsync(() => { if (!excluded.Remove(value)) excluded.Add(value); });
 
     private async Task ReloadAsync()
     {
@@ -261,6 +284,8 @@ else
             Step = State.ForecastStep,
             Trend = State.ForecastTrend,
             Today = DateOnly.FromDateTime(DateTime.Now),
+            ExcludeCategoryIds = [.. _excludedCategories],
+            ExcludeItems = [.. _excludedItems],
         };
         _data = (await Api.GetAsync<ForecastData>($"api/wallets/{Wallet!.Id}/stats/forecast" + query.ToQueryString())).Value;
         if (_data is not null)

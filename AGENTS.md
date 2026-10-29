@@ -121,7 +121,9 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   (i zaległe `Planned` na dziś) + opcjonalnie (`trend`) trend przychodów i wydatków (`MonthlyTrend` w Domain: regresja
   liniowa, od 12 mies. sezonowość miesięczna ściągana c/(c+1), 6–11 mies. sama linia, mniej – średnia; nigdy < 0)
   z maks. 24 pełnych miesięcy, bez rekordów z reguł i bez kategorii aktywnych reguł (wydatkowe/przychodowe osobno),
-  rozłożony równo na dni miesiąca. Pasmo ~80% (`Spread` = 1,28·σ·√miesięcy). Wynik: punkty, tabela miesięcy
+  rozłożony równo na dni miesiąca. `excludeCategoryIds` pomija kategorie wszędzie (trend, reguły, rekordy),
+  `excludeItems` (klucz `ForecastItem.Key`: id rekordu albo `rule:{id}`) pomija pozycję w saldzie, ale zostaje na liście
+  z `Excluded`; wybór tylko w stanie strony (bez zapisu, bez przypinania). Pasmo ~80% (`Spread` = 1,28·σ·√miesięcy). Wynik: punkty, tabela miesięcy
   (`ForecastMonth`), opis trendu; kalkulator „ile będę mieć” liczy klient (start = saldo dziś, przychód/wydatki =
   średnia z prognozy, odsetki miesięcznie od dodatniego salda). `records/export`
   bierze filtry listy (`format=csv|xlsx`, limit 50 tys.); CSV ręcznie (UTF-8 BOM, `;`, kropka dziesiętna, ochrona
