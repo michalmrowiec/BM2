@@ -2461,6 +2461,7 @@ button.account-card {
 .stats-list__item { display: flex; align-items: stretch; }
 .stats-list__item > .list-row { flex: 1; min-width: 0; }
 .stats-list__item.is-hidden > .list-row { opacity: 0.5; }
+.stats-list__item > .check { flex: none; padding-inline-start: var(--space-3); }
 
 .stats-toggle {
     position: relative;
