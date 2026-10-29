@@ -128,6 +128,10 @@ public static partial class Strings
         ["Remove budget"] = "Usuń budżet",
         ["Budget saved."] = "Zapisano budżet.",
         ["Budget removed. Records are not affected."] = "Usunięto budżet. Operacje bez zmian.",
+        ["Spending in recent months"] = "Wydatki w ostatnich miesiącach",
+        ["No spending in this category in the last 12 months."] = "Brak wydatków w tej kategorii w ostatnich 12 miesiącach.",
+        ["Average {0} a month"] = "Średnio {0} miesięcznie",
+        ["Set limit to {0}"] = "Ustaw limit {0}",
 
         // Budget bar
         ["Deleted category"] = "Usunięta kategoria",

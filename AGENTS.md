@@ -106,7 +106,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   przy tworzeniu. UI: Settings → „Invite to BM2” (`/more/settings/invites`).
 - **Budżety i dashboard:** `Budget` = miesięczny limit kategorii wydatków w walucie bazowej portfela (unikalne
   portfel+kategoria, obowiązuje co miesiąc, bez przenoszenia); wydane liczymy tylko z kont w walucie bazowej, inne
-  waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Home ładuje wszystko jednym `GET dashboard`.
+  waluty osobno jako „nieliczone”. Zapis wymaga `ManageCategories`. Edytor budżetu podpowiada limit z `stats/category-months` (pełne miesiące
+  z ostatnich 12 od pierwszego wydatku, średnia w górę do 10/50/100 przy ≤100/≤1000/więcej). Home ładuje wszystko jednym `GET dashboard`.
 - **Wykresy:** komponent `Chart` (opcje ECharts, kolory jako `"var(--token)"`, przerysowanie po zmianie motywu, bez
   animacji przy `prefers-reduced-motion`); ECharts 5.6.0 lokalnie w `BM2.Server/wwwroot/lib/echarts`, ładowany leniwie
   przez `Chart.razor.js`. Przy wykresie zawsze te same liczby tekstem (lista/tabela). Statystyki: `stats/categories`,
