@@ -1,6 +1,6 @@
 # BM2 – roadmapa
 
-Stan na: 2026-10-28. BM2 (v2 MoneyManager) działa produkcyjnie na `<host-produkcji>` z danymi z MM.
+Stan na: 2026-10-29. BM2 (v2 MoneyManager) działa produkcyjnie na `<host-produkcji>` z danymi z MM.
 Konwencje i opis funkcji: [AGENTS.md](../AGENTS.md). Wdrożenie: [deploy-webio.md](deploy-webio.md).
 
 ## Decyzje, których nie ma w AGENTS.md
@@ -26,8 +26,7 @@ Konwencje i opis funkcji: [AGENTS.md](../AGENTS.md). Wdrożenie: [deploy-webio.m
    przekazanie własności.
 5. **Utwardzenie (1C):** CSP i przegląd nagłówków, przegląd antiforgery dla `/api`, health check, backupy bazy.
 6. **Testy (dług z trybu „najpierw funkcje”):** integracyjne dla nowych endpointów + przypadki
-   w `WalletEndpointAccessTests`; `Strings` (`Plural` dla 1/2/5/12/22/112, `TrMessage` z `{0}`, brak wpisu → EN),
-   test, że każdy literał `Tr`/`Plural` ma wpis PL; `GET /culture/pl` (cookie, odrzuca nielokalny `returnUrl`);
+   w `WalletEndpointAccessTests`; `GET /culture/pl` (cookie, odrzuca nielokalny `returnUrl`);
    axe (Playwright) dla głównych ekranów w obu motywach.
 7. **WCAG – ręcznie:** czytnik ekranu (TalkBack/VoiceOver), powiększenie 200/400 %, klawiatura na wszystkich
    ekranach, powrót focusu po zamknięciu `Sheet`/`ConfirmDialog` na iOS Safari.

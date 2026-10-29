@@ -227,7 +227,10 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
 - **i18n (EN domyślnie, PL):** słownik w `BM2.Client/Localization` – angielski tekst jest kluczem i wartością
   domyślną, polski w `Strings.Pl.<Obszar>.cs` (indeksator `["EN"] = "PL",`). W komponentach `@Tr("…")`,
   `@Tr("{0} of {1}", a, b)` (import statyczny w `_Imports.razor` klienta i serwera), liczba mnoga
-  `Plural(n, "{0} record", "{0} records")` z wpisem PL `"one|few|many"`. Nie wołaj `Tr` w polach `static readonly`
+  `Plural(n, "{0} record", "{0} records")` z wpisem PL `"one|few|many"`. Języki w `Strings.Languages` (kod, kultura,
+  nazwa własna, słowniki, reguła liczby mnogiej) – nowy język = słowniki `Strings.<Lang>.*.cs` + wiersz tam; przełączniki
+  języka (Settings, strony konta) biorą listę stamtąd. Słownik zamiast .resx świadomie (bez satelitarnych DLL w WASM).
+  `StringsTests` pilnuje, że każdy literał `Tr`/`Plural` w UI ma wpis PL. Nie wołaj `Tr` w polach `static readonly`
   (prerender dzieli statyki między żądania) – używaj `=>`. Komponenty bazowe nie tłumaczą `Label`/`Title`
   (to mogą być nazwy użytkownika) – tłumaczy wołający. Komunikaty z API, walidatorów i DataAnnotations tłumaczy
   `Strings.TrMessage` na granicy (`ApiClient`, `FluentValidator`, `TrValidationMessage`/`TrValidationSummary`
