@@ -42,6 +42,8 @@ Konwencje i opis funkcji: [AGENTS.md](../AGENTS.md). Wdrożenie: [deploy-webio.m
 7. **WCAG – ręcznie:** czytnik ekranu (TalkBack/VoiceOver), powiększenie 200/400 %, klawiatura na wszystkich
    ekranach, powrót focusu po zamknięciu `Sheet`/`ConfirmDialog` na iOS Safari.
 8. **Wyłączenie MM** po okresie równoległym.
+9. **Potwierdzanie z inną kwotą:** przy rekordzie `Planned`/`Pending` po kliknięciu ptaszka (potwierdzenie) dodatkowa
+   opcja „zmień kwotę” – wpisanie faktycznej kwoty i od razu zapis jako zrealizowany (`Completed`).
 
 ## Backlog (później)
 
