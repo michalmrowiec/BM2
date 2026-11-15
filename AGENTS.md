@@ -151,6 +151,8 @@ Aktualizuj ten plik, gdy zapadnie nowa decyzja dotycząca konwencji.
   `ShowServerErrors` dla 400/409). Komponenty bazowe: `Sheet` (natywny `<dialog>`), `ConfirmDialog`, `TextField`,
   `SelectField`, `MoneyInput`, `DateField`, `SegmentedControl`, `ChipGroup`, `ListRow`, `Amount`, `ToastHost`, `BackButton` (wstecz w historii aplikacji, bez niej `Fallback`).
   Usługi klienta są rejestrowane także na serwerze (prerendering); API wołamy tylko w trybie interaktywnym.
+- **Keep-alive:** `GET /health` (anonimowy, `CanConnectAsync` do bazy) – cel zewnętrznego pingu co ~5 min, żeby pula
+  IIS nie usypiała (zimny start = długi biały ekran PWA).
 - **Konfiguracja:** `ConnectionStrings:BM2`; `Database:PrepareOnStartup` (tylko dev/testy) tworzy i migruje bazę.
   Paczki w `Directory.Packages.props` (centralnie, z pinowaniem zależności przechodnich), źródło tylko nuget.org.
 - **Testy:** xUnit v3 na Microsoft.Testing.Platform (`dotnet test --project …`, filtry `-- --filter-class …`).

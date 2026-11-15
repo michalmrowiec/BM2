@@ -74,6 +74,9 @@ if (app.Environment.IsDevelopment())
 
 app.MapBm2Api();
 app.MapCultureEndpoint();
+// Keep-alive target for an external ping, so the IIS pool and the SQL connection stay warm.
+app.MapGet("/health", async (AppDbContext db, CancellationToken ct) =>
+    await db.Database.CanConnectAsync(ct) ? Results.Ok() : Results.StatusCode(503)).AllowAnonymous();
 app.MapDemoLogin();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()

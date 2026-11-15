@@ -182,7 +182,8 @@
             await WalletState.SetLastAccountAsync(request.AccountId);
             WalletState.ForgetSuggestions();
             Toasts.Show(Tr("Saved."), ToastKind.Success);
-            await WalletState.RefreshAsync();
+            // Go back at once; the page we return to re-renders when the refreshed snapshot arrives.
+            _ = WalletState.RefreshAsync();
             await GoBackAsync();
         }
         else if (result.Problem!.HasFieldErrors)
@@ -233,7 +234,8 @@
         {
             WalletState.ForgetSuggestions();
             Toasts.Show(Tr("Record deleted."));
-            await WalletState.RefreshAsync();
+            // Go back at once; the page we return to re-renders when the refreshed snapshot arrives.
+            _ = WalletState.RefreshAsync();
             await GoBackAsync();
         }
         else
