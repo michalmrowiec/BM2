@@ -9,7 +9,7 @@
 @inject WalletState WalletState
 @inject ToastService Toasts
 
-@* Quick add, edit and copy: amount, name with suggestions, then one tap per choice; currency and Save as template under "More". *@
+@* Quick add, edit and copy: amount, name with suggestions, then one tap per choice; repeat, currency and Save as template under "More". *@
 <EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync" class="record-form">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="_ => BuildRequest()" />
 
@@ -175,17 +175,6 @@
         <RepeatFields Model="_repeat" Start="_model.OccurredOn" Existing="Rule" FirstStatus="@(Rule is null && Initial is not null ? Initial.Status : null)"
                       FirstExists="true" />
     }
-    else if (Initial is null || IsCopy)
-    {
-        <label class="check">
-            <input type="checkbox" checked="@_repeatOn" @onchange="OnRepeatChanged" />
-            <span><Icon Name="repeat" /> @Tr("Repeat")</span>
-        </label>
-        @if (_repeatOn)
-        {
-            <RepeatFields Model="_repeat" Start="_model.OccurredOn" FirstStatus="_model.Status" />
-        }
-    }
 
     @if (TagOptions.Count > 0 || CanCreateTags)
     {
@@ -225,12 +214,26 @@
         </div>
     }
 
-    @{ var canSaveTemplate = !TemplateMode && OnSaveTemplate.HasDelegate && !_repeatOn; }
-    @if (_model.Type != RecordType.Transfer || canSaveTemplate)
+    @{
+        var canSaveTemplate = !TemplateMode && OnSaveTemplate.HasDelegate && !_repeatOn;
+        var canRepeat = !TemplateMode && !RuleMode && (Initial is null || IsCopy);
+    }
+    @if (_model.Type != RecordType.Transfer || canSaveTemplate || canRepeat)
     {
         <details class="record-form__more" open="@_moreOpen">
             <summary>@Tr("More")</summary>
             <div class="form-stack">
+                @if (canRepeat)
+                {
+                    <label class="check">
+                        <input type="checkbox" checked="@_repeatOn" @onchange="OnRepeatChanged" />
+                        <span><Icon Name="repeat" /> @Tr("Repeat")</span>
+                    </label>
+                    @if (_repeatOn)
+                    {
+                        <RepeatFields Model="_repeat" Start="_model.OccurredOn" FirstStatus="_model.Status" />
+                    }
+                }
                 @if (_model.Type != RecordType.Transfer)
                 {
                     <SelectField id="record-currency" Label="@Tr("Currency")" Options="Options.Currencies" @bind-Value="_model.Currency"
@@ -532,6 +535,7 @@
     private void OnRepeatChanged(ChangeEventArgs e)
     {
         _repeatOn = e.Value is true;
+        _moreOpen = true; // keeps the section open across re-renders while the schedule is shown
         SyncRepeatMode();
     }
 
