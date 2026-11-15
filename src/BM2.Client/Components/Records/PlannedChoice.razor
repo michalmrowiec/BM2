@@ -17,7 +17,7 @@
         {
             <li>
                 <button type="button" @onclick="() => OtherAmount.InvokeAsync()">
-                    <Icon Name="coins" /><span>@Tr("Completed with another amount…")</span>
+                    <Icon Name="coins" /><span>@Tr("Completed with another amount")</span>
                 </button>
             </li>
         }
@@ -37,6 +37,6 @@
 
     [Parameter] public EventCallback Closed { get; set; }
 
-    /// <summary>Shows "Completed with another amount…" (single records only).</summary>
+    /// <summary>Shows "Completed with another amount" (single records only).</summary>
     [Parameter] public EventCallback OtherAmount { get; set; }
 }

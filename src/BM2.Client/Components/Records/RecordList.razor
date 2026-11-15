@@ -176,10 +176,10 @@
                 @if (record.Status != RecordStatus.Completed)
                 {
                     <button type="button" class="btn btn-secondary" disabled="@_busy" @onclick="() => Check(record)">
-                        <Icon Name="check" /> @(record.Status == RecordStatus.Planned ? Tr("Confirm…") : Tr("Confirm"))
+                        <Icon Name="check" /> @Tr("Confirm")
                     </button>
                     <button type="button" class="btn btn-secondary" disabled="@_busy" @onclick="() => AskAmount(record)">
-                        <Icon Name="coins" /> @Tr("Other amount…")
+                        <Icon Name="coins" /> @Tr("Confirm with another amount")
                     </button>
                 }
             </div>
@@ -262,7 +262,7 @@
                ConfirmLabel="@Tr("Mark as completed")" OnConfirm="() => ConfirmAsync([_confirmOne!])">
     <p>@Tr("It's marked as checked. It already counts in balances, so totals stay the same.")</p>
     <button type="button" class="btn btn-secondary btn-block" @onclick="() => AskAmount(_confirmOne!)">
-        <Icon Name="coins" /> @Tr("Other amount…")
+        <Icon Name="coins" /> @Tr("Confirm with another amount")
     </button>
 </ConfirmDialog>
 
