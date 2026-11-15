@@ -261,10 +261,13 @@
                Title="@Tr("Mark {0} as completed?", _confirmOne is null ? Tr("record") : View(_confirmOne).Title)"
                ConfirmLabel="@Tr("Mark as completed")" OnConfirm="() => ConfirmAsync([_confirmOne!])">
     <p>@Tr("It's marked as checked. It already counts in balances, so totals stay the same.")</p>
+    <button type="button" class="btn btn-secondary btn-block" @onclick="() => AskAmount(_confirmOne!)">
+        <Icon Name="coins" /> @Tr("Other amount…")
+    </button>
 </ConfirmDialog>
 
 <PlannedChoice Open="_choiceFor is not null" Title="@(_choiceFor is null ? null : View(_choiceFor).Title)" Closed="() => _choiceFor = null"
-               Chosen="s => ConfirmAsync([_choiceFor!], s)" />
+               Chosen="s => ConfirmAsync([_choiceFor!], s)" OtherAmount="() => AskAmount(_choiceFor!)" />
 
 <ConfirmAmountSheet Record="_amountFor" Name="@(_amountFor is null ? null : View(_amountFor).Title)" Busy="_busy" Closed="() => _amountFor = null"
                     Confirmed="a => ConfirmAsync([_amountFor!], RecordStatus.Completed, a)" />
@@ -311,6 +314,8 @@
     private void AskAmount(RecordItem item)
     {
         _menuFor = null;
+        _confirmOne = null;
+        _choiceFor = null;
         _amountFor = item;
     }
 

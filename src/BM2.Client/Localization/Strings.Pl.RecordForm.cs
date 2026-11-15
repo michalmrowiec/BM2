@@ -71,6 +71,7 @@ public static partial class Strings
         ["{0} is saved as Completed with this amount (was {1})."] = "{0} zostanie zapisana jako zrealizowana z tą kwotą (było {1}).",
         ["The record"] = "Operacja",
         ["Other amount…"] = "Inna kwota…",
+        ["Completed with another amount…"] = "Zrealizowana, z inną kwotą…",
         ["Currency"] = "Waluta",
         ["Rate {0} → {1}"] = "Kurs {0} → {1}",
         ["Amount in {0}"] = "Kwota w {0}",

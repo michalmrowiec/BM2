@@ -13,6 +13,14 @@
                 <Icon Name="clock" /><span>@Tr("Pending – it happened, I'll check it later")</span>
             </button>
         </li>
+        @if (OtherAmount.HasDelegate)
+        {
+            <li>
+                <button type="button" @onclick="() => OtherAmount.InvokeAsync()">
+                    <Icon Name="coins" /><span>@Tr("Completed with another amount…")</span>
+                </button>
+            </li>
+        }
     </ul>
     <p class="budget__note">@Tr("Both count in balances, budgets and stats from now on.")</p>
 </Sheet>
@@ -28,4 +36,7 @@
     [Parameter] public EventCallback<RecordStatus> Chosen { get; set; }
 
     [Parameter] public EventCallback Closed { get; set; }
+
+    /// <summary>Shows "Completed with another amount…" (single records only).</summary>
+    [Parameter] public EventCallback OtherAmount { get; set; }
 }
