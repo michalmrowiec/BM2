@@ -324,6 +324,36 @@ html.theme-switching::view-transition-new(root) {
     to { overflow: clip; }
 }
 
+/* Turning Repeat off: the same motion in reverse before the section is removed. */
+.check + .repeat-fields--closing {
+    animation: swap-out 220ms var(--ease-out) both;
+}
+
+@supports (interpolate-size: allow-keywords) {
+    .check + .repeat-fields.repeat-fields--closing {
+        animation: fold 280ms var(--ease-out) both;
+    }
+}
+
+@keyframes swap-out {
+    to {
+        opacity: 0;
+        transform: translateY(-0.3rem);
+    }
+}
+
+@keyframes fold {
+    from { overflow: clip; }
+
+    to {
+        overflow: clip;
+        height: 0;
+        padding-block: 0;
+        border-width: 0;
+        opacity: 0;
+    }
+}
+
 .chip--back { animation: chip-back 300ms var(--ease-spring); }
 
 @keyframes chip-back {

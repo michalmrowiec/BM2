@@ -3,7 +3,7 @@
 @using BM2.Contracts.Recurring
 
 @* Schedule part of the record form: every N days/weeks/months/years, an optional end and the confirm mode. *@
-<div class="repeat-fields">
+<div class="repeat-fields @(Closing ? "repeat-fields--closing" : null)" inert="@Closing">
     <div class="repeat-fields__every">
         <label class="field__label" for="repeat-interval">@Tr("Every")</label>
         <input id="repeat-interval" class="field__control repeat-fields__interval" type="number" inputmode="numeric" min="1" max="366"
@@ -89,6 +89,9 @@
 
     /// <summary>The first occurrence (the record date or the rule start).</summary>
     [Parameter] public DateOnly Start { get; set; }
+
+    /// <summary>Folds the section away before the parent removes it.</summary>
+    [Parameter] public bool Closing { get; set; }
 
     /// <summary>Status of the record saved now as the first occurrence; null when only the rule is saved.</summary>
     [Parameter] public RecordStatus? FirstStatus { get; set; }

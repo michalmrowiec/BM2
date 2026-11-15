@@ -229,9 +229,9 @@
                         <input type="checkbox" checked="@_repeatOn" @onchange="OnRepeatChanged" />
                         <span><Icon Name="repeat" /> @Tr("Repeat")</span>
                     </label>
-                    @if (_repeatOn)
+                    @if (_repeatOn || _repeatClosing)
                     {
-                        <RepeatFields Model="_repeat" Start="_model.OccurredOn" FirstStatus="_model.Status" />
+                        <RepeatFields Model="_repeat" Start="_model.OccurredOn" FirstStatus="_model.Status" Closing="!_repeatOn" />
                     }
                 }
                 @if (_model.Type != RecordType.Transfer)
@@ -532,11 +532,21 @@
         return messages.Count == 0 ? null : string.Join(" ", messages);
     }
 
-    private void OnRepeatChanged(ChangeEventArgs e)
+    private bool _repeatClosing;
+
+    private async Task OnRepeatChanged(ChangeEventArgs e)
     {
         _repeatOn = e.Value is true;
         _moreOpen = true; // keeps the section open across re-renders while the schedule is shown
         SyncRepeatMode();
+        if (!_repeatOn)
+        {
+            // Keeps the schedule rendered while it folds away (CSS fold, 280 ms).
+            _repeatClosing = true;
+            StateHasChanged();
+            await Task.Delay(300);
+            _repeatClosing = false;
+        }
     }
 
     // The next records default to the status picked for this one; the user can still change them separately.
