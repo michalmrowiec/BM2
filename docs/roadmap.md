@@ -18,8 +18,8 @@ Konwencje i opis funkcji: [AGENTS.md](../AGENTS.md). Wdrożenie: [deploy-webio.m
 1. **Poczta (SMTP Webio):** potwierdzanie e-maila, reset hasła, zmiana e-maila, wysyłka zaproszeń. Sekrety
    w konfiguracji hosta.
 2. **Wydajność na telefonie:** zimny start (usypianie puli IIS + pobranie WASM) i kilkusekundowy zapis rekordu.
-   Najpierw pomiar (API vs klient), potem ping z harmonogramu Webio, AOT/trimming, kompresja, optymistyczne
-   zamykanie formularza.
+   Zrobione (2026-11-15): `GET /health` + zewnętrzny ping co 5 min (cron-job.org), formularz wraca bez czekania
+   na odświeżenie portfela. Do sprawdzenia po wdrożeniu; dalej ewentualnie AOT/trimming, kompresja, mniej danych ICU.
 3. **Usuwanie konta użytkownika:** portfele, gdzie jest jedynym członkiem, usuwane z danymi; we wspólnych najpierw
    przekazanie własności.
 4. **Utwardzenie (1C):** CSP i przegląd nagłówków, przegląd antiforgery dla `/api`, health check, backupy bazy.
@@ -42,6 +42,10 @@ Konwencje i opis funkcji: [AGENTS.md](../AGENTS.md). Wdrożenie: [deploy-webio.m
 7. **WCAG – ręcznie:** czytnik ekranu (TalkBack/VoiceOver), powiększenie 200/400 %, klawiatura na wszystkich
    ekranach, powrót focusu po zamknięciu `Sheet`/`ConfirmDialog` na iOS Safari.
 8. **Wyłączenie MM** po okresie równoległym.
+9. **Pełny eksport (backup danych):** jedna akcja (np. Settings albo More → „Export everything”) zamiast „All
+   time” + eksport listy rekordów. Cały portfel (albo wszystkie portfele użytkownika): rekordy bez limitu 50 tys.,
+   konta z saldami otwarcia, kategorie, tagi, budżety, reguły cykliczne, szablony, wyceny inwestycji. Format do
+   ustalenia – XLSX z arkuszem na typ danych albo ZIP z CSV/JSON; w przyszłości ewentualnie import z takiego pliku.
 
 ## Backlog (później)
 
