@@ -19,6 +19,7 @@ export function afterWebAssemblyStarted() {
     document.addEventListener("keydown", keepComboboxEnter);
     document.addEventListener("click", slideOnClick, true);
     watchMarquees();
+    watchKeyboard();
 
     setTimeout(() => {
         document.documentElement.classList.add("motion-ready");
@@ -37,6 +38,16 @@ export function afterWebAssemblyStarted() {
             }
         }).observe(main, { childList: true });
     }, 400);
+}
+
+// The on-screen keyboard overlays the page instead of resizing it; --keyboard (its height) lifts bottom sheets above it.
+function watchKeyboard() {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const sync = () => document.documentElement.style.setProperty(
+        "--keyboard", `${Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop))}px`);
+    viewport.addEventListener("resize", sync);
+    viewport.addEventListener("scroll", sync);
 }
 
 // In-app navigation slides the page content (View Transitions; see css/motion.css): between main tabs toward the
