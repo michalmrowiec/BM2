@@ -75,6 +75,31 @@
                     }
                 </section>
 
+                @* Right under the balance: the quickest way to add a common record. *@
+                @if (_templates.Count > 0)
+                {
+                    <div class="section-header">
+                        <h2 class="section-title">@Tr("Quick add")</h2>
+                        <a class="link" href="templates">@Tr("Templates")</a>
+                    </div>
+                    <ul class="template-bar">
+                        @foreach (var template in _templates)
+                        {
+                            <li>
+                                <a class="template-tile" href="@($"records/new?template={template.Id}")">
+                                    <RecordAvatar Category="TemplateText.CategoryOf(template, wallet)" Type="template.Type"
+                                                  Fallback="@TemplateText.Label(template, wallet)" />
+                                    <span class="template-tile__label">@TemplateText.Label(template, wallet)</span>
+                                    @if (template.Amount is { } amount)
+                                    {
+                                        <Amount Value="amount" Currency="@TemplateText.Currency(template, wallet)" Sign="TemplateText.Sign(template.Type)" />
+                                    }
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+
                 <ul class="account-cards stagger">
                     @foreach (var account in accounts)
                     {
@@ -164,30 +189,6 @@
                         </span>
                     </div>
                     @OpenRecords(_planned, wallet)
-                }
-
-                @if (_templates.Count > 0)
-                {
-                    <div class="section-header">
-                        <h2 class="section-title">@Tr("Quick add")</h2>
-                        <a class="link" href="templates">@Tr("Templates")</a>
-                    </div>
-                    <ul class="template-bar">
-                        @foreach (var template in _templates)
-                        {
-                            <li>
-                                <a class="template-tile" href="@($"records/new?template={template.Id}")">
-                                    <RecordAvatar Category="TemplateText.CategoryOf(template, wallet)" Type="template.Type"
-                                                  Fallback="@TemplateText.Label(template, wallet)" />
-                                    <span class="template-tile__label">@TemplateText.Label(template, wallet)</span>
-                                    @if (template.Amount is { } amount)
-                                    {
-                                        <Amount Value="amount" Currency="@TemplateText.Currency(template, wallet)" Sign="TemplateText.Sign(template.Type)" />
-                                    }
-                                </a>
-                            </li>
-                        }
-                    </ul>
                 }
 
                 @if (_budgets is { Items.Count: > 0 } budgets)
@@ -305,6 +306,9 @@
 <PlannedChoice Open="_choiceFor is not null" Title="@_choiceFor?.Name" Closed="() => _choiceFor = null"
                Chosen="s => ConfirmManyAsync([_choiceFor!], s)" />
 
+<ConfirmAmountSheet Record="_amountFor" Name="@_amountFor?.Name" Busy="_busy" Closed="() => _amountFor = null"
+                    Confirmed="a => ConfirmManyAsync([_amountFor!], RecordStatus.Completed, a)" />
+
 @* Confirm all for Planned: the records shown there, all to one status. *@
 <PlannedChoice Open="_choiceAll" Count="_planned.Count" Closed="() => _choiceAll = false"
                Chosen="s => ConfirmManyAsync(_planned.ToList(), s)" />
@@ -336,6 +340,10 @@
                     <button type="button" class="icon-button record-row__confirm" aria-label="@Tr("Mark {0} as completed", label)"
                             title="@Tr("Mark as completed")" disabled="@_busy" @onclick="() => Check(record)">
                         <Icon Name="check" />
+                    </button>
+                    <button type="button" class="icon-button record-row__confirm" aria-label="@Tr("Confirm {0} with another amount", label)"
+                            title="@Tr("Confirm with another amount")" disabled="@_busy" @onclick="() => _amountFor = record">
+                        <Icon Name="coins" />
                     </button>
                 </li>
             }
@@ -428,13 +436,16 @@
         }
     }
 
-    private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
+    private RecordItem? _amountFor;
+
+    private async Task ConfirmManyAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed, decimal? amount = null)
     {
         _choiceFor = null;
         _choiceAll = false;
         _confirmOne = null;
+        _amountFor = null;
         _busy = true;
-        var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records, status);
+        var failed = await RecordConfirm.ConfirmAsync(Api, WalletState.Current!.Id, records, status, amount);
         _busy = false;
         var pending = status == RecordStatus.Pending;
         Toasts.Show(failed == 0

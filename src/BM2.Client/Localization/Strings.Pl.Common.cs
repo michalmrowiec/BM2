@@ -12,6 +12,7 @@ public static partial class Strings
         ["Dismiss"] = "Zamknij powiadomienie",
         ["Today"] = "Dziś",
         ["Yesterday"] = "Wczoraj",
+        ["Tomorrow"] = "Jutro",
         ["Name"] = "Nazwa",
         ["Currency"] = "Waluta",
         ["Color"] = "Kolor",

@@ -9,7 +9,7 @@
 @inject WalletState WalletState
 @inject ToastService Toasts
 
-@* Quick add, edit and copy: amount, name with suggestions, then one tap per choice; status and currency under "More". *@
+@* Quick add, edit and copy: amount, name with suggestions, then one tap per choice; currency and Save as template under "More". *@
 <EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync" class="record-form">
     <FluentValidator @ref="_validator" Validator="Validator" ToRequest="_ => BuildRequest()" />
 
@@ -156,6 +156,15 @@
     else
     {
         <DateField id="record-date" Label="@(RuleMode ? Tr("Starts") : Tr("Date"))" @bind-Value="_model.OccurredOn" />
+        @if (!RuleMode)
+        {
+            <div class="field">
+                <span class="field__label" id="record-status-label">@(_repeatOn ? Tr("Status of this record") : Tr("Status"))</span>
+                <ChipGroup TValue="RecordStatus" Options="StatusOptions" Selected="[_model.Status]" SelectedChanged="OnStatusChanged"
+                           Label="@(_repeatOn ? Tr("Status of this record") : Tr("Status"))" IconOf="StatusIcon" DescribedBy="record-status-hint" />
+                <p class="field__hint" id="record-status-hint">@StatusHint</p>
+            </div>
+        }
     }
 
     @if (TemplateMode)
@@ -216,21 +225,26 @@
         </div>
     }
 
-    <details class="record-form__more" open="@_moreOpen">
-        <summary>@Tr("More")</summary>
-        <div class="form-stack">
-            @if (!RuleMode && !TemplateMode)
-            {
-                <SelectField id="record-status" Label="@(_repeatOn ? Tr("Status of this record") : Tr("Status"))" Options="StatusOptions"
-                             @bind-Value="_model.Status" @bind-Value:after="SyncRepeatMode" />
-            }
-            @if (_model.Type != RecordType.Transfer)
-            {
-                <SelectField id="record-currency" Label="@Tr("Currency")" Options="Options.Currencies" @bind-Value="_model.Currency"
-                             @bind-Value:after="Recalculate" />
-            }
-        </div>
-    </details>
+    @{ var canSaveTemplate = !TemplateMode && OnSaveTemplate.HasDelegate && !_repeatOn; }
+    @if (_model.Type != RecordType.Transfer || canSaveTemplate)
+    {
+        <details class="record-form__more" open="@_moreOpen">
+            <summary>@Tr("More")</summary>
+            <div class="form-stack">
+                @if (_model.Type != RecordType.Transfer)
+                {
+                    <SelectField id="record-currency" Label="@Tr("Currency")" Options="Options.Currencies" @bind-Value="_model.Currency"
+                                 @bind-Value:after="Recalculate" />
+                }
+                @if (canSaveTemplate)
+                {
+                    <button type="button" class="btn btn-ghost btn-block" disabled="@Busy" @onclick="SaveTemplateAsync">
+                        <Icon Name="bolt" /> @Tr("Save as template")
+                    </button>
+                }
+            </div>
+        </details>
+    }
 
     @if (IsForeign && !TemplateMode)
     {
@@ -251,13 +265,6 @@
     }
     else
     {
-        @if (OnSaveTemplate.HasDelegate && !_repeatOn)
-        {
-            <button type="button" class="btn btn-ghost btn-block" disabled="@Busy" @onclick="SaveTemplateAsync">
-                <Icon Name="bolt" /> @Tr("Save as template")
-            </button>
-        }
-
         <button type="submit" class="btn btn-primary btn-block record-form__submit" disabled="@Busy">@Tr("Save")</button>
     }
 </EditForm>
@@ -298,11 +305,27 @@
     private bool IsRefundCategory(Guid? categoryId) => FindCategory(categoryId)?.Type == CategoryType.Expense;
 
     private static IReadOnlyList<(RecordStatus Value, string Label)> StatusOptions =>
-        [
-            (RecordStatus.Completed, Tr("Completed – done and checked")),
-            (RecordStatus.Pending, Tr("Pending – happened, waiting for your ✓ (counts in balances)")),
-            (RecordStatus.Planned, Tr("Planned – not counted yet, shown as a forecast")),
-        ];
+        [(RecordStatus.Completed, Tr("Completed")), (RecordStatus.Pending, Tr("Pending")), (RecordStatus.Planned, Tr("Planned"))];
+
+    private static string StatusIcon(RecordStatus status) => status switch
+    {
+        RecordStatus.Pending => "clock",
+        RecordStatus.Planned => "calendar",
+        _ => "check",
+    };
+
+    private string StatusHint => _model.Status switch
+    {
+        RecordStatus.Pending => Tr("It happened, waiting for your ✓. Counts in balances."),
+        RecordStatus.Planned => Tr("Not counted yet, shown as a forecast."),
+        _ => Tr("Done and checked."),
+    };
+
+    private void OnStatusChanged(IReadOnlyCollection<RecordStatus> selected)
+    {
+        _model.Status = selected.First();
+        SyncRepeatMode();
+    }
 
     private readonly List<TagItem> _createdTags = [];
     private FormModel _model = new();
@@ -472,7 +495,7 @@
         }
 
         _repeat = Rule is { } rule ? RepeatModel.From(rule) : new RepeatModel();
-        _moreOpen = !RuleMode && _model.Status != RecordStatus.Completed || IsForeign;
+        _moreOpen = IsForeign;
         _model.PreviousAccountCurrency = AccountCurrency;
         _editContext = new EditContext(_model);
     }

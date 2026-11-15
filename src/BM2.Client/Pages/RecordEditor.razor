@@ -181,7 +181,7 @@
         {
             await WalletState.SetLastAccountAsync(request.AccountId);
             WalletState.ForgetSuggestions();
-            Toasts.Show(Tr("Saved."), ToastKind.Success);
+            Toasts.Show(Tr("Saved: {0} · {1}", SavedLabel(request), SavedAmount(request)), ToastKind.Success);
             // Go back at once; the page we return to re-renders when the refreshed snapshot arrives.
             _ = WalletState.RefreshAsync();
             await GoBackAsync();
@@ -212,6 +212,16 @@
             Toasts.Show(result.Problem!.Detail ?? Tr("Couldn't save the template."), ToastKind.Error);
         }
     }
+
+    private string SavedLabel(SaveRecordRequest r) =>
+        r.Name ?? Wallet!.Categories.FirstOrDefault(c => c.Id == r.CategoryId)?.Name ?? Tr(r.Type.ToString());
+
+    private static string SavedAmount(SaveRecordRequest r) => r.Type switch
+    {
+        RecordType.Expense => "−",
+        RecordType.Income => "+",
+        _ => "",
+    } + r.Amount.ToString("N2", System.Globalization.CultureInfo.CurrentCulture) + " " + CurrencyLabel.Of(r.Currency);
 
     // "Save and go back" (spec): to the previous app page, or to Records when the editor was opened directly.
     private async Task GoBackAsync()

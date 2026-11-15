@@ -102,6 +102,10 @@
                                 title="@Tr("Mark as completed")" disabled="@_busy" @onclick="() => Check(item)">
                             <Icon Name="check" />
                         </button>
+                        <button type="button" class="icon-button record-row__confirm" aria-label="@Tr("Confirm {0} with another amount", view.Title)"
+                                title="@Tr("Confirm with another amount")" disabled="@_busy" @onclick="() => AskAmount(item)">
+                            <Icon Name="coins" />
+                        </button>
                     }
                 </li>
             }
@@ -178,6 +182,9 @@
                 {
                     <button type="button" class="btn btn-secondary" disabled="@_busy" @onclick="() => Check(record)">
                         <Icon Name="check" /> @(record.Status == RecordStatus.Planned ? Tr("Confirm…") : Tr("Confirm"))
+                    </button>
+                    <button type="button" class="btn btn-secondary" disabled="@_busy" @onclick="() => AskAmount(record)">
+                        <Icon Name="coins" /> @Tr("Other amount…")
                     </button>
                 }
             </div>
@@ -264,6 +271,9 @@
 <PlannedChoice Open="_choiceFor is not null" Title="@(_choiceFor is null ? null : View(_choiceFor).Title)" Closed="() => _choiceFor = null"
                Chosen="s => ConfirmAsync([_choiceFor!], s)" />
 
+<ConfirmAmountSheet Record="_amountFor" Name="@(_amountFor is null ? null : View(_amountFor).Title)" Busy="_busy" Closed="() => _amountFor = null"
+                    Confirmed="a => ConfirmAsync([_amountFor!], RecordStatus.Completed, a)" />
+
 <ConfirmDialog Open="_deleting is not null" OpenChanged="v => { if (!v) _deleting = null; }" Title="@Tr("Delete record?")" ConfirmLabel="@Tr("Delete")"
                Danger="true" OnConfirm="DeleteAsync">
     <p>@Tr("This can't be undone.")</p>
@@ -301,14 +311,23 @@
         }
     }
 
-    private async Task ConfirmAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed)
+    private RecordItem? _amountFor;
+
+    private void AskAmount(RecordItem item)
+    {
+        _menuFor = null;
+        _amountFor = item;
+    }
+
+    private async Task ConfirmAsync(IReadOnlyList<RecordItem> records, RecordStatus status = RecordStatus.Completed, decimal? amount = null)
     {
         _menuFor = null;
         _choiceFor = null;
         _confirmOne = null;
+        _amountFor = null;
         _confirmBulkComplete = false;
         _busy = true;
-        var failed = await RecordConfirm.ConfirmAsync(Api, Wallet.Id, records, status);
+        var failed = await RecordConfirm.ConfirmAsync(Api, Wallet.Id, records, status, amount);
         _busy = false;
         _selected.ExceptWith(records.Select(r => r.Id));
         var pending = status == RecordStatus.Pending;

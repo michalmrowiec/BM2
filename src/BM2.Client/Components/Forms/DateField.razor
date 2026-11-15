@@ -21,6 +21,7 @@
             <div class="date-field__shortcuts">
                 <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today)" @onclick="() => CurrentValue = Today">@Tr("Today")</button>
                 <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(-1))" @onclick="() => CurrentValue = Today.AddDays(-1)">@Tr("Yesterday")</button>
+                <button type="button" class="chip chip--sm" aria-pressed="@Pressed(Today.AddDays(1))" @onclick="() => CurrentValue = Today.AddDays(1)">@Tr("Tomorrow")</button>
             </div>
         }
     </div>
@@ -42,7 +43,7 @@
         _open = true;
     }
 
-    /// <summary>Today and Yesterday chips; off for dates that are rarely recent, like an end date.</summary>
+    /// <summary>Today, Yesterday and Tomorrow chips; off for dates that are rarely recent, like an end date.</summary>
     [Parameter] public bool Shortcuts { get; set; } = true;
 
     // The user's calendar day, from the device clock.

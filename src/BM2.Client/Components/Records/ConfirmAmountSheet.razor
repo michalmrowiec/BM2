@@ -1,0 +1,50 @@
+@using BM2.Contracts.Records
+
+@* Confirms a pending or planned record with the amount that was actually paid. *@
+<Sheet Open="Record is not null" OpenChanged="v => { if (!v) Closed.InvokeAsync(); }" Title="@Tr("Confirm with another amount")">
+    @if (_shown is { } record)
+    {
+        <EditForm @key="_shown" Model="_model" OnValidSubmit="() => Confirmed.InvokeAsync(_model.Amount!.Value)" class="form-stack">
+            <MoneyInput id="confirm-amount" Label="@Tr("Actual amount")" Currency="@record.Currency" Large="true"
+                        Autofocus="true" SelectOnFocus="true" @bind-Value="_model.Amount" />
+            <p class="field__hint">
+                @Tr("{0} is saved as Completed with this amount (was {1}).", Name ?? Tr("The record"),
+                    record.Amount.ToString("N2", System.Globalization.CultureInfo.CurrentCulture) + " " + CurrencyLabel.Of(record.Currency))
+            </p>
+            <button type="submit" class="btn btn-primary btn-block" disabled="@(Busy || _model.Amount is null)">
+                <Icon Name="check" /> @Tr("Confirm")
+            </button>
+        </EditForm>
+    }
+</Sheet>
+
+@code {
+    private RecordItem? _shown;
+    private AmountModel _model = new();
+
+    /// <summary>The record to confirm; null closes the sheet.</summary>
+    [Parameter] public RecordItem? Record { get; set; }
+
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public EventCallback<decimal> Confirmed { get; set; }
+
+    [Parameter] public EventCallback Closed { get; set; }
+
+    // Kept after closing, so the sheet has content while it animates out.
+    protected override void OnParametersSet()
+    {
+        if (Record is not null && !ReferenceEquals(Record, _shown))
+        {
+            _shown = Record;
+            _model = new AmountModel { Amount = Record.Amount };
+        }
+    }
+
+    private sealed class AmountModel
+    {
+        public decimal? Amount { get; set; }
+    }
+}
