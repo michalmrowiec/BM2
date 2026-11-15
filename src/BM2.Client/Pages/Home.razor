@@ -236,7 +236,7 @@
                             var name = rule.Record.Name is { } n ? n + rule.Schedule.Suffix(index) : null;
                             var label = name ?? wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)?.Name ?? Tr(rule.Record.Type.ToString());
                             <li @key="(rule.Id, index)">
-                                <ListRow Title="@label" Subtitle="@date.ToString("dddd, d MMM")" Href="@($"recurring/{rule.Id}")">
+                                <ListRow Title="@label" Subtitle="@date.ToString("dddd, d MMM")" OnClick="() => _occurrence = _occurrenceShown = (rule, label, date)">
                                     <Leading>
                                         <RecordAvatar Category="wallet.Categories.FirstOrDefault(c => c.Id == rule.Record.CategoryId)" Type="rule.Record.Type"
                                                       Fallback="@label" />
@@ -297,6 +297,41 @@
     <p>@Tr("The records shown in To confirm are marked as checked (Completed). They already count in balances, so totals stay the same.")</p>
 </ConfirmDialog>
 
+@* An upcoming occurrence isn't a record yet: details of the rule's next record, then the rule itself. *@
+<Sheet Open="_occurrence is not null" OpenChanged="v => { if (!v) _occurrence = null; }" Title="@(_occurrenceShown?.Label ?? "")">
+    @if (_occurrenceShown is { } occurrence && WalletState.Current is { } w)
+    {
+        var (rule, _, date) = occurrence;
+        var r = rule.Record;
+        <div class="record-details">
+            <div class="record-details__amount">
+                <Amount Value="r.Amount" Currency="@r.Currency" Sign="TemplateText.Sign(r.Type)" />
+            </div>
+            <dl class="record-details__list">
+                <div><dt>@Tr("Date")</dt><dd>@date.ToString("dddd, d MMMM yyyy", System.Globalization.CultureInfo.CurrentCulture)</dd></div>
+                <div><dt>@Tr("Repeats")</dt><dd>@RecurringText.Describe(rule.Schedule)</dd></div>
+                <div>
+                    <dt>@Tr("Status")</dt>
+                    <dd>@(rule.Mode == RecurringMode.Confirm ? Tr("Added as pending, waiting for your ✓") : Tr("Added automatically as completed"))</dd>
+                </div>
+                @if (r.Type == RecordType.Transfer)
+                {
+                    <div><dt>@Tr("Transfer")</dt><dd>@AccountName(w, r.AccountId) → @AccountName(w, r.TransferAccountId)</dd></div>
+                }
+                else
+                {
+                    <div><dt>@Tr("Category")</dt><dd>@(w.Categories.FirstOrDefault(c => c.Id == r.CategoryId)?.Name ?? Tr("No category"))</dd></div>
+                    <div><dt>@Tr("Account")</dt><dd>@AccountName(w, r.AccountId)</dd></div>
+                }
+            </dl>
+            <p class="muted">@Tr("Not added yet: the record appears on its date.")</p>
+        </div>
+        <div class="record-details__actions">
+            <a class="btn btn-primary" href="@($"recurring/{rule.Id}")"><Icon Name="edit" /> @Tr("Edit the rule")</a>
+        </div>
+    }
+</Sheet>
+
 @* Confirm all for Planned: the records shown there, all to one status. *@
 <PlannedChoice Open="_choiceAll" Count="_planned.Count" Closed="() => _choiceAll = false"
                Chosen="s => ConfirmManyAsync(_planned.ToList(), s)" />
@@ -307,6 +342,12 @@
     private bool _confirmAll;
     private IReadOnlyList<RecordItem> _planned = [];
     private bool _choiceAll;
+
+    // The tapped upcoming occurrence; _occurrenceShown keeps the sheet's content while it animates out.
+    private (RecurringRuleItem Rule, string Label, DateOnly Date)? _occurrence;
+    private (RecurringRuleItem Rule, string Label, DateOnly Date)? _occurrenceShown;
+
+    private static string AccountName(WalletSnapshot w, Guid? id) => w.Accounts.FirstOrDefault(a => a.Id == id)?.Name ?? "";
 
     private IReadOnlyList<RecordItem> _recent = [];
     private IReadOnlyList<PinnedChartItem> _pins = [];
